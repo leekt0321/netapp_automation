@@ -1,9 +1,9 @@
 from pathlib import Path
-from uuid import uuid4
+import re
 
-from fastapi import Depends, FastAPI, File, HTTPException, UploadFile
-from sqlalchemy.orm import Session
+from fastapi import Depends, FastAPI, File, Form, HTTPException, UploadFile
 from sqlalchemy import text
+from sqlalchemy.orm import Session
 
 from app.config import settings
 from app.db import Base, engine, get_db
@@ -14,6 +14,39 @@ app = FastAPI(title=settings.app_name)
 
 upload_dir = Path(settings.upload_dir)
 upload_dir.mkdir(parents=True, exist_ok=True)
+
+INVALID_FILENAME_CHARS = re.compile(r'[<>:"/\\|?*\x00-\x1f]')
+
+
+def normalize_filename(requested_name: str, original_filename: str) -> str:
+    cleaned_name = INVALID_FILENAME_CHARS.sub("_", requested_name).strip().strip(".")
+    if not cleaned_name:
+        raise HTTPException(status_code=400, detail="저장할 파일 이름을 입력해주세요.")
+
+    requested_path = Path(cleaned_name)
+    original_ext = Path(original_filename).suffix
+    final_ext = requested_path.suffix or original_ext
+    final_stem = requested_path.stem if requested_path.suffix else cleaned_name
+    final_stem = final_stem.strip().strip(".")
+
+    if not final_stem:
+        raise HTTPException(status_code=400, detail="유효한 파일 이름을 입력해주세요.")
+
+    return f"{final_stem}{final_ext}"
+
+
+def get_unique_filename(filename: str) -> str:
+    candidate = Path(filename)
+    stem = candidate.stem
+    suffix = candidate.suffix
+    unique_name = candidate.name
+    counter = 1
+
+    while (upload_dir / unique_name).exists():
+        unique_name = f"{stem}({counter}){suffix}"
+        counter += 1
+
+    return unique_name
 
 
 @app.on_event("startup")
@@ -46,13 +79,14 @@ def health(db: Session = Depends(get_db)):
 @app.post("/upload")
 async def upload_log(
     file: UploadFile = File(...),
+    save_name: str = Form(...),
     db: Session = Depends(get_db),
 ):
     if not file.filename:
         raise HTTPException(status_code=400, detail="파일명이 없습니다.")
 
-    ext = Path(file.filename).suffix
-    saved_name = f"{uuid4().hex}{ext}"
+    requested_name = normalize_filename(save_name, file.filename)
+    saved_name = get_unique_filename(requested_name)
     saved_path = upload_dir / saved_name
 
     content = await file.read()
@@ -62,7 +96,7 @@ async def upload_log(
     saved_path.write_bytes(content)
 
     log = UploadedLog(
-        filename=file.filename,
+        filename=saved_name,
         stored_path=str(saved_path),
         content_type=file.content_type,
         size=len(content),

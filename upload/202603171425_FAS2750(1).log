@@ -1,0 +1,2120 @@
+=~=~=~=~=~=~=~=~=~=~=~= PuTTY log 2026.03.16 15:46:18 =~=~=~=~=~=~=~=~=~=~=~=
+        
+FAS2750::*> 
+FAS2750::*> node     no   node show
+Node      Health Eligibility Uptime        Model       Personality Location
+--------- ------ ----------- ------------- ----------- ----------- ------------
+FAS2750-01 true  true        12 days 00:00 FAS2750     Unified
+FAS2750-02 true  true        35 days 01:23 FAS2750     Unified
+2 entries were displayed.
+
+FAS2750::*> sp show
+                               IP           Firmware
+Node          Type Status      Configured   Version   IP Address
+------------- ---- ----------- ------------ --------- -------------------------
+FAS2750-01    BMC  online      true         11.12     192.168.0.33
+FAS2750-02    BMC  online      true         11.12     192.168.0.34
+2 entries were displayed.
+
+FAS2750::*> clustser show
+
+Error: "clustser" is not a recognized command
+
+FAS2750::*> ha show
+  (cluster ha show)
+High-Availability Configured: true
+High-Availability Backend Configured (MBX): true
+
+
+FAS2750::*> cluster show
+Node                 Health  Eligibility   Epsilon
+-------------------- ------- ------------  ------------
+FAS2750-01           true    true          false
+FAS2750-02           true    true          false
+2 entries were displayed.
+
+FAS2750::*> system controller fr  show
+Controller Name           System ID     Serial Number     Model    Status      
+------------------------- ------------- ----------------- -------- ----------- 
+FAS2750-01                538185702     952047001063      FAS2750  ok
+FAS2750-02                538185660     952047000902      FAS2750  ok
+2 entries were displayed.
+
+FAS2750::*> system controller fru show
+Node               FRU Name                     Subsystem          Status      
+------------------ ---------------------------- ------------------ ----------- 
+FAS2750-01         PSU1 FRU                     Environment        ok
+FAS2750-01         PSU2 FRU                     Environment        ok
+FAS2750-01         DIMM-2                       Memory             ok
+FAS2750-01         DIMM-1                       Memory             ok
+FAS2750-01         BootMedia                    Motherboard        ok
+FAS2750-02         PSU1 FRU                     Environment        ok
+FAS2750-02         PSU2 FRU                     Environment        ok
+FAS2750-02         DIMM-1                       Memory             ok
+FAS2750-02         DIMM-2                       Memory             ok
+FAS2750-02         BootMedia                    Motherboard        ok
+10 entries were displayed.
+
+FAS2750::*> system environment sensors show -!no   state !normal 
+There are no entries matching your query.
+
+FAS2750::*> system controller environment show
+Node               FRU Name                       State      
+------------------ ------------------------------ ----------- 
+FAS2750-01         PSU1 FRU                       GOOD
+FAS2750-01         PSU2 FRU                       GOOD
+FAS2750-02         PSU1 FRU                       GOOD
+FAS2750-02         PSU2 FRU                       GOOD
+4 entries were displayed.
+
+FAS2750::*> system con
+    configuration controller    
+
+FAS2750::*> system controller           ch
+
+Error: "cch" is not a recognized command
+FAS2750::*> system cch  hassis show
+
+Chassis ID                 Status          List of Nodes
+-------------------------- --------------- ---------------------------------- 
+952049000718               ok              FAS2750-01, FAS2750-02
+
+FAS2750::*> run -node FAS2750-0
+    FAS2750-01 FAS2750-02 
+FAS2750::*> run -node FAS2750-0* sysconfig -ca
+2 entries were acted on.
+
+Node: FAS2750-01
+sysconfig: slot 1 OK: X3311A: M.2 1TB NVMe Drive
+sysconfig: No shelf configuration errors detected.
+sysconfig: There are no configuration errors.
+
+Node: FAS2750-02
+sysconfig: slot 1 OK: X3311A: M.2 1TB NVMe Drive
+sysconfig: No shelf configuration errors detected.
+sysconfig: There are no configuration errors.
+
+FAS2750::*> run -node FAS2750-0* sysconfig -caa a
+2 entries were acted on.
+
+Node: FAS2750-01
+NetApp Release 9.17.1P2: Fri Nov  7 04:39:01 EST 2025
+System ID: 0538185702 (FAS2750-01); partner ID: 0538185660 (FAS2750-02)
+System Serial Number: 952047001063 (FAS2750-01)
+System Rev: C2
+System Storage Configuration: Mixed-Path HA
+System ACP Connectivity: Inband Active
+All-Flash Optimized: false
+Capacity Optimized: false
+All SAN Array: false
+Disaggregated Storage: false
+Personality: Unified
+Backplane Part Number: DS22412
+Backplane Rev: 
+Backplane Serial Number: 952049000718
+slot 0: System Board 1.5 GHz (System Board XXII C2)
+                Model Name:         FAS2750
+                Part Number:        111-04333
+                Revision:           C2
+                Serial Number:      952047001063
+                BIOS version:       11.24
+                Loader version:     8.5.0
+                Boot Flash:         Primary
+                Processors:         12
+                Processor ID:       0x50664
+                Microcode Version:  0xf00001a
+                Processor type:     Intel(R) Xeon(R) CPU D-1557 @ 1.50GHz
+                Memory Size:        32768 MB
+                Memory Attributes:  Hoisting
+                                    Rank Interleaving
+                                    Channel Interleaving
+                Mezzanine Card:     
+                    Part:           111-04160
+                    Version:        A1
+                    Serial:         042049003392
+                NVMEM Size:         4094 MB of Main Memory Used
+                Controller:         A
+                PCIE Switch 1:      id 1 546 1.04
+                TPM FW Version:     5.66.19374.2
+Service Processor           Status: Online
+Firmware Version:   11.12
+Mgmt MAC Address:   d0:39:ea:28:61:50
+Ethernet Link:      up, full duplex, auto-neg complete
+Using DHCP:         no
+IPv4 configuration:
+IP Address:         192.168.0.33
+Netmask:            255.255.255.0
+Gateway:            192.168.0.1
+IPv6 configuration:         Disabled
+[Service Processor cached network information determined at Mon Mar 16 15:46:15 KST 2026]
+slot 0: Internal 10/100/1000 Ethernet Switch
+Wrench:             auto-1000t-fd-up
+Device Type:        88E6176
+slot 0: Gigabit Ethernet I210
+e0M MAC Address:    d0:39:ea:28:61:4e (auto-1000t-fd-up)
+Device Type:        0x1533 (BSD99)
+Firmware Version:   3.25-7.5 0x80000674
+slot 0: 10 Gigabit Ethernet Controller IX5-SFP+
+e0a MAC Address:    d0:39:ea:28:61:40 (auto-10g_twinax-fd-up)
+    SFP Vendor:         Amphenol        
+    SFP Part Number:    628620000       
+    SFP Serial Number:  APF20459287968  
+e0b MAC Address:    d0:39:ea:28:61:41 (auto-10g_twinax-fd-up)
+    SFP Vendor:         Molex           
+    SFP Part Number:    1111455002      
+    SFP Serial Number:  93A2312520107   
+Device Type:        X550EM(0x15AC) (BSD99)
+Firmware Version:   2.10-7.1 etid 800009be phy 20150807
+slot 0: 1G/10G Ethernet Controller CNA EP 8324
+(Dual-port, QLogic CNA 8324(8362) rev. 2)
+e0c MAC Address:    d0:39:ea:28:61:42 (auto-unknown-fd-down)
+e0d MAC Address:    d0:39:ea:28:61:43 (auto-1000sx-fd-up)
+Device Type:        EP8324N
+Firmware Version:   5.4.66.0
+slot 0: PLX DMA Engine 2 (PLX87d0)
+State:           Active
+slot 0: Interconnect HBA: Generic OFED Provider
+Port Name:          ic0a
+GID:                fe80:0000:0000:0000:0000:0000:0000:0104
+Base LID:           0x104
+Active MTU:         8192
+slot 0: NTB Interconnect (PLX87b0)
+Max HW Data Rate:  PCIe Gen 3 x 8
+HW Data Rate:   PCIe Gen 3 x 8
+SW Data Rate:   PCIe Gen 3 x 8
+Logical Link:   Up
+Port State:   Enabled
+slot 0: SAS Host Adapter 0a (PMC-Sierra PM8070 rev. C, SAS, <OFFLINE (hard)>)
+Firmware rev:       03.08.09.00
+Base WWN:           5:00a098:00e56c9:b0
+Temperature:        Not Available
+Phy State:          [0] Disabled
+                    [1] Disabled
+                    [2] Disabled
+                    [3] Disabled
+Mini-SAS HD Vendor:        not available
+Mini-SAS HD Part Number:   not available
+Mini-SAS HD Type:          not available
+Mini-SAS HD Serial Number: not available
+slot 0: SAS Host Adapter 0b (PMC-Sierra PM8070 rev. C, SAS, <UP>)
+Firmware rev:       03.08.09.00
+Base WWN:           5:00a098:00e56c9:b4
+Temperature:        Not Available
+Phy State:          [4] Enabled, 12.0 Gb/s
+                    [5] Enabled, 12.0 Gb/s
+                    [6] Enabled, 12.0 Gb/s
+                    [7] Enabled, 12.0 Gb/s
+00.2 : NETAPP   X422_HCOBE600A10 NA02 560.0GB 520B/sect (KWKWT3JX)
+00.3 : NETAPP   X422_TAL13600A10 NA01 560.0GB 520B/sect (95M0A0L4FUZ6)
+00.5 : NETAPP   X422_HCOBE600A10 NA02 560.0GB 520B/sect (KWK3B7ZX)
+00.6 : NETAPP   X422_TAL13600A10 NA01 560.0GB 520B/sect (95M0A0GWFUZ6)
+00.9 : NETAPP   X422_HCOBE600A10 NA02 560.0GB 520B/sect (KWK2YR6X)
+00.10: NETAPP   X422_HCBFE600A10 NA08 560.0GB 520B/sect (03G6SGRZ)
+00.11: NETAPP   X422_HCOBE600A10 NA02 560.0GB 520B/sect (KWK272HX)
+00.12: NETAPP   X422_HCOBE600A10 NA02 560.0GB 520B/sect (KWK32LVX)
+00.13: NETAPP   X422_HCOBE600A10 NA02 560.0GB 520B/sect (KWK2XMKX)
+00.14: NETAPP   X422_TAL13600A10 NA01 560.0GB 520B/sect (95M0A0L6FUZ6)
+00.15: NETAPP   X422_TAL13600A10 NA01 560.0GB 520B/sect (95I0A1R4FUZ6)
+00.16: NETAPP   X422_HCOBE600A10 NA02 560.0GB 520B/sect (W7G11ZEX)
+00.17: NETAPP   X422_HCOBE600A10 NA02 560.0GB 520B/sect (KWK270KX)
+00.18: NETAPP   X422_TAL13600A10 NA01 560.0GB 520B/sect (95I0A1QZFUZ6)
+00.19: NETAPP   X422_HCOBE600A10 NA02 560.0GB 520B/sect (W7G0YPBX)
+Shelf 0: DS224-12  Firmware rev. IOM12E A: 0251  IOM12E B: 0251
+        slot 0: Fibre Channel Target Host Adapter 0c
+                (QLogic CNA 8324 (8362) rev. 2, <LINK NOT CONNECTED>)
+                Firmware rev:      8.9.0
+                Flash rev:         7.0.3
+                Host Port Addr:    000000
+                FC Nodename:       50:0a:09:80:80:24:0f:e6 (500a098080240fe6)
+                FC Portname:       50:0a:09:82:80:24:0f:e6 (500a098280240fe6)
+                Connection:        No link
+                Switch Port:       Unknown
+        slot 0: Fibre Channel Target Host Adapter 0d
+                (QLogic CNA 8324 (8362) rev. 2, <LINK NOT CONNECTED>)
+                Firmware rev:      8.9.0
+                Flash rev:         7.0.3
+                Host Port Addr:    000000
+                FC Nodename:       50:0a:09:80:80:24:0f:e6 (500a098080240fe6)
+                FC Portname:       50:0a:09:83:80:24:0f:e6 (500a098380240fe6)
+                Connection:        No link
+                Switch Port:       Unknown
+SFP Vendor Name:   CISCO-FINISAR
+SFP Vendor P/N:    FTLF8519P2BCL-C4
+SFP Vendor Rev:    A
+SFP Serial No.:    FNS14281F1V
+SFP Connector:     LC
+SFP Capabilities:  1 Gbit/Sec
+        slot 0: Fibre Channel Target Host Adapter 0e
+                (QLogic 8324 (8362) rev. 2, <ONLINE>)
+                Firmware rev:      8.9.0
+                Flash rev:         7.0.3
+                Host Port Addr:    010000
+                FC Nodename:       50:0a:09:80:80:24:0f:e6 (500a098080240fe6)
+                FC Portname:       50:0a:09:81:80:24:0f:e6 (500a098180240fe6)
+                Connection:        PTP, Fabric
+                Switch Port:       Brocade300:0
+SFP Vendor Name:   BROCADE
+SFP Vendor P/N:    57-1000012-01
+SFP Vendor Rev:    A
+SFP Serial No.:    UAF110190001DED
+SFP Connector:     LC
+SFP Capabilities:  2, 4, 8 Gbit/Sec
+slot 0: FC Host Adapter 0f (QLogic 8324 rev. 2, N-port, <UP>)
+Firmware rev:      8.9.1
+Flash rev:         7.0.3
+Host Port Id:      0x10600
+FC Node Name:      5:00a:09830e:56eb68
+FC Port Name:      5:00a:09830e:56eb68
+SFP Vendor:        BROCADE
+SFP Part Number:   57-1000012-01
+SFP Serial Number: UAF110200000C5H
+SFP Capabilities:  2, 4 or 8 Gbit
+Link Data Rate:    8 Gbit
+Switch Port:       Brocade300:6
+Brocade300:4.126L0             : DGC      VRAID            0533  88.7GB 512B/sect (600601603B203600B3D7782BB2D0F011)
+Brocade300:5.126L1             : DGC      VRAID            0533 908.3GB 512B/sect (600601603B20360030513D36B2D0F011)
+Brocade300:4.126L2             : DGC      VRAID            0533 133.0GB 512B/sect (600601603B2036003BC5E07E1EECF011)
+Brocade300:4.126L3             : DGC      VRAID            0533 221.7GB 512B/sect (600601603B2036003A6463B81EECF011)
+Brocade300:5.126L4             : DGC      VRAID            0533  44.3GB 512B/sect (600601603B203600C5D50BF1E6ECF011)
+Brocade300:4.126L5             : DGC      VRAID            0533  44.3GB 512B/sect (600601603B203600C7D50BF1E6ECF011)
+Brocade300:5.126L6             : DGC      VRAID            0533  13.3GB 512B/sect (600601603B203600A9CD36A5AFEDF011)
+Brocade300:4.126L7             : DGC      VRAID            0533  13.3GB 512B/sect (600601603B203600ABCD36A5AFEDF011)
+Brocade300:5.126L8             : DGC      VRAID            0533  13.3GB 512B/sect (600601603B203600ADCD36A5AFEDF011)
+Brocade300:4.126L9             : DGC      VRAID            0533  13.3GB 512B/sect (600601603B203600AFCD36A5AFEDF011)
+Brocade300:5.126L10            : DGC      VRAID            0533  13.3GB 512B/sect (600601603B203600B1CD36A5AFEDF011)
+Brocade300:4.126L11            : DGC      VRAID            0533  13.3GB 512B/sect (600601603B203600B3CD36A5AFEDF011)
+Brocade300:5.126L12            : DGC      VRAID            0533  13.3GB 512B/sect (600601603B203600B5CD36A5AFEDF011)
+        slot 0: Intel BDW SATA Controller u0a (0x91d10000)
+                boot0 ATP SATA III mSATA AF120GSMHI-NT3     Q0303B 114473MB  512B/sect       (200902300089)
+slot 0: Intel USB EHCI Adapter u0b (0x91d11000)
+slot 1: Flash Cache NVMe
+Serial Number:      S46YNA0NA01185
+Part Number:        119-00329
+Hardware Revision:  B0
+Firmware Version:   NA01
+Firmware File:      X3311_S000PM983NVM
+Model Name:         X3311A
+Capacity:           1024 GB
+State:              ok
+
+Node: FAS2750-02
+NetApp Release 9.17.1P2: Fri Nov  7 04:39:01 EST 2025
+System ID: 0538185660 (FAS2750-02); partner ID: 0538185702 (FAS2750-01)
+System Serial Number: 952047000902 (FAS2750-02)
+System Rev: C2
+System Storage Configuration: Mixed-Path HA
+System ACP Connectivity: Inband Active
+All-Flash Optimized: false
+Capacity Optimized: false
+All SAN Array: false
+Disaggregated Storage: false
+Personality: Unified
+Backplane Part Number: DS22412
+Backplane Rev: 
+Backplane Serial Number: 952049000718
+slot 0: System Board 1.5 GHz (System Board XXII C2)
+                Model Name:         FAS2750
+                Part Number:        111-04333
+                Revision:           C2
+                Serial Number:      952047000902
+                BIOS version:       11.24
+                Loader version:     8.5.0
+                Boot Flash:         Primary
+                Processors:         12
+                Processor ID:       0x50664
+                Microcode Version:  0xf00001a
+                Processor type:     Intel(R) Xeon(R) CPU D-1557 @ 1.50GHz
+                Memory Size:        32768 MB
+                Memory Attributes:  Hoisting
+                                    Rank Interleaving
+                                    Channel Interleaving
+                Mezzanine Card:     
+                    Part:           111-04160
+                    Version:        A1
+                    Serial:         042049002727
+                NVMEM Size:         4094 MB of Main Memory Used
+                Controller:         B
+                PCIE Switch 1:      id 1 546 1.04
+                TPM FW Version:     5.66.19374.2
+Service Processor           Status: Online
+Firmware Version:   11.12
+Mgmt MAC Address:   d0:39:ea:28:5b:86
+Ethernet Link:      up, full duplex, auto-neg complete
+Using DHCP:         no
+IPv4 configuration:
+IP Address:         192.168.0.34
+Netmask:            255.255.255.0
+Gateway:            192.168.0.1
+IPv6 configuration:         Disabled
+[Service Processor cached network information determined at Mon Mar 16 15:43:03 KST 2026]
+slot 0: Internal 10/100/1000 Ethernet Switch
+Wrench:             auto-1000t-fd-up
+Device Type:        88E6176
+slot 0: Gigabit Ethernet I210
+e0M MAC Address:    d0:39:ea:28:5b:84 (auto-1000t-fd-up)
+Device Type:        0x1533 (BSD99)
+Firmware Version:   3.25-7.5 0x80000674
+slot 0: 10 Gigabit Ethernet Controller IX5-SFP+
+e0a MAC Address:    d0:39:ea:28:5b:76 (auto-10g_twinax-fd-up)
+    SFP Vendor:         Amphenol        
+    SFP Part Number:    628620000       
+    SFP Serial Number:  APF20459287968  
+e0b MAC Address:    d0:39:ea:28:5b:77 (auto-10g_twinax-fd-up)
+    SFP Vendor:         Molex           
+    SFP Part Number:    1111455002      
+    SFP Serial Number:  93A2312520107   
+Device Type:        X550EM(0x15AC) (BSD99)
+Firmware Version:   2.10-7.1 etid 800009be phy 20150807
+slot 0: 1G/10G Ethernet Controller CNA EP 8324
+(Dual-port, QLogic CNA 8324(8362) rev. 2)
+e0c MAC Address:    d0:39:ea:28:5b:78 (auto-unknown-fd-down)
+e0d MAC Address:    d0:39:ea:28:5b:79 (auto-1000sx-fd-up)
+Device Type:        EP8324N
+Firmware Version:   5.4.66.0
+slot 0: PLX DMA Engine 2 (PLX87d0)
+State:           Active
+slot 0: Interconnect HBA: Generic OFED Provider
+Port Name:          ic0a
+GID:                fe80:0000:0000:0000:0000:0000:0000:0105
+Base LID:           0x105
+Active MTU:         8192
+slot 0: NTB Interconnect (PLX87b0)
+Max HW Data Rate:  PCIe Gen 3 x 8
+HW Data Rate:   PCIe Gen 3 x 8
+SW Data Rate:   PCIe Gen 3 x 8
+Logical Link:   Up
+Port State:   Enabled
+slot 0: SAS Host Adapter 0a (PMC-Sierra PM8070 rev. C, SAS, <OFFLINE (hard)>)
+Firmware rev:       03.08.09.00
+Base WWN:           5:00a098:00e56b4:b0
+Temperature:        Not Available
+Phy State:          [0] Disabled
+                    [1] Disabled
+                    [2] Disabled
+                    [3] Disabled
+Mini-SAS HD Vendor:        not available
+Mini-SAS HD Part Number:   not available
+Mini-SAS HD Type:          not available
+Mini-SAS HD Serial Number: not available
+slot 0: SAS Host Adapter 0b (PMC-Sierra PM8070 rev. C, SAS, <UP>)
+Firmware rev:       03.08.09.00
+Base WWN:           5:00a098:00e56b4:b4
+Temperature:        Not Available
+Phy State:          [4] Enabled, 12.0 Gb/s
+                    [5] Enabled, 12.0 Gb/s
+                    [6] Enabled, 12.0 Gb/s
+                    [7] Enabled, 12.0 Gb/s
+00.2 : NETAPP   X422_HCOBE600A10 NA02 560.0GB 520B/sect (KWKWT3JX)
+00.3 : NETAPP   X422_TAL13600A10 NA01 560.0GB 520B/sect (95M0A0L4FUZ6)
+00.5 : NETAPP   X422_HCOBE600A10 NA02 560.0GB 520B/sect (KWK3B7ZX)
+00.6 : NETAPP   X422_TAL13600A10 NA01 560.0GB 520B/sect (95M0A0GWFUZ6)
+00.9 : NETAPP   X422_HCOBE600A10 NA02 560.0GB 520B/sect (KWK2YR6X)
+00.10: NETAPP   X422_HCBFE600A10 NA08 560.0GB 520B/sect (03G6SGRZ)
+00.11: NETAPP   X422_HCOBE600A10 NA02 560.0GB 520B/sect (KWK272HX)
+00.12: NETAPP   X422_HCOBE600A10 NA02 560.0GB 520B/sect (KWK32LVX)
+00.13: NETAPP   X422_HCOBE600A10 NA02 560.0GB 520B/sect (KWK2XMKX)
+00.14: NETAPP   X422_TAL13600A10 NA01 560.0GB 520B/sect (95M0A0L6FUZ6)
+00.15: NETAPP   X422_TAL13600A10 NA01 560.0GB 520B/sect (95I0A1R4FUZ6)
+00.16: NETAPP   X422_HCOBE600A10 NA02 560.0GB 520B/sect (W7G11ZEX)
+00.17: NETAPP   X422_HCOBE600A10 NA02 560.0GB 520B/sect (KWK270KX)
+00.18: NETAPP   X422_TAL13600A10 NA01 560.0GB 520B/sect (95I0A1QZFUZ6)
+00.19: NETAPP   X422_HCOBE600A10 NA02 560.0GB 520B/sect (W7G0YPBX)
+Shelf 0: DS224-12  Firmware rev. IOM12E A: 0251  IOM12E B: 0251
+        slot 0: Fibre Channel Target Host Adapter 0c
+                (QLogic CNA 8324 (8362) rev. 2, <OFFLINED BY USER>)
+                Firmware rev:      8.9.0
+                Flash rev:         7.0.3
+                Host Port Addr:    000000
+                FC Nodename:       50:0a:09:80:80:24:0f:bc (500a098080240fbc)
+                FC Portname:       50:0a:09:82:80:24:0f:bc (500a098280240fbc)
+                Connection:        No link
+                Switch Port:       Unknown
+        slot 0: Fibre Channel Target Host Adapter 0d
+                (QLogic CNA 8324 (8362) rev. 2, <OFFLINED BY USER>)
+                Firmware rev:      8.9.0
+                Flash rev:         7.0.3
+                Host Port Addr:    000000
+                FC Nodename:       50:0a:09:80:80:24:0f:bc (500a098080240fbc)
+                FC Portname:       50:0a:09:83:80:24:0f:bc (500a098380240fbc)
+                Connection:        No link
+                Switch Port:       Unknown
+SFP Vendor Name:   CISCO-FINISAR (Warning: SFP info not updated when port is OFFLINE)
+SFP Vendor P/N:    FTLF8519P2BCL-C4
+SFP Vendor Rev:    A
+SFP Serial No.:    FNS14281F2B
+SFP Connector:     LC
+SFP Capabilities:  1 Gbit/Sec
+        slot 0: Fibre Channel Target Host Adapter 0e
+                (QLogic 8324 (8362) rev. 2, <ONLINE>)
+                Firmware rev:      8.9.0
+                Flash rev:         7.0.3
+                Host Port Addr:    010100
+                FC Nodename:       50:0a:09:80:80:24:0f:bc (500a098080240fbc)
+                FC Portname:       50:0a:09:81:80:24:0f:bc (500a098180240fbc)
+                Connection:        PTP, Fabric
+                Switch Port:       Brocade300:1
+SFP Vendor Name:   BROCADE
+SFP Vendor P/N:    57-1000117-01
+SFP Vendor Rev:    A
+SFP Serial No.:    UAF414360000S4E
+SFP Connector:     LC
+SFP Capabilities:  2, 4, 8 Gbit/Sec
+slot 0: FC Host Adapter 0f (QLogic 8324 rev. 2, N-port, <UP>)
+Firmware rev:      8.9.1
+Flash rev:         7.0.3
+Host Port Id:      0x10700
+FC Node Name:      5:00a:09830e:56eae8
+FC Port Name:      5:00a:09830e:56eae8
+SFP Vendor:        BROCADE
+SFP Part Number:   57-1000012-01
+SFP Serial Number: UAF110200000C3G
+SFP Capabilities:  2, 4 or 8 Gbit
+Link Data Rate:    8 Gbit
+Switch Port:       Brocade300:7
+Brocade300:4.126L0             : DGC      VRAID            0533  88.7GB 512B/sect (600601603B203600B3D7782BB2D0F011)
+Brocade300:5.126L1             : DGC      VRAID            0533 908.3GB 512B/sect (600601603B20360030513D36B2D0F011)
+Brocade300:4.126L2             : DGC      VRAID            0533 133.0GB 512B/sect (600601603B2036003BC5E07E1EECF011)
+Brocade300:4.126L3             : DGC      VRAID            0533 221.7GB 512B/sect (600601603B2036003A6463B81EECF011)
+Brocade300:5.126L4             : DGC      VRAID            0533  44.3GB 512B/sect (600601603B203600C5D50BF1E6ECF011)
+Brocade300:4.126L5             : DGC      VRAID            0533  44.3GB 512B/sect (600601603B203600C7D50BF1E6ECF011)
+Brocade300:5.126L6             : DGC      VRAID            0533  13.3GB 512B/sect (600601603B203600A9CD36A5AFEDF011)
+Brocade300:4.126L7             : DGC      VRAID            0533  13.3GB 512B/sect (600601603B203600ABCD36A5AFEDF011)
+Brocade300:5.126L8             : DGC      VRAID            0533  13.3GB 512B/sect (600601603B203600ADCD36A5AFEDF011)
+Brocade300:4.126L9             : DGC      VRAID            0533  13.3GB 512B/sect (600601603B203600AFCD36A5AFEDF011)
+Brocade300:5.126L10            : DGC      VRAID            0533  13.3GB 512B/sect (600601603B203600B1CD36A5AFEDF011)
+Brocade300:4.126L11            : DGC      VRAID            0533  13.3GB 512B/sect (600601603B203600B3CD36A5AFEDF011)
+Brocade300:5.126L12            : DGC      VRAID            0533  13.3GB 512B/sect (600601603B203600B5CD36A5AFEDF011)
+        slot 0: Intel BDW SATA Controller u0a (0x91d10000)
+                boot0 ATP SATA III mSATA AF120GSMHI-NT3     Q0303B 114473MB  512B/sect       (200902290834)
+slot 0: Intel USB EHCI Adapter u0b (0x91d11000)
+slot 1: Flash Cache NVMe
+Serial Number:      S46YNA0NA01182
+Part Number:        119-00329
+Hardware Revision:  B0
+Firmware Version:   NA01
+Firmware File:      X3311_S000PM983NVM
+Model Name:         X3311A
+Capacity:           1024 GB
+State:              ok
+
+FAS2750::*> memerr
+Correctable ECC Memory Errors:
+
+Node: FAS2750-01
+
+DIMM      CECC  Multiple Err
+Name     Count  Same Address
+------- ------  ------------
+DIMM-1       0  false
+DIMM-2       0  false
+Node: FAS2750-02
+
+DIMM      CECC  Multiple Err
+Name     Count  Same Address
+------- ------  ------------
+DIMM-1       0  false
+DIMM-2       0  false
+4 entries were displayed.
+
+FAS2750::*> dimm show
+  (system controller memory dimm show)
+              DIMM     UECC  CECC  Alert    CPU           Slot          Failure
+Node          Name    Count Count Method Socket Channel Number Status    Reason
+------------- ------- ----- ----- ------ ------ ------- ------ ------- --------
+FAS2750-01
+              DIMM-1      0     0 bucket      0       0      0 ok          none
+              DIMM-2      0     0 bucket      0       1      0 ok          none
+FAS2750-02
+              DIMM-1      0     0 bucket      0       0      0 ok          none
+              DIMM-2      0     0 bucket      0       1      0 ok          none
+4 entries were displayed.
+
+FAS2750::*> net int show
+  (network interface show)
+            Logical    Status     Network            Current       Current Is
+Vserver     Interface  Admin/Oper Address/Mask       Node          Port    Home
+----------- ---------- ---------- ------------------ ------------- ------- ----
+Cluster
+            FAS2750-01_clus1 up/up 169.254.245.228/16 FAS2750-01   e0a     true
+            FAS2750-01_clus2 up/up 169.254.87.41/16  FAS2750-01    e0b     true
+            FAS2750-02_clus1 up/up 169.254.143.178/16 FAS2750-02   e0b     true
+            FAS2750-02_clus2 up/up 169.254.237.16/16 FAS2750-02    e0b     true
+FAS2750
+            FAS2750-01_mgmt1 up/up 192.168.0.31/24   FAS2750-01    e0M     true
+            FAS2750-02_mgmt1 up/up 192.168.0.32/24   FAS2750-02    e0M     true
+            cluster_mgmt up/up    192.168.0.30/24    FAS2750-01    e0M     true
+            n1_e0c_sm    up/up    100.100.100.2/24   FAS2750-01    e0d     false
+            n2_e0c_sm    up/up    100.100.100.3/24   FAS2750-02    e0d     false
+JH
+            lif1         up/up    192.168.0.78/24    FAS2750-01    e0d     true
+ehk
+            ehk_fcp_n1   up/up    20:19:d0:39:ea:28:61:4e FAS2750-01 0e    true
+            ehk_fcp_n2   up/up    20:1b:d0:39:ea:28:61:4e FAS2750-02 0e    true
+            n1_data01    up/up    192.168.0.71/24    FAS2750-01    e0d     true
+            n1_iscsi     up/up    192.168.0.73/24    FAS2750-01    e0d     true
+hs_svm
+            iscsi_n1     up/up    192.168.0.131/24   FAS2750-01    e0d     true
+            iscsi_n2     up/up    192.168.0.132/24   FAS2750-02    e0d     true
+            n1_lif2      up/up    192.168.0.134/24   FAS2750-02    e0d     true
+            n2_lif1      up/up    192.168.0.135/24   FAS2750-02    e0d     true
+hs_svm_dr
+            n1_lif1_dr   up/up    192.168.0.133/24   FAS2750-02    e0d     true
+iskwon_svm
+            lif1         up/up    192.168.0.53/24    FAS2750-01    e0d     true
+jjy
+            n1_e0d       up/up    192.168.0.97/24    FAS2750-02    e0d     true
+jjy_cinder
+            jjy_cinder_n1_e0d up/up 192.168.0.174/24 FAS2750-01    e0d     true
+jjy_dr
+            n1_cifs_ad down/down  192.168.0.128/24   FAS2750-01    e0d     true
+            n1_lif_e0d   up/down  192.168.0.99/24    FAS2750-01    e0d     true
+jjy_glance
+            jjy_glance_n1_e0d up/up 192.168.0.176/24 FAS2750-01    e0d     true
+jjy_manila
+            jjy_manila_n1_e0d up/up 192.168.0.175/24 FAS2750-01    e0d     true
+jjy_object
+            jjy_object_n1_e0d up/up 192.168.0.179/24 FAS2750-01    e0d     true
+lsw_FAS2750
+            lsw_n1_0e    up/up    20:21:d0:39:ea:28:61:4e FAS2750-01 0e    true
+            lsw_n2_0e    up/up    20:23:d0:39:ea:28:61:4e FAS2750-02 0e    true
+            n1_nfs       up/up    192.168.0.120/24   FAS2750-01    e0d     true
+pmh
+            data02       up/up    192.168.0.86/24    FAS2750-02    e0d     true
+            iscsi01      up/up    192.168.0.190/24   FAS2750-01    e0d     true
+            iscsi02      up/up    192.168.0.191/24   FAS2750-02    e0d     true
+            lif_pmh_4284 up/up    192.168.0.83/24    FAS2750-01    e0d     true
+            mgmt         up/up    1.1.1.1/24         FAS2750-01    e0M     true
+svm01
+            n1_e0d_catalog down/down 192.168.0.122/24 FAS2750-02   e0d     true
+            n1_e0d_cifs down/down 192.168.0.124/24   FAS2750-01    e0d     true
+test
+            lif_test_7440 up/up   20:25:d0:39:ea:28:61:4e FAS2750-02 0e    true
+            lif_test_8678 up/up   20:05:d0:39:ea:28:61:4e FAS2750-01 0e    true
+trident
+            trident_lif  up/up    192.168.0.77/24    FAS2750-01    e0d     false
+vmdata
+            1            up/up    192.168.0.41/24    FAS2750-01    e0d     true
+            esxi_01      up/up    192.168.0.40/24    FAS2750-02    e0d     true
+42 entries were displayed.
+
+FAS2750::*> net port show
+  (network port show)
+
+Node: FAS2750-01
+                                                                       Ignore
+                                                  Speed(Mbps) Health   Health
+Port      IPspace      Broadcast Domain Link MTU  Admin/Oper  Status   Status
+--------- ------------ ---------------- ---- ---- ----------- -------- ------
+e0M       Default      mgmt             up   1500  auto/1000  healthy  false
+e0a       Cluster      Cluster          up   9000  auto/10000 healthy  false
+e0b       Cluster      Cluster          up   9000  auto/10000 healthy  false
+e0c       Default      Data             down 1500  auto/-     -        false
+e0d       Default      Data             up   1500  auto/1000  healthy  false
+
+Node: FAS2750-02
+                                                                       Ignore
+                                                  Speed(Mbps) Health   Health
+Port      IPspace      Broadcast Domain Link MTU  Admin/Oper  Status   Status
+--------- ------------ ---------------- ---- ---- ----------- -------- ------
+e0M       Default      mgmt             up   1500  auto/1000  healthy  false
+e0a       Cluster      Cluster          up   9000  auto/10000 healthy  false
+e0b       Cluster      Cluster          up   9000  auto/10000 healthy  false
+e0c       Default      Data             down 1500  auto/-     -        false
+e0d       Default      Data             up   1500  auto/1000  healthy  false
+10 entries were displayed.
+
+FAS2750::*> net   broadcast-domain show
+  (network port broadcast-domain show)
+IPspace Broadcast                                         Update
+Name    Domain Name    MTU  Port List                     Status Details
+------- ----------- ------  ----------------------------- --------------
+Cluster Cluster       9000
+                            FAS2750-01:e0a                complete
+                            FAS2750-01:e0b                complete
+                            FAS2750-02:e0a                complete
+                            FAS2750-02:e0b                complete
+Default Data          1500
+                            FAS2750-01:e0c                complete
+                            FAS2750-01:e0d                complete
+                            FAS2750-02:e0c                complete
+                            FAS2750-02:e0d                complete
+        mgmt          1500
+                            FAS2750-01:e0M                complete
+                            FAS2750-02:e0M                complete
+service data2         1500
+                            -                             -
+4 entries were displayed.
+
+FAS2750::*> net int failover-groups show
+  (network interface failover-groups show)
+                                  Failover
+Vserver          Group            Targets
+---------------- ---------------- --------------------------------------------
+Cluster
+                 Cluster
+                                  FAS2750-01:e0a, FAS2750-01:e0b,
+                                  FAS2750-02:e0a, FAS2750-02:e0b
+FAS2750
+                 Data
+                                  FAS2750-01:e0c, FAS2750-01:e0d,
+                                  FAS2750-02:e0c, FAS2750-02:e0d
+                 mgmt
+                                  FAS2750-01:e0M, FAS2750-02:e0M
+pmh
+                 vlan10
+                                  FAS2750-01:e0d, FAS2750-02:e0d
+4 entries were displayed.
+
+FAS2750::*> nfs show
+Virtual      General
+Server       Access  v3       v4.0     v4.1     UDP      TCP      RDMA
+------------ ------- -------- -------- -------- -------- -------- --------
+JH           true    enabled  enabled  enabled  enabled  enabled  enabled
+ehk          true    enabled  disabled disabled enabled  enabled  enabled
+hs_svm       true    enabled  disabled disabled enabled  enabled  enabled
+hs_svm_dr    true    enabled  disabled disabled enabled  enabled  enabled
+iskwon_svm   true    enabled  disabled disabled enabled  enabled  enabled
+jjy          true    enabled  enabled  enabled  enabled  enabled  enabled
+jjy_cinder   true    enabled  enabled  enabled  enabled  enabled  enabled
+jjy_dr       false   enabled  enabled  enabled  enabled  enabled  enabled
+jjy_manila   true    enabled  enabled  enabled  enabled  enabled  enabled
+lsw_FAS2750  true    enabled  disabled disabled enabled  enabled  enabled
+pmh          true    enabled  enabled  enabled  enabled  enabled  enabled
+trident      true    enabled  disabled disabled enabled  enabled  enabled
+vmdata       true    enabled  enabled  enabled  enabled  enabled  enabled
+13 entries were displayed.
+
+FAS2750::*> cifs show
+            Server          Status    Domain/Workgroup Authentication
+Vserver     Name            Admin     Name             Style
+----------- --------------- --------- ---------------- --------------
+JH          TEST            up        WG               workgroup
+ehk         EHK_CIFS        up        WORKGROUP        workgroup
+hs_svm      FAS2750         up        WORKGROUP1       workgroup
+iskwon_svm  ISKWON_SVM      up        WORKGROUP        workgroup
+jjy         CIFS_SERVER     up        WORKGROUP        workgroup
+lsw_FAS2750 CIFSSVR         up        WORKGROUP        workgroup
+pmh         PMH             up        WORKGROUP        workgroup
+svm01       BACKUP_CIFS     up        WG               workgroup
+vmdata      VMDATA          up        MH               domain
+9 entries were displayed.
+
+FAS2750::*> iscsi show
+           Target                           Target                       Status
+Vserver    Name                             Alias                        Admin
+---------- -------------------------------- ---------------------------- ------
+ehk        iqn.1992-08.com.netapp:sn.1e81c5868b8711ef945fd039ea285b84:vs.96 ehk up
+hs_svm     iqn.1992-08.com.netapp:sn.aab12900433411efb934d039ea285b84:vs.89 hs_svm down
+iskwon_svm iqn.1992-08.com.netapp:sn.dc68ce3038e411efb934d039ea285b84:vs.82 iskwon_svm up
+jjy        iqn.1992-08.com.netapp:sn.319faf843a0311f0bfd9d039ea28614e:vs.107 jjy up
+jjy_cinder iqn.1992-08.com.netapp:sn.4b174a06b09c11f0b4cdd039ea28614e:vs.129 jjy_cinder up
+lsw_FAS2750 iqn.1992-08.com.netapp:sn.3e1a14aaa58411efb24bd039ea28614e:vs.99 lsw up
+pmh        iqn.1992-08.com.netapp:sn.31a65ef15bc911f0b663d039ea28614e:vs.112 pmh up
+7 entries were displayed.
+
+FAS2750::*> fcp adapter show
+  (network fcp adapter show)
+                      Connection  Port    Admin    Operational
+Node         Adapter  Established Address Status   Status
+------------ -------- ----------- ------- -------- ---------------
+FAS2750-01   0c       false       0       up       link not connected
+FAS2750-01   0d       false       0       up       link not connected
+FAS2750-01   0e       true        10000   up       online
+FAS2750-02   0c       false       0       down     offlined by user/system
+FAS2750-02   0d       false       0       down     offlined by user/system
+FAS2750-02   0e       true        10100   up       online
+6 entries were displayed.
+
+FAS2750::*> lun show
+Vserver   Path                            State   Mapped   Type        Size
+--------- ------------------------------- ------- -------- -------- --------
+ehk       /vol/trident_pvc_8632b639_6e83_42bd_acb7_5a460bd65ef9/lun0 online mapped linux 1GB
+hs_svm    /vol/dbvol01/new0lun01.lun      online  mapped   windows_2008  5GB
+hs_svm    /vol/dbvol01/newlun02.lun       online  mapped   windows_2008 4.90GB
+hs_svm    /vol/lunvol1/lun0.lun           online  unmapped windows       1GB
+hs_svm    /vol/lunvol1/lun1.lun           online  unmapped windows       2GB
+hs_svm    /vol/lunvol1/lun2.lun           online  unmapped windows       3GB
+hs_svm    /vol/lunvol1_clone_25/lun0.lun  online  unmapped windows       1GB
+hs_svm    /vol/lunvol1_clone_25/lun1.lun  online  unmapped windows       2GB
+hs_svm    /vol/lunvol1_clone_25/lun2.lun  online  unmapped windows       3GB
+hs_svm    /vol/lunvol1_clone_450/lun0.lun online  unmapped windows       1GB
+hs_svm    /vol/lunvol1_clone_450/lun1.lun online  unmapped windows       2GB
+hs_svm    /vol/lunvol1_clone_450/lun2.lun online  unmapped windows       3GB
+hs_svm    /vol/lunvol1_clone_677/lun0.lun online  unmapped windows       1GB
+hs_svm    /vol/lunvol1_clone_677/lun1.lun online  unmapped windows       2GB
+hs_svm    /vol/lunvol1_clone_677/lun2.lun online  unmapped windows       3GB
+hs_svm    /vol/lunvol1_clone_770/lun0.lun online  unmapped windows       1GB
+hs_svm    /vol/lunvol1_clone_770/lun1.lun online  unmapped windows       2GB
+hs_svm    /vol/lunvol1_clone_770/lun2.lun online  unmapped windows       3GB
+hs_svm    /vol/testvol1/lun1.lun          online  unmapped linux        10GB
+hs_svm    /vol/testvol1/lun2.lun          online  unmapped linux        10GB
+hs_svm    /vol/testvol1/lun3.lun          online  unmapped linux        10GB
+hs_svm    /vol/testvol1_dr/lun1.lun       online  unmapped linux        10GB
+hs_svm    /vol/testvol1_dr/lun2.lun       online  unmapped linux        10GB
+hs_svm    /vol/testvol1_dr/lun3.lun       online  unmapped linux        10GB
+iskwon_svm /vol/iscsi_vol/lun00           online  unmapped linux         1GB
+iskwon_svm /vol/lun_test/lun00            online  unmapped linux         1GB
+jjy       /vol/jjy_vol/volume-872ce442-ad2e-45fc-b7b4-55c3ca10e8dd online unmapped linux 10GB
+jjy_cinder /vol/cinder_iscsi/snapshot-b881157c-bef3-49b3-873a-51425e192e1b online unmapped linux 25GB
+jjy_cinder /vol/cinder_iscsi/volume-8335d498-5402-4ca9-b081-9e268fcf397a online unmapped linux 10GB
+jjy_cinder /vol/cinder_iscsi/volume-b8f7a0d6-c5ff-4839-a41d-163c25aae387 online unmapped linux 10GB
+jjy_cinder /vol/cinder_iscsi/volume-d35661d6-a8d3-41af-aea3-8bd752222919 online unmapped linux 25GB
+lsw_FAS2750 /vol/lsw_netapp/netapp1       online  mapped   linux       100GB
+pmh       /vol/data/lun1                  online  unmapped windows      10GB
+pmh       /vol/data/lun1_copy             online  unmapped windows      10GB
+pmh       /vol/data_dr/lun1               online  unmapped windows      10GB
+pmh       /vol/data_dr/lun1_copy          online  unmapped windows      10GB
+36 entries were displayed.
+
+FAS2750::*> iugrou      igroup show
+Vserver   Igroup       Protocol OS Type  Initiators
+--------- ------------ -------- -------- ------------------------------------
+ehk       worker-3673d20c-98ba-413c-96ab-070eb18036e3 iscsi linux iqn.1994-05.com.redhat:d0d6e0b1179b
+hs_svm    iglinux      iscsi    linux    iqn.1994-05.com.redhat:75276cf2e93
+hs_svm    igtest       iscsi    windows  iqn.1991-05.com.microsoft:win-vemtqrhg5dd
+iskwon_svm linux       iscsi    linux    iqn.1994-05.com.redhat:899e494263f9
+                                         iqn.1994-05.com.redhat:f6e6dec43c3
+iskwon_svm windows     iscsi    windows  iqn.1991-05.com.microsoft:win-evd1rchovea
+jjy_cinder openstack-1f68c8c1-7c23-4a07-8e14-45b56be43834 iscsi linux iqn.1994-05.com.redhat:52f55432e6c
+lsw_FAS2750 RX2540     fcp      linux    10:00:00:10:9b:c1:b6:39
+                                         10:00:00:10:9b:c1:b6:3a
+pmh       test01       iscsi    linux    iqn.1994-05.com.redhat:bb751f5d055
+8 entries were displayed.
+
+FAS2750::*> storage shelf show
+                                                                      
+                                                        Module  Operational
+       Shelf Name Shelf ID Serial Number   Model        Type    Status
+----------------- -------- --------------- ------------ ------- -----------
+              9.0        0 SHFNC2050000238 DS224-12     IOM12E  Normal
+
+FAS2750::*> disk show
+                                                                                           Usable           Disk    Container   Container
+Disk                   Size Shelf Bay Type    Type        Name      Owner
+---------------- ---------- ----- --- ------- ----------- --------- --------
+9.0.2               546.9GB     0   2 SAS     shared      n1_DATA   FAS2750-01
+9.0.3               546.9GB     0   3 SAS     shared      OS_n1, n1_DATA FAS2750-01
+9.0.5               546.9GB     0   5 SAS     shared      OS_n1, n1_DATA FAS2750-01
+9.0.6               546.9GB     0   6 SAS     shared      n1_DATA   FAS2750-01
+9.0.9               546.9GB     0   9 SAS     shared      OS_n1, n1_DATA FAS2750-01
+9.0.10              546.9GB     0  10 SAS     shared      OS_n2, n1_DATA FAS2750-02
+9.0.11              546.9GB     0  11 SAS     shared      OS_n1, n1_DATA FAS2750-01
+9.0.12              546.9GB     0  12 SAS     shared      n1_DATA   FAS2750-01
+9.0.13              546.9GB     0  13 SAS     shared      OS_n1, n1_DATA FAS2750-01
+9.0.14              546.9GB     0  14 SAS     shared      n1_DATA   FAS2750-01
+9.0.15              546.9GB     0  15 SAS     shared      n1_DATA   FAS2750-01
+9.0.16              546.9GB     0  16 SAS     shared      OS_n2     FAS2750-02
+9.0.17              546.9GB     0  17 SAS     shared      OS_n2, n1_DATA FAS2750-02
+9.0.18              546.9GB     0  18 SAS     shared      n1_DATA   FAS2750-01
+9.0.19              546.9GB     0  19 SAS     shared      OS_n2, n1_DATA FAS2750-02
+DGC-1.1                   -     -   - LUN     foreign     -         -
+DGC-1.2                   -     -   - LUN     foreign     -         -
+DGC-1.4                   -     -   - LUN     foreign     -         -
+DGC-1.5                   -     -   - LUN     foreign     -         -
+DGC-1.6                   -     -   - LUN     foreign     -         -
+DGC-1.7                   -     -   - LUN     foreign     -         -
+DGC-1.8                   -     -   - LUN     foreign     -         -
+DGC-1.9                   -     -   - LUN     foreign     -         -
+DGC-1.10                  -     -   - LUN     foreign     -         -
+DGC-1.11                  -     -   - LUN     foreign     -         -
+DGC-1.12                  -     -   - LUN     foreign     -         -
+DGC-1.13                  -     -   - LUN     foreign     -         -
+DGC-1.14                  -     -   - LUN     foreign     -         -
+28 entries were displayed.
+
+FAS2750::*> disk show -broken
+There are no entries matching your query.
+
+FAS2750::*> aggr show
+                                                                      
+
+Aggregate     Size Available Used% State   #Vols  Nodes            RAID Status
+--------- -------- --------- ----- ------- ------ ---------------- ------------
+OS_n1      239.8GB   77.61GB   68% online       1 FAS2750-01       raid_dp,
+                                                                   normal
+OS_n2      159.9GB    7.75GB   95% online       1 FAS2750-02       raid_dp,
+                                                                   normal
+n1_DATA     4.78TB    1.89TB   60% online     129 FAS2750-01       raid_dp,
+                                                                   normal
+3 entries were displayed.
+
+FAS2750::*> aggr status -s
+                                                                      
+ Owner Node: FAS2750-01
+ Pool0
+  Root-Data Partitioned Spares
+                                                              Local    Local
+                                                               Data     Root Physical
+ Disk             Type   Class          RPM Checksum         Usable   Usable     Size Status
+ ---------------- ------ ----------- ------ -------------- -------- -------- -------- --------
+ 9.0.2            SAS    performance  10000 block                0B  93.52GB  558.9GB zeroed
+ 9.0.6            SAS    performance  10000 block                0B  93.52GB  547.1GB zeroed
+ 9.0.12           SAS    performance  10000 block                0B  93.52GB  558.9GB zeroed
+ 9.0.14           SAS    performance  10000 block                0B  93.52GB  547.1GB zeroed
+ 9.0.15           SAS    performance  10000 block                0B  93.52GB  547.1GB zeroed
+
+ Owner Node: FAS2750-02
+ Pool0
+  Root-Data Partitioned Spares
+                                                              Local    Local
+                                                               Data     Root Physical
+ Disk             Type   Class          RPM Checksum         Usable   Usable     Size Status
+ ---------------- ------ ----------- ------ -------------- -------- -------- -------- --------
+ 9.0.16           SAS    performance  10000 block           453.3GB       0B  558.9GB zeroed
+ 9.0.18           SAS    performance  10000 block                0B  93.52GB  547.1GB zeroed
+7 entries were displayed.
+
+FAS2750::*> aggr status -s r
+
+ Owner Node: FAS2750-01
+ Aggregate: OS_n1 (online, raid_dp) (block checksums)
+  Plex: /OS_n1/plex0 (online, normal, active, pool0)
+   RAID Group /OS_n1/plex0/rg0 (normal, block checksums)
+                                                              Usable Physical
+     Position Disk                        Pool Type     RPM     Size     Size Status
+     -------- --------------------------- ---- ----- ------ -------- -------- ----------
+     shared   9.0.9                        0   SAS    10000  93.52GB  558.9GB (normal)
+     shared   9.0.11                       0   SAS    10000  93.52GB  558.9GB (normal)
+     shared   9.0.5                        0   SAS    10000  93.52GB  558.9GB (normal)
+     shared   9.0.13                       0   SAS    10000  93.52GB  558.9GB (normal)
+     shared   9.0.3                        0   SAS    10000  93.52GB  547.1GB (normal)
+
+ Owner Node: FAS2750-02
+ Aggregate: OS_n2 (online, raid_dp) (block checksums)
+  Plex: /OS_n2/plex0 (online, normal, active, pool0)
+   RAID Group /OS_n2/plex0/rg0 (normal, block checksums)
+                                                              Usable Physical
+     Position Disk                        Pool Type     RPM     Size     Size Status
+     -------- --------------------------- ---- ----- ------ -------- -------- ----------
+     shared   9.0.10                       0   SAS    10000  93.52GB  558.9GB (normal)
+     shared   9.0.16                       0   SAS    10000  93.52GB  558.9GB (normal)
+     shared   9.0.17                       0   SAS    10000  93.52GB  558.9GB (normal)
+     shared   9.0.19                       0   SAS    10000  93.52GB  558.9GB (normal)
+
+ Owner Node: FAS2750-01
+ Aggregate: n1_DATA (online, raid_dp) (block checksums)
+  Plex: /n1_DATA/plex0 (online, normal, active, pool0)
+   RAID Group /n1_DATA/plex0/rg0 (normal, block checksums)
+                                                              Usable Physical
+     Position Disk                        Pool Type     RPM     Size     Size Status
+     -------- --------------------------- ---- ----- ------ -------- -------- ----------
+     shared   9.0.15                       0   SAS    10000  453.3GB  547.1GB (normal)
+     shared   9.0.19                       0   SAS    10000  453.3GB  558.9GB (normal)
+     shared   9.0.17                       0   SAS    10000  453.3GB  558.9GB (normal)
+     shared   9.0.9                        0   SAS    10000  453.3GB  558.9GB (normal)
+     shared   9.0.5                        0   SAS    10000  453.3GB  558.9GB (normal)
+     shared   9.0.13                       0   SAS    10000  453.3GB  558.9GB (normal)
+     shared   9.0.12                       0   SAS    10000  453.3GB  558.9GB (normal)
+     shared   9.0.2                        0   SAS    10000  453.3GB  558.9GB (normal)
+     shared   9.0.3                        0   SAS    10000  453.3GB  547.1GB (normal)
+     shared   9.0.14                       0   SAS    10000  453.3GB  547.1GB (normal)
+     shared   9.0.18                       0   SAS    10000  453.3GB  547.1GB (normal)
+     shared   9.0.11                       0   SAS    10000  453.3GB  558.9GB (normal)
+     shared   9.0.6                        0   SAS    10000  453.3GB  547.1GB (normal)
+     shared   9.0.10                       0   SAS    10000  453.3GB  558.9GB (normal)
+23 entries were displayed.
+
+FAS2750::*> vol show
+Vserver   Volume       Aggregate    State      Type       Size  Available Used%
+--------- ------------ ------------ ---------- ---- ---------- ---------- -----
+FAS2750   MDV_aud_8246749f0605453cb59d6663c1ce4926 n1_DATA online RW 5GB 4.75GB  0%
+FAS2750-01 vol0        OS_n1        online     RW      161.3GB    91.88GB   40%
+FAS2750-02 vol0        OS_n2        online     RW      151.3GB    86.43GB   39%
+JH        JH_root      n1_DATA      online     RW          1GB    971.0MB    0%
+JH        quota        n1_DATA      online     RW         20MB    18.55MB    2%
+JH        test         n1_DATA      online     RW          4GB     3.79GB    0%
+JH_dr     JH_dr_root   n1_DATA      online     RW          1GB    971.2MB    0%
+JH_s3     JH_s3_root   n1_DATA      online     RW          1GB    971.0MB    0%
+TD_test   TD_test_root n1_DATA      online     RW          1GB    971.0MB    0%
+ehk       ehk_dr_root  n1_DATA      online     RW          1GB    971.5MB    0%
+ehk       fg_oss_1766733384 -       online     RW      105.3GB    99.75GB    0%
+ehk       fg_oss_1766733384__0001 n1_DATA online RW    105.3GB    99.75GB    0%
+ehk       nfs01        n1_DATA      online     RW         40GB    37.93GB    0%
+ehk       one          n1_DATA      online     RW          5GB     4.74GB    0%
+ehk       trident_pvc_8632b639_6e83_42bd_acb7_5a460bd65ef9 n1_DATA online RW 1.10GB 1.07GB  3%
+ehk       wintest      n1_DATA      online     RW         40GB    37.99GB    0%
+ehk_dp    ehk_dp_root  n1_DATA      online     RW          1GB    970.9MB    0%
+ehk_dp    nfs_dp       n1_DATA      online     DP         40GB    39.93GB    0%
+ehk_dp    three        n1_DATA      online     DP          3GB     2.98GB    0%
+ehk_dp    win_dp       n1_DATA      online     DP         40GB    40.00GB    0%
+fcsdf     fcsdf_root   n1_DATA      online     RW          1GB    971.5MB    0%
+gtlee_svm gtlee_svm_root n1_DATA    online     RW          1GB    970.7MB    0%
+hs_svm    dbvol01      n1_DATA      online     RW      11.81GB     1.87GB   84%
+hs_svm    fg1          -            online     RW         10GB     8.99GB    5%
+hs_svm    fg1__0001    n1_DATA      online     RW       1.25GB     1.12GB    5%
+hs_svm    fg1__0002    n1_DATA      online     RW       1.25GB     1.12GB    5%
+hs_svm    fg1__0003    n1_DATA      online     RW       1.25GB     1.12GB    5%
+hs_svm    fg1__0004    n1_DATA      online     RW       1.25GB     1.12GB    5%
+hs_svm    fg1__0005    n1_DATA      online     RW       1.25GB     1.12GB    5%
+hs_svm    fg1__0006    n1_DATA      online     RW       1.25GB     1.12GB    5%
+hs_svm    fg1__0007    n1_DATA      online     RW       1.25GB     1.12GB    5%
+hs_svm    fg1__0008    n1_DATA      online     RW       1.25GB     1.12GB    5%
+hs_svm    fgvol1_dr    -            online     RW         50GB    28.13GB   40%
+hs_svm    fgvol1_dr__0001 n1_DATA   online     RW      12.50GB     6.88GB   42%
+hs_svm    fgvol1_dr__0002 n1_DATA   online     RW      12.50GB     7.00GB   41%
+hs_svm    fgvol1_dr__0003 n1_DATA   online     RW      12.50GB     6.75GB   43%
+hs_svm    fgvol1_dr__0004 n1_DATA   online     RW      12.50GB     7.49GB   36%
+hs_svm    hs_svm_root  n1_DATA      online     RW          1GB    971.8MB    0%
+hs_svm    lunvol1      n1_DATA      online     RW         10GB     3.47GB   63%
+hs_svm    lunvol1_clone_25 n1_DATA  online     RW         10GB     3.47GB   63%
+hs_svm    lunvol1_clone_450 n1_DATA online     RW         10GB     3.47GB   63%
+hs_svm    lunvol1_clone_677 n1_DATA online     RW         10GB     3.47GB   63%
+hs_svm    lunvol1_clone_770 n1_DATA online     RW         10GB     3.47GB   63%
+hs_svm    testvol1     n1_DATA      online     RW        125GB    76.98GB   35%
+hs_svm    testvol1_dr  n1_DATA      online     DP      46.46GB     4.20GB   90%
+hs_svm    vol1         n1_DATA      online     RW         50GB    47.48GB    0%
+hs_svm    vol2         n1_DATA      online     RW          5GB     3.30GB   30%
+hs_svm    vol_ex       n1_DATA      online     RW      105.3MB    99.74MB    0%
+hs_svm    vol_test1    n1_DATA      online     RW      21.05GB    20.00GB    0%
+hs_svm    volx         n1_DATA      online     RW          5GB     4.71GB    0%
+hs_svm    xcp_catalog  n1_DATA      online     RW         50GB    47.43GB    0%
+hs_svm_dr hs_svm_dr_root n1_DATA    online     RW          1GB    970.7MB    0%
+hs_svm_dr vol1_dr      n1_DATA      online     DP         20MB     4.64MB   76%
+hs_svm_dr vol2_sync    n1_DATA      online     DP       1.74GB    289.8MB   83%
+iskwon_svm bucket2     -            online     RW        400GB    398.7GB    0%
+iskwon_svm bucket2__0001 n1_DATA    online     RW        100GB    99.49GB    0%
+iskwon_svm bucket2__0002 n1_DATA    online     RW        100GB    99.75GB    0%
+iskwon_svm bucket2__0003 n1_DATA    online     RW        100GB    99.75GB    0%
+iskwon_svm bucket2__0004 n1_DATA    online     RW        100GB    99.75GB    0%
+iskwon_svm catalog     n1_DATA      online     RW        110TB     1.89TB    0%
+iskwon_svm catalog_dp  n1_DATA      online     DP      128.0MB    127.0MB    0%
+iskwon_svm cinder_clone n1_DATA     online     RW        500GB    499.8GB    0%
+iskwon_svm cinder_vol  n1_DATA      online     RW        500GB    499.8GB    0%
+iskwon_svm fg_oss_1732508446 -      online     RW       6.74TB     1.89TB    0%
+iskwon_svm fg_oss_1732508446__0001 n1_DATA online RW    1.68TB     1.60TB    0%
+iskwon_svm fg_oss_1732508446__0002 n1_DATA online RW    1.68TB     1.60TB    0%
+iskwon_svm fg_oss_1732508446__0003 n1_DATA online RW    1.68TB     1.60TB    0%
+iskwon_svm fg_oss_1732508446__0004 n1_DATA online RW    1.68TB     1.60TB    0%
+iskwon_svm fg_oss_1758271224 -      online     RW      842.1GB    799.5GB    0%
+iskwon_svm fg_oss_1758271224__0001 n1_DATA online RW   421.1GB    399.7GB    0%
+iskwon_svm fg_oss_1758271224__0002 n1_DATA online RW   421.1GB    399.7GB    0%
+iskwon_svm iscsi_vol   n1_DATA      online     RW       1.10GB     1.08GB    2%
+iskwon_svm iskwon_svm_root n1_DATA  online     RW          1GB    970.9MB    0%
+iskwon_svm lun_test    n1_DATA      online     RW       1.05GB    44.16MB   95%
+iskwon_svm lun_test1   n1_DATA      online     RW       1.10TB     1.10TB    0%
+iskwon_svm quota       n1_DATA      online     RW         10TB     1.89TB    0%
+iskwon_svm share_a4402fab_82d1_4873_be35_ad38854d5b83 n1_DATA online RW 100GB 95.00GB  0%
+iskwon_svm share_d01625a2_da45_4469_be95_dcae7fc3d81a n1_DATA online RW 100GB 95.00GB  0%
+jjy       NFS          n1_DATA      online     DP        100GB    95.00GB    0%
+jjy       cifs_vol     n1_DATA      online     RW        100GB    95.00GB    0%
+jjy       jjy_root     n1_DATA      online     RW          1GB    972.4MB    0%
+jjy       jjy_vol      n1_DATA      online     RW        300GB    290.0GB    3%
+jjy       nfs_vol      n1_DATA      online     RW        100GB    93.25GB    1%
+jjy       nfs_vol2     n1_DATA      online     RW        100GB    93.25GB    1%
+jjy       source_vol   n1_DATA      online     DP        100GB    81.54GB   14%
+jjy       thintick     n1_DATA      online     RW        100GB    95.00GB    0%
+jjy       thintick2    n1_DATA      online     RW        200GB    190.0GB    0%
+jjy_cinder cinder_iscsi n1_DATA     online     RW        100GB    54.82GB   45%
+jjy_cinder cinder_nfs  n1_DATA      online     RW        100GB    99.93GB    0%
+jjy_cinder jjy_cinder_root n1_DATA  online     RW          1GB    971.6MB    0%
+jjy_dr    NFS2         n1_DATA      online     RW        100GB   100.00GB    0%
+jjy_dr    cifs_ad      n1_DATA      online     RW        101GB    95.95GB    0%
+jjy_dr    jjy_dr_root  n1_DATA      online     RW          1GB    972.3MB    0%
+jjy_dr    jjy_vol_dr   n1_DATA      online     RW        200GB    200.0GB    0%
+jjy_dr    target_vol   n1_DATA      online     RW        100GB    86.47GB   13%
+jjy_glance jjy_glance_root n1_DATA  online     RW          1GB    971.3MB    0%
+jjy_manila jjy_manila_root n1_DATA  online     RW          1GB    971.3MB    0%
+jjy_manila share_0d31ee70_1bb4_479a_a1dc_911f62998a62 n1_DATA online RW 10GB 9.50GB  0%
+jjy_manila share_10f4885c_b028_4ae6_a2fd_ae625a77f35b n1_DATA online RW 10GB 9.50GB  0%
+jjy_manila share_446a9c72_b47c_42c7_9d92_d04b1b20c318 n1_DATA online RW 10GB 9.50GB  0%
+jjy_manila share_c7e507ee_0135_466f_a767_d1e3b09ce8ea n1_DATA online RW 10GB 9.50GB  0%
+jjy_manila share_fbd2d183_7c02_4f6f_8d49_efcd16c1d5b5 n1_DATA online RW 100GB 94.99GB  0%
+jjy_object fg_oss_1761732350 -      online     RW      105.3GB    99.75GB    0%
+jjy_object fg_oss_1761732350__0001 n1_DATA online RW   105.3GB    99.75GB    0%
+jjy_object jjy_object_root n1_DATA  online     RW          1GB    971.5MB    0%
+jjy_swift jjy_swift_root n1_DATA    online     RW          1GB    971.3MB    0%
+lsw_FAS2750 lsw_catalog n1_DATA     online     RW         10GB     9.50GB    0%
+lsw_FAS2750 lsw_cifs   n1_DATA      online     RW         13GB    13.61MB   99%
+lsw_FAS2750 lsw_netapp n1_DATA      online     RW        105GB     4.57GB   95%
+lsw_FAS2750 lsw_nfs    n1_DATA      online     RW         10GB     9.00GB    0%
+lsw_FAS2750 lsw_root   n1_DATA      online     RW          1GB    972.2MB    0%
+lsw_FAS2750 lsw_test   n1_DATA      online     RW       1.10TB     1.04TB    0%
+lsw_FAS2750 lsw_win    n1_DATA      online     RW        100GB    94.99GB    0%
+lsw_FAS2750 lsw_xen    n1_DATA      online     RW         50GB    47.49GB    0%
+lsw_FAS2750 lsw_xen_iso n1_DATA     online     RW         50GB    43.29GB    8%
+pmh       data         n1_DATA      online     RW         10GB     9.97GB    0%
+pmh       data_dr      n1_DATA      online     RW         10GB     9.99GB    0%
+pmh       data_restore n1_DATA      online     RW         10GB    10.00GB    0%
+pmh       fg_oss_1757659851 -       online     RW       1000GB    946.5GB    0%
+pmh       fg_oss_1757659851__0001 n1_DATA online RW     1000GB    946.5GB    0%
+pmh       pmh_root     n1_DATA      online     RW          1GB    970.9MB    0%
+pmh       sm_sync      n1_DATA      online     DP         15GB    15.00GB    0%
+pmh       xcp          n1_DATA      online     RW        100MB    74.93MB   25%
+svm01     catalog      n1_DATA      online     RW        100GB    99.99GB    0%
+svm01     jjy_root     n1_DATA      online     RW          1GB    970.6MB    0%
+svm01     source_vol   n1_DATA      online     RW        100GB    94.99GB    0%
+svm01     target_cifs  n1_DATA      online     RW        100GB    62.88GB   37%
+svm01     target_nfs   n1_DATA      online     RW        100GB    62.88GB   37%
+svm01     target_nfs2  n1_DATA      online     RW        100GB   100.00GB    0%
+test      test_root    n1_DATA      online     RW          1GB    972.0MB    0%
+tmp       tmp_root     n1_DATA      online     RW          1GB    970.8MB    0%
+trident   trident_pvc_aaca1db1_2439_40a3_a9de_399848e3d5f7 n1_DATA online RW 1GB 1023MB  0%
+trident   trident_root n1_DATA      online     RW          1GB    971.4MB    0%
+veritas   veritas_root n1_DATA      online     RW          1GB    971.6MB    0%
+vmdata    ESXi_VM      n1_DATA      online     RW       2.69TB     1.41TB   44%
+vmdata    XEN_VM       n1_DATA      online     RW       1.49TB     1.36TB    3%
+vmdata    iso          n1_DATA      online     RW      100.0GB    88.01GB   12%
+vmdata    iso_cifs     n1_DATA      online     RW        200GB    166.2GB   16%
+vmdata    vs01_root    n1_DATA      online     RW          1GB     1023MB    0%
+139 entries were displayed.
+
+FAS2750::*> vo  alert show
+  (system health alert show)
+This table is currently empty.
+
+FAS2750::*> set admin
+
+FAS2750::> eventr l        evnet log s           ene   event log show
+Time                Node             Severity      Event
+------------------- ---------------- ------------- ---------------------------
+3/16/2026 15:45:00  FAS2750-01       ERROR         smc.snapmir.update.fail: Snapmirror update from source volume 'jjy:source_vol' to destination volume 'jjy_dr:target_vol' failed with error 'Destination jjy_dr:target_vol must be a data-protection volume.'. Relationship UUID '3ecf9d39-70f0-11f0-81b2-d039ea285b84'.
+3/16/2026 15:40:00  FAS2750-01       ERROR         smc.snapmir.update.fail: Snapmirror update from source volume 'jjy:source_vol' to destination volume 'jjy_dr:target_vol' failed with error 'Destination jjy_dr:target_vol must be a data-protection volume.'. Relationship UUID '3ecf9d39-70f0-11f0-81b2-d039ea285b84'.
+3/16/2026 15:35:00  FAS2750-01       ERROR         smc.snapmir.update.fail: Snapmirror update from source volume 'jjy:source_vol' to destination volume 'jjy_dr:target_vol' failed with error 'Destination jjy_dr:target_vol must be a data-protection volume.'. Relationship UUID '3ecf9d39-70f0-11f0-81b2-d039ea285b84'.
+3/16/2026 15:30:00  FAS2750-01       ERROR         smc.snapmir.update.fail: Snapmirror update from source volume 'jjy:source_vol' to destination volume 'jjy_dr:target_vol' failed with error 'Destination jjy_dr:target_vol must be a data-protection volume.'. Relationship UUID '3ecf9d39-70f0-11f0-81b2-d039ea285b84'.
+3/16/2026 15:25:00  FAS2750-01       ERROR         smc.snapmir.update.fail: Snapmirror update from source volume 'jjy:source_vol' to destination volume 'jjy_dr:target_vol' failed with error 'Destination jjy_dr:target_vol must be a data-protection volume.'. Relationship UUID '3ecf9d39-70f0-11f0-81b2-d039ea285b84'.
+3/16/2026 15:20:00  FAS2750-01       ERROR         smc.snapmir.update.fail: Snapmirror update from source volume 'jjy:source_vol' to destination volume 'jjy_dr:target_vol' failed with error 'Destination jjy_dr:target_vol must be a data-protection volume.'. Relationship UUID '3ecf9d39-70f0-11f0-81b2-d039ea285b84'.
+3/16/2026 15:15:00  FAS2750-01       ERROR         smc.snapmir.update.fail: Snapmirror update from source volume 'jjy:source_vol' to destination volume 'jjy_dr:target_vol' failed with error 'Destination jjy_dr:target_vol must be a data-protection volume.'. Relationship UUID '3ecf9d39-70f0-11f0-81b2-d039ea285b84'.
+3/16/2026 15:10:00  FAS2750-01       ERROR         smc.snapmir.update.fail: Snapmirror update from source volume 'jjy:source_vol' to destination volume 'jjy_dr:target_vol' failed with error 'Destination jjy_dr:target_vol must be a data-protection volume.'. Relationship UUID '3ecf9d39-70f0-11f0-81b2-d039ea285b84'.
+3/16/2026 15:05:00  FAS2750-01       ERROR         smc.snapmir.update.fail: Snapmirror update from source volume 'jjy:source_vol' to destination volume 'jjy_dr:target_vol' failed with error 'Destination jjy_dr:target_vol must be a data-protection volume.'. Relationship UUID '3ecf9d39-70f0-11f0-81b2-d039ea285b84'.
+3/16/2026 15:00:00  FAS2750-01       ERROR         smc.snapmir.update.fail: Snapmirror update from source volume 'jjy:source_vol' to destination volume 'jjy_dr:target_vol' failed with error 'Destination jjy_dr:target_vol must be a data-protection volume.'. Relationship UUID '3ecf9d39-70f0-11f0-81b2-d039ea285b84'.
+3/16/2026 14:55:59  FAS2750-01       ALERT         security.invalid.login: Failed to authenticate login attempt to Vserver: FAS2750, username: diag, application: ssh, location: 127.0.0.1.
+3/16/2026 14:55:00  FAS2750-01       ERROR         smc.snapmir.update.fail: Snapmirror update from source volume 'jjy:source_vol' to destination volume 'jjy_dr:target_vol' failed with error 'Destination jjy_dr:target_vol must be a data-protection volume.'. Relationship UUID '3ecf9d39-70f0-11f0-81b2-d039ea285b84'.
+3/16/2026 14:50:00  FAS2750-01       ERROR         smc.snapmir.update.fail: Snapmirror update from source volume 'jjy:source_vol' to destination volume 'jjy_dr:target_vol' failed with error 'Destination jjy_dr:target_vol must be a data-protection volume.'. Relationship UUID '3ecf9d39-70f0-11f0-81b2-d039ea285b84'.
+3/16/2026 14:45:00  FAS2750-01       ERROR         smc.snapmir.update.fail: Snapmirror update from source volume 'jjy:source_vol' to destination volume 'jjy_dr:target_vol' failed with error 'Destination jjy_dr:target_vol must be a data-protection volume.'. Relationship UUID '3ecf9d39-70f0-11f0-81b2-d039ea285b84'.
+3/16/2026 14:40:00  FAS2750-01       ERROR         smc.snapmir.update.fail: Snapmirror update from source volume 'jjy:source_vol' to destination volume 'jjy_dr:target_vol' failed with error 'Destination jjy_dr:target_vol must be a data-protection volume.'. Relationship UUID '3ecf9d39-70f0-11f0-81b2-d039ea285b84'.
+3/16/2026 14:35:00  FAS2750-01       ERROR         smc.snapmir.update.fail: Snapmirror update from source volume 'jjy:source_vol' to destination volume 'jjy_dr:target_vol' failed with error 'Destination jjy_dr:target_vol must be a data-protection volume.'. Relationship UUID '3ecf9d39-70f0-11f0-81b2-d039ea285b84'.
+3/16/2026 14:30:00  FAS2750-01       ERROR         smc.snapmir.update.fail: Snapmirror update from source volume 'jjy:source_vol' to destination volume 'jjy_dr:target_vol' failed with error 'Destination jjy_dr:target_vol must be a data-protection volume.'. Relationship UUID '3ecf9d39-70f0-11f0-81b2-d039ea285b84'.
+3/16/2026 14:25:00  FAS2750-01       ERROR         smc.snapmir.update.fail: Snapmirror update from source volume 'jjy:source_vol' to destination volume 'jjy_dr:target_vol' failed with error 'Destination jjy_dr:target_vol must be a data-protection volume.'. Relationship UUID '3ecf9d39-70f0-11f0-81b2-d039ea285b84'.
+3/16/2026 14:20:00  FAS2750-01       ERROR         smc.snapmir.update.fail: Snapmirror update from source volume 'jjy:source_vol' to destination volume 'jjy_dr:target_vol' failed with error 'Destination jjy_dr:target_vol must be a data-protection volume.'. Relationship UUID '3ecf9d39-70f0-11f0-81b2-d039ea285b84'.
+3/16/2026 14:15:00  FAS2750-01       ERROR         smc.snapmir.update.fail: Snapmirror update from source volume 'jjy:source_vol' to destination volume 'jjy_dr:target_vol' failed with error 'Destination jjy_dr:target_vol must be a data-protection volume.'. Relationship UUID '3ecf9d39-70f0-11f0-81b2-d039ea285b84'.
+3/16/2026 14:10:00  FAS2750-01       ERROR         smc.snapmir.update.fail: Snapmirror update from source volume 'jjy:source_vol' to destination volume 'jjy_dr:target_vol' failed with error 'Destination jjy_dr:target_vol must be a data-protection volume.'. Relationship UUID '3ecf9d39-70f0-11f0-81b2-d039ea285b84'.
+3/16/2026 14:05:00  FAS2750-01       ERROR         smc.snapmir.update.fail: Snapmirror update from source volume 'jjy:source_vol' to destination volume 'jjy_dr:target_vol' failed with error 'Destination jjy_dr:target_vol must be a data-protection volume.'. Relationship UUID '3ecf9d39-70f0-11f0-81b2-d039ea285b84'.
+3/16/2026 14:00:00  FAS2750-01       ERROR         smc.snapmir.update.fail: Snapmirror update from source volume 'jjy:source_vol' to destination volume 'jjy_dr:target_vol' failed with error 'Destination jjy_dr:target_vol must be a data-protection volume.'. Relationship UUID '3ecf9d39-70f0-11f0-81b2-d039ea285b84'.
+3/16/2026 13:55:00  FAS2750-01       ERROR         smc.snapmir.update.fail: Snapmirror update from source volume 'jjy:source_vol' to destination volume 'jjy_dr:target_vol' failed with error 'Destination jjy_dr:target_vol must be a data-protection volume.'. Relationship UUID '3ecf9d39-70f0-11f0-81b2-d039ea285b84'.
+3/16/2026 13:50:00  FAS2750-01       ERROR         smc.snapmir.update.fail: Snapmirror update from source volume 'jjy:source_vol' to destination volume 'jjy_dr:target_vol' failed with error 'Destination jjy_dr:target_vol must be a data-protection volume.'. Relationship UUID '3ecf9d39-70f0-11f0-81b2-d039ea285b84'.
+3/16/2026 13:45:00  FAS2750-01       ERROR         smc.snapmir.update.fail: Snapmirror update from source volume 'jjy:source_vol' to destination volume 'jjy_dr:target_vol' failed with error 'Destination jjy_dr:target_vol must be a data-protection volume.'. Relationship UUID '3ecf9d39-70f0-11f0-81b2-d039ea285b84'.
+3/16/2026 13:40:00  FAS2750-01       ERROR         smc.snapmir.update.fail: Snapmirror update from source volume 'jjy:source_vol' to destination volume 'jjy_dr:target_vol' failed with error 'Destination jjy_dr:target_vol must be a data-protection volume.'. Relationship UUID '3ecf9d39-70f0-11f0-81b2-d039ea285b84'.
+3/16/2026 13:35:00  FAS2750-01       ERROR         smc.snapmir.update.fail: Snapmirror update from source volume 'jjy:source_vol' to destination volume 'jjy_dr:target_vol' failed with error 'Destination jjy_dr:target_vol must be a data-protection volume.'. Relationship UUID '3ecf9d39-70f0-11f0-81b2-d039ea285b84'.
+3/16/2026 13:30:00  FAS2750-01       ERROR         smc.snapmir.update.fail: Snapmirror update from source volume 'jjy:source_vol' to destination volume 'jjy_dr:target_vol' failed with error 'Destination jjy_dr:target_vol must be a data-protection volume.'. Relationship UUID '3ecf9d39-70f0-11f0-81b2-d039ea285b84'.
+3/16/2026 13:25:00  FAS2750-01       ERROR         smc.snapmir.update.fail: Snapmirror update from source volume 'jjy:source_vol' to destination volume 'jjy_dr:target_vol' failed with error 'Destination jjy_dr:target_vol must be a data-protection volume.'. Relationship UUID '3ecf9d39-70f0-11f0-81b2-d039ea285b84'.
+3/16/2026 13:20:00  FAS2750-01       ERROR         smc.snapmir.update.fail: Snapmirror update from source volume 'jjy:source_vol' to destination volume 'jjy_dr:target_vol' failed with error 'Destination jjy_dr:target_vol must be a data-protection volume.'. Relationship UUID '3ecf9d39-70f0-11f0-81b2-d039ea285b84'.
+3/16/2026 13:15:00  FAS2750-01       ERROR         smc.snapmir.update.fail: Snapmirror update from source volume 'jjy:source_vol' to destination volume 'jjy_dr:target_vol' failed with error 'Destination jjy_dr:target_vol must be a data-protection volume.'. Relationship UUID '3ecf9d39-70f0-11f0-81b2-d039ea285b84'.
+3/16/2026 13:10:00  FAS2750-01       ERROR         smc.snapmir.update.fail: Snapmirror update from source volume 'jjy:source_vol' to destination volume 'jjy_dr:target_vol' failed with error 'Destination jjy_dr:target_vol must be a data-protection volume.'. Relationship UUID '3ecf9d39-70f0-11f0-81b2-d039ea285b84'.
+3/16/2026 13:05:00  FAS2750-01       ERROR         smc.snapmir.update.fail: Snapmirror update from source volume 'jjy:source_vol' to destination volume 'jjy_dr:target_vol' failed with error 'Destination jjy_dr:target_vol must be a data-protection volume.'. Relationship UUID '3ecf9d39-70f0-11f0-81b2-d039ea285b84'.
+3/16/2026 13:00:00  FAS2750-01       ERROR         smc.snapmir.update.fail: Snapmirror update from source volume 'jjy:source_vol' to destination volume 'jjy_dr:target_vol' failed with error 'Destination jjy_dr:target_vol must be a data-protection volume.'. Relationship UUID '3ecf9d39-70f0-11f0-81b2-d039ea285b84'.
+3/16/2026 12:55:00  FAS2750-01       ERROR         smc.snapmir.update.fail: Snapmirror update from source volume 'jjy:source_vol' to destination volume 'jjy_dr:target_vol' failed with error 'Destination jjy_dr:target_vol must be a data-protection volume.'. Relationship UUID '3ecf9d39-70f0-11f0-81b2-d039ea285b84'.
+3/16/2026 12:50:00  FAS2750-01       ERROR         smc.snapmir.update.fail: Snapmirror update from source volume 'jjy:source_vol' to destination volume 'jjy_dr:target_vol' failed with error 'Destination jjy_dr:target_vol must be a data-protection volume.'. Relationship UUID '3ecf9d39-70f0-11f0-81b2-d039ea285b84'.
+3/16/2026 12:45:00  FAS2750-01       ERROR         smc.snapmir.update.fail: Snapmirror update from source volume 'jjy:source_vol' to destination volume 'jjy_dr:target_vol' failed with error 'Destination jjy_dr:target_vol must be a data-protection volume.'. Relationship UUID '3ecf9d39-70f0-11f0-81b2-d039ea285b84'.
+3/16/2026 12:40:00  FAS2750-01       ERROR         smc.snapmir.update.fail: Snapmirror update from source volume 'jjy:source_vol' to destination volume 'jjy_dr:target_vol' failed with error 'Destination jjy_dr:target_vol must be a data-protection volume.'. Relationship UUID '3ecf9d39-70f0-11f0-81b2-d039ea285b84'.
+3/16/2026 12:35:00  FAS2750-01       ERROR         smc.snapmir.update.fail: Snapmirror update from source volume 'jjy:source_vol' to destination volume 'jjy_dr:target_vol' failed with error 'Destination jjy_dr:target_vol must be a data-protection volume.'. Relationship UUID '3ecf9d39-70f0-11f0-81b2-d039ea285b84'.
+3/16/2026 12:30:00  FAS2750-01       ERROR         smc.snapmir.update.fail: Snapmirror update from source volume 'jjy:source_vol' to destination volume 'jjy_dr:target_vol' failed with error 'Destination jjy_dr:target_vol must be a data-protection volume.'. Relationship UUID '3ecf9d39-70f0-11f0-81b2-d039ea285b84'.
+3/16/2026 12:26:50  FAS2750-02       ERROR         callhome.dsk.redun.fault: Call home for DISK REDUNDANCY FAILED
+3/16/2026 12:25:00  FAS2750-01       ERROR         smc.snapmir.update.fail: Snapmirror update from source volume 'jjy:source_vol' to destination volume 'jjy_dr:target_vol' failed with error 'Destination jjy_dr:target_vol must be a data-protection volume.'. Relationship UUID '3ecf9d39-70f0-11f0-81b2-d039ea285b84'.
+3/16/2026 12:20:00  FAS2750-01       ERROR         smc.snapmir.update.fail: Snapmirror update from source volume 'jjy:source_vol' to destination volume 'jjy_dr:target_vol' failed with error 'Destination jjy_dr:target_vol must be a data-protection volume.'. Relationship UUID '3ecf9d39-70f0-11f0-81b2-d039ea285b84'.
+3/16/2026 12:15:00  FAS2750-01       ERROR         smc.snapmir.update.fail: Snapmirror update from source volume 'jjy:source_vol' to destination volume 'jjy_dr:target_vol' failed with error 'Destination jjy_dr:target_vol must be a data-protection volume.'. Relationship UUID '3ecf9d39-70f0-11f0-81b2-d039ea285b84'.
+3/16/2026 12:10:00  FAS2750-01       ERROR         smc.snapmir.update.fail: Snapmirror update from source volume 'jjy:source_vol' to destination volume 'jjy_dr:target_vol' failed with error 'Destination jjy_dr:target_vol must be a data-protection volume.'. Relationship UUID '3ecf9d39-70f0-11f0-81b2-d039ea285b84'.
+3/16/2026 12:05:00  FAS2750-01       ERROR         smc.snapmir.update.fail: Snapmirror update from source volume 'jjy:source_vol' to destination volume 'jjy_dr:target_vol' failed with error 'Destination jjy_dr:target_vol must be a data-protection volume.'. Relationship UUID '3ecf9d39-70f0-11f0-81b2-d039ea285b84'.
+3/16/2026 12:00:00  FAS2750-01       ERROR         smc.snapmir.update.fail: Snapmirror update from source volume 'jjy:source_vol' to destination volume 'jjy_dr:target_vol' failed with error 'Destination jjy_dr:target_vol must be a data-protection volume.'. Relationship UUID '3ecf9d39-70f0-11f0-81b2-d039ea285b84'.
+3/16/2026 11:55:00  FAS2750-01       ERROR         smc.snapmir.update.fail: Snapmirror update from source volume 'jjy:source_vol' to destination volume 'jjy_dr:target_vol' failed with error 'Destination jjy_dr:target_vol must be a data-protection volume.'. Relationship UUID '3ecf9d39-70f0-11f0-81b2-d039ea285b84'.
+3/16/2026 11:50:00  FAS2750-01       ERROR         smc.snapmir.update.fail: Snapmirror update from source volume 'jjy:source_vol' to destination volume 'jjy_dr:target_vol' failed with error 'Destination jjy_dr:target_vol must be a data-protection volume.'. Relationship UUID '3ecf9d39-70f0-11f0-81b2-d039ea285b84'.
+3/16/2026 11:45:00  FAS2750-01       ERROR         smc.snapmir.update.fail: Snapmirror update from source volume 'jjy:source_vol' to destination volume 'jjy_dr:target_vol' failed with error 'Destination jjy_dr:target_vol must be a data-protection volume.'. Relationship UUID '3ecf9d39-70f0-11f0-81b2-d039ea285b84'.
+3/16/2026 11:40:00  FAS2750-01       ERROR         smc.snapmir.update.fail: Snapmirror update from source volume 'jjy:source_vol' to destination volume 'jjy_dr:target_vol' failed with error 'Destination jjy_dr:target_vol must be a data-protection volume.'. Relationship UUID '3ecf9d39-70f0-11f0-81b2-d039ea285b84'.
+3/16/2026 11:35:00  FAS2750-01       ERROR         smc.snapmir.update.fail: Snapmirror update from source volume 'jjy:source_vol' to destination volume 'jjy_dr:target_vol' failed with error 'Destination jjy_dr:target_vol must be a data-protection volume.'. Relationship UUID '3ecf9d39-70f0-11f0-81b2-d039ea285b84'.
+3/16/2026 11:30:00  FAS2750-01       ERROR         smc.snapmir.update.fail: Snapmirror update from source volume 'jjy:source_vol' to destination volume 'jjy_dr:target_vol' failed with error 'Destination jjy_dr:target_vol must be a data-protection volume.'. Relationship UUID '3ecf9d39-70f0-11f0-81b2-d039ea285b84'.
+3/16/2026 11:25:00  FAS2750-01       ERROR         smc.snapmir.update.fail: Snapmirror update from source volume 'jjy:source_vol' to destination volume 'jjy_dr:target_vol' failed with error 'Destination jjy_dr:target_vol must be a data-protection volume.'. Relationship UUID '3ecf9d39-70f0-11f0-81b2-d039ea285b84'.
+3/16/2026 11:20:00  FAS2750-01       ERROR         smc.snapmir.update.fail: Snapmirror update from source volume 'jjy:source_vol' to destination volume 'jjy_dr:target_vol' failed with error 'Destination jjy_dr:target_vol must be a data-protection volume.'. Relationship UUID '3ecf9d39-70f0-11f0-81b2-d039ea285b84'.
+3/16/2026 11:15:00  FAS2750-01       ERROR         smc.snapmir.update.fail: Snapmirror update from source volume 'jjy:source_vol' to destination volume 'jjy_dr:target_vol' failed with error 'Destination jjy_dr:target_vol must be a data-protection volume.'. Relationship UUID '3ecf9d39-70f0-11f0-81b2-d039ea285b84'.
+3/16/2026 11:10:00  FAS2750-01       ERROR         smc.snapmir.update.fail: Snapmirror update from source volume 'jjy:source_vol' to destination volume 'jjy_dr:target_vol' failed with error 'Destination jjy_dr:target_vol must be a data-protection volume.'. Relationship UUID '3ecf9d39-70f0-11f0-81b2-d039ea285b84'.
+3/16/2026 11:05:00  FAS2750-01       ERROR         smc.snapmir.update.fail: Snapmirror update from source volume 'jjy:source_vol' to destination volume 'jjy_dr:target_vol' failed with error 'Destination jjy_dr:target_vol must be a data-protection volume.'. Relationship UUID '3ecf9d39-70f0-11f0-81b2-d039ea285b84'.
+3/16/2026 11:00:00  FAS2750-01       ERROR         smc.snapmir.update.fail: Snapmirror update from source volume 'jjy:source_vol' to destination volume 'jjy_dr:target_vol' failed with error 'Destination jjy_dr:target_vol must be a data-protection volume.'. Relationship UUID '3ecf9d39-70f0-11f0-81b2-d039ea285b84'.
+3/16/2026 10:55:00  FAS2750-01       ERROR         smc.snapmir.update.fail: Snapmirror update from source volume 'jjy:source_vol' to destination volume 'jjy_dr:target_vol' failed with error 'Destination jjy_dr:target_vol must be a data-protection volume.'. Relationship UUID '3ecf9d39-70f0-11f0-81b2-d039ea285b84'.
+3/16/2026 10:50:00  FAS2750-01       ERROR         smc.snapmir.update.fail: Snapmirror update from source volume 'jjy:source_vol' to destination volume 'jjy_dr:target_vol' failed with error 'Destination jjy_dr:target_vol must be a data-protection volume.'. Relationship UUID '3ecf9d39-70f0-11f0-81b2-d039ea285b84'.
+3/16/2026 10:45:00  FAS2750-01       ERROR         smc.snapmir.update.fail: Snapmirror update from source volume 'jjy:source_vol' to destination volume 'jjy_dr:target_vol' failed with error 'Destination jjy_dr:target_vol must be a data-protection volume.'. Relationship UUID '3ecf9d39-70f0-11f0-81b2-d039ea285b84'.
+3/16/2026 10:40:00  FAS2750-01       ERROR         smc.snapmir.update.fail: Snapmirror update from source volume 'jjy:source_vol' to destination volume 'jjy_dr:target_vol' failed with error 'Destination jjy_dr:target_vol must be a data-protection volume.'. Relationship UUID '3ecf9d39-70f0-11f0-81b2-d039ea285b84'.
+3/16/2026 10:35:00  FAS2750-01       ERROR         smc.snapmir.update.fail: Snapmirror update from source volume 'jjy:source_vol' to destination volume 'jjy_dr:target_vol' failed with error 'Destination jjy_dr:target_vol must be a data-protection volume.'. Relationship UUID '3ecf9d39-70f0-11f0-81b2-d039ea285b84'.
+3/16/2026 10:30:00  FAS2750-01       ERROR         smc.snapmir.update.fail: Snapmirror update from source volume 'jjy:source_vol' to destination volume 'jjy_dr:target_vol' failed with error 'Destination jjy_dr:target_vol must be a data-protection volume.'. Relationship UUID '3ecf9d39-70f0-11f0-81b2-d039ea285b84'.
+3/16/2026 10:25:00  FAS2750-01       ERROR         smc.snapmir.update.fail: Snapmirror update from source volume 'jjy:source_vol' to destination volume 'jjy_dr:target_vol' failed with error 'Destination jjy_dr:target_vol must be a data-protection volume.'. Relationship UUID '3ecf9d39-70f0-11f0-81b2-d039ea285b84'.
+3/16/2026 10:20:00  FAS2750-01       ERROR         smc.snapmir.update.fail: Snapmirror update from source volume 'jjy:source_vol' to destination volume 'jjy_dr:target_vol' failed with error 'Destination jjy_dr:target_vol must be a data-protection volume.'. Relationship UUID '3ecf9d39-70f0-11f0-81b2-d039ea285b84'.
+3/16/2026 10:15:00  FAS2750-01       ERROR         smc.snapmir.update.fail: Snapmirror update from source volume 'jjy:source_vol' to destination volume 'jjy_dr:target_vol' failed with error 'Destination jjy_dr:target_vol must be a data-protection volume.'. Relationship UUID '3ecf9d39-70f0-11f0-81b2-d039ea285b84'.
+3/16/2026 10:10:00  FAS2750-01       ERROR         smc.snapmir.update.fail: Snapmirror update from source volume 'jjy:source_vol' to destination volume 'jjy_dr:target_vol' failed with error 'Destination jjy_dr:target_vol must be a data-protection volume.'. Relationship UUID '3ecf9d39-70f0-11f0-81b2-d039ea285b84'.
+3/16/2026 10:05:00  FAS2750-01       ERROR         smc.snapmir.update.fail: Snapmirror update from source volume 'jjy:source_vol' to destination volume 'jjy_dr:target_vol' failed with error 'Destination jjy_dr:target_vol must be a data-protection volume.'. Relationship UUID '3ecf9d39-70f0-11f0-81b2-d039ea285b84'.
+3/16/2026 10:00:00  FAS2750-01       ERROR         smc.snapmir.update.fail: Snapmirror update from source volume 'jjy:source_vol' to destination volume 'jjy_dr:target_vol' failed with error 'Destination jjy_dr:target_vol must be a data-protection volume.'. Relationship UUID '3ecf9d39-70f0-11f0-81b2-d039ea285b84'.
+3/16/2026 09:55:00  FAS2750-01       ERROR         smc.snapmir.update.fail: Snapmirror update from source volume 'jjy:source_vol' to destination volume 'jjy_dr:target_vol' failed with error 'Destination jjy_dr:target_vol must be a data-protection volume.'. Relationship UUID '3ecf9d39-70f0-11f0-81b2-d039ea285b84'.
+3/16/2026 09:50:00  FAS2750-01       ERROR         smc.snapmir.update.fail: Snapmirror update from source volume 'jjy:source_vol' to destination volume 'jjy_dr:target_vol' failed with error 'Destination jjy_dr:target_vol must be a data-protection volume.'. Relationship UUID '3ecf9d39-70f0-11f0-81b2-d039ea285b84'.
+3/16/2026 09:45:00  FAS2750-01       ERROR         smc.snapmir.update.fail: Snapmirror update from source volume 'jjy:source_vol' to destination volume 'jjy_dr:target_vol' failed with error 'Destination jjy_dr:target_vol must be a data-protection volume.'. Relationship UUID '3ecf9d39-70f0-11f0-81b2-d039ea285b84'.
+3/16/2026 09:40:00  FAS2750-01       ERROR         smc.snapmir.update.fail: Snapmirror update from source volume 'jjy:source_vol' to destination volume 'jjy_dr:target_vol' failed with error 'Destination jjy_dr:target_vol must be a data-protection volume.'. Relationship UUID '3ecf9d39-70f0-11f0-81b2-d039ea285b84'.
+3/16/2026 09:35:00  FAS2750-01       ERROR         smc.snapmir.update.fail: Snapmirror update from source volume 'jjy:source_vol' to destination volume 'jjy_dr:target_vol' failed with error 'Destination jjy_dr:target_vol must be a data-protection volume.'. Relationship UUID '3ecf9d39-70f0-11f0-81b2-d039ea285b84'.
+3/16/2026 09:30:00  FAS2750-01       ERROR         smc.snapmir.update.fail: Snapmirror update from source volume 'jjy:source_vol' to destination volume 'jjy_dr:target_vol' failed with error 'Destination jjy_dr:target_vol must be a data-protection volume.'. Relationship UUID '3ecf9d39-70f0-11f0-81b2-d039ea285b84'.
+3/16/2026 09:25:00  FAS2750-01       ERROR         smc.snapmir.update.fail: Snapmirror update from source volume 'jjy:source_vol' to destination volume 'jjy_dr:target_vol' failed with error 'Destination jjy_dr:target_vol must be a data-protection volume.'. Relationship UUID '3ecf9d39-70f0-11f0-81b2-d039ea285b84'.
+3/16/2026 09:20:00  FAS2750-01       ERROR         smc.snapmir.update.fail: Snapmirror update from source volume 'jjy:source_vol' to destination volume 'jjy_dr:target_vol' failed with error 'Destination jjy_dr:target_vol must be a data-protection volume.'. Relationship UUID '3ecf9d39-70f0-11f0-81b2-d039ea285b84'.
+3/16/2026 09:15:00  FAS2750-01       ERROR         smc.snapmir.update.fail: Snapmirror update from source volume 'jjy:source_vol' to destination volume 'jjy_dr:target_vol' failed with error 'Destination jjy_dr:target_vol must be a data-protection volume.'. Relationship UUID '3ecf9d39-70f0-11f0-81b2-d039ea285b84'.
+3/16/2026 09:10:00  FAS2750-01       ERROR         smc.snapmir.update.fail: Snapmirror update from source volume 'jjy:source_vol' to destination volume 'jjy_dr:target_vol' failed with error 'Destination jjy_dr:target_vol must be a data-protection volume.'. Relationship UUID '3ecf9d39-70f0-11f0-81b2-d039ea285b84'.
+3/16/2026 09:05:00  FAS2750-01       ERROR         smc.snapmir.update.fail: Snapmirror update from source volume 'jjy:source_vol' to destination volume 'jjy_dr:target_vol' failed with error 'Destination jjy_dr:target_vol must be a data-protection volume.'. Relationship UUID '3ecf9d39-70f0-11f0-81b2-d039ea285b84'.
+3/16/2026 09:00:00  FAS2750-01       ERROR         smc.snapmir.update.fail: Snapmirror update from source volume 'jjy:source_vol' to destination volume 'jjy_dr:target_vol' failed with error 'Destination jjy_dr:target_vol must be a data-protection volume.'. Relationship UUID '3ecf9d39-70f0-11f0-81b2-d039ea285b84'.
+3/16/2026 08:55:00  FAS2750-01       ERROR         smc.snapmir.update.fail: Snapmirror update from source volume 'jjy:source_vol' to destination volume 'jjy_dr:target_vol' failed with error 'Destination jjy_dr:target_vol must be a data-protection volume.'. Relationship UUID '3ecf9d39-70f0-11f0-81b2-d039ea285b84'.
+3/16/2026 08:50:00  FAS2750-01       ERROR         smc.snapmir.update.fail: Snapmirror update from source volume 'jjy:source_vol' to destination volume 'jjy_dr:target_vol' failed with error 'Destination jjy_dr:target_vol must be a data-protection volume.'. Relationship UUID '3ecf9d39-70f0-11f0-81b2-d039ea285b84'.
+3/16/2026 08:45:00  FAS2750-01       ERROR         smc.snapmir.update.fail: Snapmirror update from source volume 'jjy:source_vol' to destination volume 'jjy_dr:target_vol' failed with error 'Destination jjy_dr:target_vol must be a data-protection volume.'. Relationship UUID '3ecf9d39-70f0-11f0-81b2-d039ea285b84'.
+3/16/2026 08:40:00  FAS2750-01       ERROR         smc.snapmir.update.fail: Snapmirror update from source volume 'jjy:source_vol' to destination volume 'jjy_dr:target_vol' failed with error 'Destination jjy_dr:target_vol must be a data-protection volume.'. Relationship UUID '3ecf9d39-70f0-11f0-81b2-d039ea285b84'.
+3/16/2026 08:35:00  FAS2750-01       ERROR         smc.snapmir.update.fail: Snapmirror update from source volume 'jjy:source_vol' to destination volume 'jjy_dr:target_vol' failed with error 'Destination jjy_dr:target_vol must be a data-protection volume.'. Relationship UUID '3ecf9d39-70f0-11f0-81b2-d039ea285b84'.
+3/16/2026 08:30:00  FAS2750-01       ERROR         smc.snapmir.update.fail: Snapmirror update from source volume 'jjy:source_vol' to destination volume 'jjy_dr:target_vol' failed with error 'Destination jjy_dr:target_vol must be a data-protection volume.'. Relationship UUID '3ecf9d39-70f0-11f0-81b2-d039ea285b84'.
+3/16/2026 08:25:00  FAS2750-01       ERROR         smc.snapmir.update.fail: Snapmirror update from source volume 'jjy:source_vol' to destination volume 'jjy_dr:target_vol' failed with error 'Destination jjy_dr:target_vol must be a data-protection volume.'. Relationship UUID '3ecf9d39-70f0-11f0-81b2-d039ea285b84'.
+3/16/2026 08:20:00  FAS2750-01       ERROR         smc.snapmir.update.fail: Snapmirror update from source volume 'jjy:source_vol' to destination volume 'jjy_dr:target_vol' failed with error 'Destination jjy_dr:target_vol must be a data-protection volume.'. Relationship UUID '3ecf9d39-70f0-11f0-81b2-d039ea285b84'.
+3/16/2026 08:15:00  FAS2750-01       ERROR         smc.snapmir.update.fail: Snapmirror update from source volume 'jjy:source_vol' to destination volume 'jjy_dr:target_vol' failed with error 'Destination jjy_dr:target_vol must be a data-protection volume.'. Relationship UUID '3ecf9d39-70f0-11f0-81b2-d039ea285b84'.
+3/16/2026 08:10:00  FAS2750-01       ERROR         smc.snapmir.update.fail: Snapmirror update from source volume 'jjy:source_vol' to destination volume 'jjy_dr:target_vol' failed with error 'Destination jjy_dr:target_vol must be a data-protection volume.'. Relationship UUID '3ecf9d39-70f0-11f0-81b2-d039ea285b84'.
+3/16/2026 08:05:00  FAS2750-01       ERROR         smc.snapmir.update.fail: Snapmirror update from source volume 'jjy:source_vol' to destination volume 'jjy_dr:target_vol' failed with error 'Destination jjy_dr:target_vol must be a data-protection volume.'. Relationship UUID '3ecf9d39-70f0-11f0-81b2-d039ea285b84'.
+3/16/2026 08:00:00  FAS2750-01       ERROR         smc.snapmir.update.fail: Snapmirror update from source volume 'jjy:source_vol' to destination volume 'jjy_dr:target_vol' failed with error 'Destination jjy_dr:target_vol must be a data-protection volume.'. Relationship UUID '3ecf9d39-70f0-11f0-81b2-d039ea285b84'.
+3/16/2026 07:55:00  FAS2750-01       ERROR         smc.snapmir.update.fail: Snapmirror update from source volume 'jjy:source_vol' to destination volume 'jjy_dr:target_vol' failed with error 'Destination jjy_dr:target_vol must be a data-protection volume.'. Relationship UUID '3ecf9d39-70f0-11f0-81b2-d039ea285b84'.
+3/16/2026 07:50:00  FAS2750-01       ERROR         smc.snapmir.update.fail: Snapmirror update from source volume 'jjy:source_vol' to destination volume 'jjy_dr:target_vol' failed with error 'Destination jjy_dr:target_vol must be a data-protection volume.'. Relationship UUID '3ecf9d39-70f0-11f0-81b2-d039ea285b84'.
+3/16/2026 07:45:00  FAS2750-01       ERROR         smc.snapmir.update.fail: Snapmirror update from source volume 'jjy:source_vol' to destination volume 'jjy_dr:target_vol' failed with error 'Destination jjy_dr:target_vol must be a data-protection volume.'. Relationship UUID '3ecf9d39-70f0-11f0-81b2-d039ea285b84'.
+3/16/2026 07:40:00  FAS2750-01       ERROR         smc.snapmir.update.fail: Snapmirror update from source volume 'jjy:source_vol' to destination volume 'jjy_dr:target_vol' failed with error 'Destination jjy_dr:target_vol must be a data-protection volume.'. Relationship UUID '3ecf9d39-70f0-11f0-81b2-d039ea285b84'.
+3/16/2026 07:35:00  FAS2750-01       ERROR         smc.snapmir.update.fail: Snapmirror update from source volume 'jjy:source_vol' to destination volume 'jjy_dr:target_vol' failed with error 'Destination jjy_dr:target_vol must be a data-protection volume.'. Relationship UUID '3ecf9d39-70f0-11f0-81b2-d039ea285b84'.
+3/16/2026 07:30:00  FAS2750-01       ERROR         smc.snapmir.update.fail: Snapmirror update from source volume 'jjy:source_vol' to destination volume 'jjy_dr:target_vol' failed with error 'Destination jjy_dr:target_vol must be a data-protection volume.'. Relationship UUID '3ecf9d39-70f0-11f0-81b2-d039ea285b84'.
+3/16/2026 07:25:00  FAS2750-01       ERROR         smc.snapmir.update.fail: Snapmirror update from source volume 'jjy:source_vol' to destination volume 'jjy_dr:target_vol' failed with error 'Destination jjy_dr:target_vol must be a data-protection volume.'. Relationship UUID '3ecf9d39-70f0-11f0-81b2-d039ea285b84'.
+3/16/2026 07:20:00  FAS2750-01       ERROR         smc.snapmir.update.fail: Snapmirror update from source volume 'jjy:source_vol' to destination volume 'jjy_dr:target_vol' failed with error 'Destination jjy_dr:target_vol must be a data-protection volume.'. Relationship UUID '3ecf9d39-70f0-11f0-81b2-d039ea285b84'.
+3/16/2026 07:15:00  FAS2750-01       ERROR         smc.snapmir.update.fail: Snapmirror update from source volume 'jjy:source_vol' to destination volume 'jjy_dr:target_vol' failed with error 'Destination jjy_dr:target_vol must be a data-protection volume.'. Relationship UUID '3ecf9d39-70f0-11f0-81b2-d039ea285b84'.
+3/16/2026 07:10:00  FAS2750-01       ERROR         smc.snapmir.update.fail: Snapmirror update from source volume 'jjy:source_vol' to destination volume 'jjy_dr:target_vol' failed with error 'Destination jjy_dr:target_vol must be a data-protection volume.'. Relationship UUID '3ecf9d39-70f0-11f0-81b2-d039ea285b84'.
+3/16/2026 07:05:00  FAS2750-01       ERROR         smc.snapmir.update.fail: Snapmirror update from source volume 'jjy:source_vol' to destination volume 'jjy_dr:target_vol' failed with error 'Destination jjy_dr:target_vol must be a data-protection volume.'. Relationship UUID '3ecf9d39-70f0-11f0-81b2-d039ea285b84'.
+3/16/2026 07:00:00  FAS2750-01       ERROR         smc.snapmir.update.fail: Snapmirror update from source volume 'jjy:source_vol' to destination volume 'jjy_dr:target_vol' failed with error 'Destination jjy_dr:target_vol must be a data-protection volume.'. Relationship UUID '3ecf9d39-70f0-11f0-81b2-d039ea285b84'.
+3/16/2026 06:55:00  FAS2750-01       ERROR         smc.snapmir.update.fail: Snapmirror update from source volume 'jjy:source_vol' to destination volume 'jjy_dr:target_vol' failed with error 'Destination jjy_dr:target_vol must be a data-protection volume.'. Relationship UUID '3ecf9d39-70f0-11f0-81b2-d039ea285b84'.
+3/16/2026 06:50:00  FAS2750-01       ERROR         smc.snapmir.update.fail: Snapmirror update from source volume 'jjy:source_vol' to destination volume 'jjy_dr:target_vol' failed with error 'Destination jjy_dr:target_vol must be a data-protection volume.'. Relationship UUID '3ecf9d39-70f0-11f0-81b2-d039ea285b84'.
+3/16/2026 06:45:00  FAS2750-01       ERROR         smc.snapmir.update.fail: Snapmirror update from source volume 'jjy:source_vol' to destination volume 'jjy_dr:target_vol' failed with error 'Destination jjy_dr:target_vol must be a data-protection volume.'. Relationship UUID '3ecf9d39-70f0-11f0-81b2-d039ea285b84'.
+3/16/2026 06:40:00  FAS2750-01       ERROR         smc.snapmir.update.fail: Snapmirror update from source volume 'jjy:source_vol' to destination volume 'jjy_dr:target_vol' failed with error 'Destination jjy_dr:target_vol must be a data-protection volume.'. Relationship UUID '3ecf9d39-70f0-11f0-81b2-d039ea285b84'.
+3/16/2026 06:35:00  FAS2750-01       ERROR         smc.snapmir.update.fail: Snapmirror update from source volume 'jjy:source_vol' to destination volume 'jjy_dr:target_vol' failed with error 'Destination jjy_dr:target_vol must be a data-protection volume.'. Relationship UUID '3ecf9d39-70f0-11f0-81b2-d039ea285b84'.
+3/16/2026 06:30:00  FAS2750-01       ERROR         smc.snapmir.update.fail: Snapmirror update from source volume 'jjy:source_vol' to destination volume 'jjy_dr:target_vol' failed with error 'Destination jjy_dr:target_vol must be a data-protection volume.'. Relationship UUID '3ecf9d39-70f0-11f0-81b2-d039ea285b84'.
+3/16/2026 06:25:00  FAS2750-01       ERROR         smc.snapmir.update.fail: Snapmirror update from source volume 'jjy:source_vol' to destination volume 'jjy_dr:target_vol' failed with error 'Destination jjy_dr:target_vol must be a data-protection volume.'. Relationship UUID '3ecf9d39-70f0-11f0-81b2-d039ea285b84'.
+3/16/2026 06:20:00  FAS2750-01       ERROR         smc.snapmir.update.fail: Snapmirror update from source volume 'jjy:source_vol' to destination volume 'jjy_dr:target_vol' failed with error 'Destination jjy_dr:target_vol must be a data-protection volume.'. Relationship UUID '3ecf9d39-70f0-11f0-81b2-d039ea285b84'.
+3/16/2026 06:15:00  FAS2750-01       ERROR         smc.snapmir.update.fail: Snapmirror update from source volume 'jjy:source_vol' to destination volume 'jjy_dr:target_vol' failed with error 'Destination jjy_dr:target_vol must be a data-protection volume.'. Relationship UUID '3ecf9d39-70f0-11f0-81b2-d039ea285b84'.
+3/16/2026 06:10:00  FAS2750-01       ERROR         smc.snapmir.update.fail: Snapmirror update from source volume 'jjy:source_vol' to destination volume 'jjy_dr:target_vol' failed with error 'Destination jjy_dr:target_vol must be a data-protection volume.'. Relationship UUID '3ecf9d39-70f0-11f0-81b2-d039ea285b84'.
+3/16/2026 06:05:00  FAS2750-01       ERROR         smc.snapmir.update.fail: Snapmirror update from source volume 'jjy:source_vol' to destination volume 'jjy_dr:target_vol' failed with error 'Destination jjy_dr:target_vol must be a data-protection volume.'. Relationship UUID '3ecf9d39-70f0-11f0-81b2-d039ea285b84'.
+3/16/2026 06:00:00  FAS2750-01       ERROR         smc.snapmir.update.fail: Snapmirror update from source volume 'jjy:source_vol' to destination volume 'jjy_dr:target_vol' failed with error 'Destination jjy_dr:target_vol must be a data-protection volume.'. Relationship UUID '3ecf9d39-70f0-11f0-81b2-d039ea285b84'.
+3/16/2026 05:55:00  FAS2750-01       ERROR         smc.snapmir.update.fail: Snapmirror update from source volume 'jjy:source_vol' to destination volume 'jjy_dr:target_vol' failed with error 'Destination jjy_dr:target_vol must be a data-protection volume.'. Relationship UUID '3ecf9d39-70f0-11f0-81b2-d039ea285b84'.
+3/16/2026 05:50:00  FAS2750-01       ERROR         smc.snapmir.update.fail: Snapmirror update from source volume 'jjy:source_vol' to destination volume 'jjy_dr:target_vol' failed with error 'Destination jjy_dr:target_vol must be a data-protection volume.'. Relationship UUID '3ecf9d39-70f0-11f0-81b2-d039ea285b84'.
+3/16/2026 05:45:00  FAS2750-01       ERROR         smc.snapmir.update.fail: Snapmirror update from source volume 'jjy:source_vol' to destination volume 'jjy_dr:target_vol' failed with error 'Destination jjy_dr:target_vol must be a data-protection volume.'. Relationship UUID '3ecf9d39-70f0-11f0-81b2-d039ea285b84'.
+3/16/2026 05:40:00  FAS2750-01       ERROR         smc.snapmir.update.fail: Snapmirror update from source volume 'jjy:source_vol' to destination volume 'jjy_dr:target_vol' failed with error 'Destination jjy_dr:target_vol must be a data-protection volume.'. Relationship UUID '3ecf9d39-70f0-11f0-81b2-d039ea285b84'.
+3/16/2026 05:35:00  FAS2750-01       ERROR         smc.snapmir.update.fail: Snapmirror update from source volume 'jjy:source_vol' to destination volume 'jjy_dr:target_vol' failed with error 'Destination jjy_dr:target_vol must be a data-protection volume.'. Relationship UUID '3ecf9d39-70f0-11f0-81b2-d039ea285b84'.
+3/16/2026 05:30:00  FAS2750-01       ERROR         smc.snapmir.update.fail: Snapmirror update from source volume 'jjy:source_vol' to destination volume 'jjy_dr:target_vol' failed with error 'Destination jjy_dr:target_vol must be a data-protection volume.'. Relationship UUID '3ecf9d39-70f0-11f0-81b2-d039ea285b84'.
+3/16/2026 05:25:00  FAS2750-01       ERROR         smc.snapmir.update.fail: Snapmirror update from source volume 'jjy:source_vol' to destination volume 'jjy_dr:target_vol' failed with error 'Destination jjy_dr:target_vol must be a data-protection volume.'. Relationship UUID '3ecf9d39-70f0-11f0-81b2-d039ea285b84'.
+3/16/2026 05:20:00  FAS2750-01       ERROR         smc.snapmir.update.fail: Snapmirror update from source volume 'jjy:source_vol' to destination volume 'jjy_dr:target_vol' failed with error 'Destination jjy_dr:target_vol must be a data-protection volume.'. Relationship UUID '3ecf9d39-70f0-11f0-81b2-d039ea285b84'.
+3/16/2026 05:15:00  FAS2750-01       ERROR         smc.snapmir.update.fail: Snapmirror update from source volume 'jjy:source_vol' to destination volume 'jjy_dr:target_vol' failed with error 'Destination jjy_dr:target_vol must be a data-protection volume.'. Relationship UUID '3ecf9d39-70f0-11f0-81b2-d039ea285b84'.
+3/16/2026 05:10:00  FAS2750-01       ERROR         smc.snapmir.update.fail: Snapmirror update from source volume 'jjy:source_vol' to destination volume 'jjy_dr:target_vol' failed with error 'Destination jjy_dr:target_vol must be a data-protection volume.'. Relationship UUID '3ecf9d39-70f0-11f0-81b2-d039ea285b84'.
+3/16/2026 05:05:00  FAS2750-01       ERROR         smc.snapmir.update.fail: Snapmirror update from source volume 'jjy:source_vol' to destination volume 'jjy_dr:target_vol' failed with error 'Destination jjy_dr:target_vol must be a data-protection volume.'. Relationship UUID '3ecf9d39-70f0-11f0-81b2-d039ea285b84'.
+3/16/2026 05:00:00  FAS2750-01       ERROR         smc.snapmir.update.fail: Snapmirror update from source volume 'jjy:source_vol' to destination volume 'jjy_dr:target_vol' failed with error 'Destination jjy_dr:target_vol must be a data-protection volume.'. Relationship UUID '3ecf9d39-70f0-11f0-81b2-d039ea285b84'.
+3/16/2026 04:55:00  FAS2750-01       ERROR         smc.snapmir.update.fail: Snapmirror update from source volume 'jjy:source_vol' to destination volume 'jjy_dr:target_vol' failed with error 'Destination jjy_dr:target_vol must be a data-protection volume.'. Relationship UUID '3ecf9d39-70f0-11f0-81b2-d039ea285b84'.
+3/16/2026 04:50:00  FAS2750-01       ERROR         smc.snapmir.update.fail: Snapmirror update from source volume 'jjy:source_vol' to destination volume 'jjy_dr:target_vol' failed with error 'Destination jjy_dr:target_vol must be a data-protection volume.'. Relationship UUID '3ecf9d39-70f0-11f0-81b2-d039ea285b84'.
+3/16/2026 04:45:00  FAS2750-01       ERROR         smc.snapmir.update.fail: Snapmirror update from source volume 'jjy:source_vol' to destination volume 'jjy_dr:target_vol' failed with error 'Destination jjy_dr:target_vol must be a data-protection volume.'. Relationship UUID '3ecf9d39-70f0-11f0-81b2-d039ea285b84'.
+3/16/2026 04:40:00  FAS2750-01       ERROR         smc.snapmir.update.fail: Snapmirror update from source volume 'jjy:source_vol' to destination volume 'jjy_dr:target_vol' failed with error 'Destination jjy_dr:target_vol must be a data-protection volume.'. Relationship UUID '3ecf9d39-70f0-11f0-81b2-d039ea285b84'.
+3/16/2026 04:35:00  FAS2750-01       ERROR         smc.snapmir.update.fail: Snapmirror update from source volume 'jjy:source_vol' to destination volume 'jjy_dr:target_vol' failed with error 'Destination jjy_dr:target_vol must be a data-protection volume.'. Relationship UUID '3ecf9d39-70f0-11f0-81b2-d039ea285b84'.
+3/16/2026 04:30:00  FAS2750-01       ERROR         smc.snapmir.update.fail: Snapmirror update from source volume 'jjy:source_vol' to destination volume 'jjy_dr:target_vol' failed with error 'Destination jjy_dr:target_vol must be a data-protection volume.'. Relationship UUID '3ecf9d39-70f0-11f0-81b2-d039ea285b84'.
+3/16/2026 04:25:00  FAS2750-01       ERROR         smc.snapmir.update.fail: Snapmirror update from source volume 'jjy:source_vol' to destination volume 'jjy_dr:target_vol' failed with error 'Destination jjy_dr:target_vol must be a data-protection volume.'. Relationship UUID '3ecf9d39-70f0-11f0-81b2-d039ea285b84'.
+3/16/2026 04:20:00  FAS2750-01       ERROR         smc.snapmir.update.fail: Snapmirror update from source volume 'jjy:source_vol' to destination volume 'jjy_dr:target_vol' failed with error 'Destination jjy_dr:target_vol must be a data-protection volume.'. Relationship UUID '3ecf9d39-70f0-11f0-81b2-d039ea285b84'.
+3/16/2026 04:15:00  FAS2750-01       ERROR         smc.snapmir.update.fail: Snapmirror update from source volume 'jjy:source_vol' to destination volume 'jjy_dr:target_vol' failed with error 'Destination jjy_dr:target_vol must be a data-protection volume.'. Relationship UUID '3ecf9d39-70f0-11f0-81b2-d039ea285b84'.
+3/16/2026 04:10:00  FAS2750-01       ERROR         smc.snapmir.update.fail: Snapmirror update from source volume 'jjy:source_vol' to destination volume 'jjy_dr:target_vol' failed with error 'Destination jjy_dr:target_vol must be a data-protection volume.'. Relationship UUID '3ecf9d39-70f0-11f0-81b2-d039ea285b84'.
+3/16/2026 04:05:00  FAS2750-01       ERROR         smc.snapmir.update.fail: Snapmirror update from source volume 'jjy:source_vol' to destination volume 'jjy_dr:target_vol' failed with error 'Destination jjy_dr:target_vol must be a data-protection volume.'. Relationship UUID '3ecf9d39-70f0-11f0-81b2-d039ea285b84'.
+3/16/2026 04:00:00  FAS2750-01       ERROR         smc.snapmir.update.fail: Snapmirror update from source volume 'jjy:source_vol' to destination volume 'jjy_dr:target_vol' failed with error 'Destination jjy_dr:target_vol must be a data-protection volume.'. Relationship UUID '3ecf9d39-70f0-11f0-81b2-d039ea285b84'.
+3/16/2026 03:55:00  FAS2750-01       ERROR         smc.snapmir.update.fail: Snapmirror update from source volume 'jjy:source_vol' to destination volume 'jjy_dr:target_vol' failed with error 'Destination jjy_dr:target_vol must be a data-protection volume.'. Relationship UUID '3ecf9d39-70f0-11f0-81b2-d039ea285b84'.
+3/16/2026 03:50:00  FAS2750-01       ERROR         smc.snapmir.update.fail: Snapmirror update from source volume 'jjy:source_vol' to destination volume 'jjy_dr:target_vol' failed with error 'Destination jjy_dr:target_vol must be a data-protection volume.'. Relationship UUID '3ecf9d39-70f0-11f0-81b2-d039ea285b84'.
+3/16/2026 03:45:00  FAS2750-01       ERROR         smc.snapmir.update.fail: Snapmirror update from source volume 'jjy:source_vol' to destination volume 'jjy_dr:target_vol' failed with error 'Destination jjy_dr:target_vol must be a data-protection volume.'. Relationship UUID '3ecf9d39-70f0-11f0-81b2-d039ea285b84'.
+3/16/2026 03:40:00  FAS2750-01       ERROR         smc.snapmir.update.fail: Snapmirror update from source volume 'jjy:source_vol' to destination volume 'jjy_dr:target_vol' failed with error 'Destination jjy_dr:target_vol must be a data-protection volume.'. Relationship UUID '3ecf9d39-70f0-11f0-81b2-d039ea285b84'.
+3/16/2026 03:35:00  FAS2750-01       ERROR         smc.snapmir.update.fail: Snapmirror update from source volume 'jjy:source_vol' to destination volume 'jjy_dr:target_vol' failed with error 'Destination jjy_dr:target_vol must be a data-protection volume.'. Relationship UUID '3ecf9d39-70f0-11f0-81b2-d039ea285b84'.
+3/16/2026 03:30:00  FAS2750-01       ERROR         smc.snapmir.update.fail: Snapmirror update from source volume 'jjy:source_vol' to destination volume 'jjy_dr:target_vol' failed with error 'Destination jjy_dr:target_vol must be a data-protection volume.'. Relationship UUID '3ecf9d39-70f0-11f0-81b2-d039ea285b84'.
+3/16/2026 03:25:00  FAS2750-01       ERROR         smc.snapmir.update.fail: Snapmirror update from source volume 'jjy:source_vol' to destination volume 'jjy_dr:target_vol' failed with error 'Destination jjy_dr:target_vol must be a data-protection volume.'. Relationship UUID '3ecf9d39-70f0-11f0-81b2-d039ea285b84'.
+3/16/2026 03:20:00  FAS2750-01       ERROR         smc.snapmir.update.fail: Snapmirror update from source volume 'jjy:source_vol' to destination volume 'jjy_dr:target_vol' failed with error 'Destination jjy_dr:target_vol must be a data-protection volume.'. Relationship UUID '3ecf9d39-70f0-11f0-81b2-d039ea285b84'.
+3/16/2026 03:15:00  FAS2750-01       ERROR         smc.snapmir.update.fail: Snapmirror update from source volume 'jjy:source_vol' to destination volume 'jjy_dr:target_vol' failed with error 'Destination jjy_dr:target_vol must be a data-protection volume.'. Relationship UUID '3ecf9d39-70f0-11f0-81b2-d039ea285b84'.
+3/16/2026 00:00:03  FAS2750-02       ERROR         mgmtgwd.sign.cert.expired: A digital certificate with Fully Qualified Domain Name (FQDN) jjy_object, Serial Number 1872861FAE38A008, Certificate Authority 'jjy_ca' and Certificate Authority Serial Number 18728382D5293FE5 for Vserver jjy_object has expired.
+3/16/2026 00:00:03  FAS2750-02       ERROR         mgmtgwd.certificate.expired: A digital certificate with Fully Qualified Domain Name (FQDN) jjy, Serial Number 17DE9B0C71F4A38B, Certificate Authority 'jjy' and type server for Vserver svm01 has expired.
+3/16/2026 00:00:03  FAS2750-02       ERROR         mgmtgwd.certificate.expired: A digital certificate with Fully Qualified Domain Name (FQDN) lsw, Serial Number 18090198F30D44B1, Certificate Authority 'lsw' and type server for Vserver lsw_FAS2750 has expired.
+3/16/2026 00:00:03  FAS2750-02       ERROR         mgmtgwd.certificate.expired: A digital certificate with Fully Qualified Domain Name (FQDN) jjy_object, Serial Number 1872861FAE38A008, Certificate Authority 'jjy_ca' and type server for Vserver jjy_object has expired.
+3/16/2026 00:00:03  FAS2750-02       ERROR         mgmtgwd.certificate.expired: A digital certificate with Fully Qualified Domain Name (FQDN) jjy_dr, Serial Number 1801A590754012C2, Certificate Authority 'jjy_dr' and type server for Vserver jjy_dr has expired.
+3/16/2026 00:00:03  FAS2750-02       ERROR         mgmtgwd.certificate.expired: A digital certificate with Fully Qualified Domain Name (FQDN) iskwon_svm_ca, Serial Number 181D3FCADC892448, Certificate Authority 'iskwon_svm_ca' and type server-ca for Vserver iskwon_svm has expired.
+3/16/2026 00:00:03  FAS2750-02       ERROR         mgmtgwd.certificate.expired: A digital certificate with Fully Qualified Domain Name (FQDN) iskwon_svm_ca, Serial Number 181D3FCADC892448, Certificate Authority 'iskwon_svm_ca' and type client-ca for Vserver iskwon_svm has expired.
+3/16/2026 00:00:03  FAS2750-02       ERROR         mgmtgwd.certificate.expired: A digital certificate with Fully Qualified Domain Name (FQDN) iskwon_svm_ca, Serial Number 181D3FCADC892448, Certificate Authority 'iskwon_svm_ca' and type root-ca for Vserver iskwon_svm has expired.
+3/16/2026 00:00:03  FAS2750-02       ERROR         mgmtgwd.certificate.expired: A digital certificate with Fully Qualified Domain Name (FQDN) iskwon_svm, Serial Number 17DE9356A470411D, Certificate Authority 'iskwon_svm' and type server for Vserver iskwon_svm has expired.
+3/16/2026 00:00:03  FAS2750-02       ERROR         mgmtgwd.certificate.expired: A digital certificate with Fully Qualified Domain Name (FQDN) hs_svm, Serial Number 17E29A835F8839F0, Certificate Authority 'hs_svm' and type server for Vserver hs_svm has expired.
+3/16/2026 00:00:03  FAS2750-02       ERROR         mgmtgwd.certificate.expired: A digital certificate with Fully Qualified Domain Name (FQDN) admin, Serial Number 5F3CB8A3F864B328, Certificate Authority 'admin' and type client-ca for Vserver FAS2750 has expired.
+3/16/2026 00:00:03  FAS2750-02       ERROR         mgmtgwd.certificate.expired: A digital certificate with Fully Qualified Domain Name (FQDN) admin, Serial Number 17ED9E80D41B9EE7, Certificate Authority 'admin' and type server for Vserver FAS2750 has expired.
+3/16/2026 00:00:03  FAS2750-02       ERROR         mgmtgwd.certificate.expired: A digital certificate with Fully Qualified Domain Name (FQDN) admin, Serial Number 0B249471084A285C, Certificate Authority 'admin' and type client-ca for Vserver FAS2750 has expired.
+3/16/2026 00:00:03  FAS2750-02       ERROR         mgmtgwd.certificate.expired: A digital certificate with Fully Qualified Domain Name (FQDN) admin, Serial Number 05BCA2D4DCBC69F6, Certificate Authority 'admin' and type client-ca for Vserver FAS2750 has expired.
+3/16/2026 00:00:03  FAS2750-02       ERROR         mgmtgwd.certificate.expired: A digital certificate with Fully Qualified Domain Name (FQDN) BOBT, Serial Number 179B6DA6C6C81785, Certificate Authority 'BOBT' and type server-ca for Vserver FAS2750 has expired.
+3/16/2026 00:00:03  FAS2750-02       ERROR         mgmtgwd.certificate.expired: A digital certificate with Fully Qualified Domain Name (FQDN) BOBT, Serial Number 179B6DA6C6C81785, Certificate Authority 'BOBT' and type client-ca for Vserver FAS2750 has expired.
+3/16/2026 00:00:03  FAS2750-02       ERROR         mgmtgwd.certificate.expired: A digital certificate with Fully Qualified Domain Name (FQDN) BOBT, Serial Number 179B6DA6C6C81785, Certificate Authority 'BOBT' and type root-ca for Vserver FAS2750 has expired.
+3/16/2026 00:00:03  FAS2750-02       ERROR         mgmtgwd.certificate.expired: A digital certificate with Fully Qualified Domain Name (FQDN) 192.168.0.96, Serial Number 704CD258FEF697DB, Certificate Authority '192.168.0.96' and type server-ca for Vserver FAS2750 has expired.
+3/16/2026 00:00:03  FAS2750-02       ERROR         mgmtgwd.certificate.expired: A digital certificate with Fully Qualified Domain Name (FQDN) 192.168.0.59, Serial Number 35C066D00B039023, Certificate Authority '192.168.0.59' and type server-ca for Vserver FAS2750 has expired.
+3/16/2026 00:00:03  FAS2750-02       ERROR         mgmtgwd.certificate.expired: A digital certificate with Fully Qualified Domain Name (FQDN) 192.168.0.5, Serial Number 6AF94D9313FE408C, Certificate Authority '192.168.0.5' and type server-ca for Vserver FAS2750 has expired.
+3/16/2026 00:00:03  FAS2750-02       ERROR         mgmtgwd.certificate.expired: A digital certificate with Fully Qualified Domain Name (FQDN) 192.168.0.2, Serial Number 1E5785D5F372AD08, Certificate Authority '192.168.0.2' and type server-ca for Vserver FAS2750 has expired.
+3/16/2026 00:00:03  FAS2750-02       ERROR         mgmtgwd.certificate.expired: A digital certificate with Fully Qualified Domain Name (FQDN) 192.168.0.164, Serial Number 7EEC3637E32140A3, Certificate Authority 'localhost' and type server-ca for Vserver FAS2750 has expired.
+3/16/2026 00:00:03  FAS2750-02       ERROR         mgmtgwd.certificate.expired: A digital certificate with Fully Qualified Domain Name (FQDN) 192.168.0.104, Serial Number 038F6DC8D85AB6BD, Certificate Authority '192.168.0.104' and type server-ca for Vserver FAS2750 has expired.
+3/15/2026 12:26:50  FAS2750-02       ERROR         callhome.dsk.redun.fault: Call home for DISK REDUNDANCY FAILED
+3/15/2026 00:15:05  FAS2750-02       ERROR         vifmgr.lif.subnetMisconfig: LIFs in subnet 192.168.0.0/24 of IPspace "Default" are configured on ports in multiple broadcast domains:  Data, mgmt
+3/15/2026 00:00:03  FAS2750-02       ALERT         license.term.enforcement: WARNING: Your license has expired. Please contact NetApp to renew your license term as soon as possible.
+3/15/2026 00:00:03  FAS2750-02       ALERT         license.term.enforcement: Data tiering has been stopped because of one of these issues: Your Tiering license has expired. You are managing more tiered data than allowed by your license. Connectivity has been lost between the cluster and BlueXP Connector.Verify cluster connectivity in the BlueXP Canvas or Tiering Clusters dashboard. For licensing, in BlueXP, go to All Governance > Digital Wallet > Data Services Licenses to view the status and update your Tiering license.
+3/15/2026 00:00:03  FAS2750-02       ERROR         license.check.warn.expired: The license for package "Anti_ransomware" expired on 11/14/2025 23:59:59.
+3/14/2026 12:13:14  FAS2750-02       ERROR         callhome.dsk.redun.fault: Call home for DISK REDUNDANCY FAILED
+3/14/2026 00:00:03  FAS2750-02       ALERT         license.term.enforcement: WARNING: Your license has expired. Please contact NetApp to renew your license term as soon as possible.
+3/14/2026 00:00:03  FAS2750-02       ALERT         license.term.enforcement: Data tiering has been stopped because of one of these issues: Your Tiering license has expired. You are managing more tiered data than allowed by your license. Connectivity has been lost between the cluster and BlueXP Connector.Verify cluster connectivity in the BlueXP Canvas or Tiering Clusters dashboard. For licensing, in BlueXP, go to All Governance > Digital Wallet > Data Services Licenses to view the status and update your Tiering license.
+3/14/2026 00:00:03  FAS2750-02       ERROR         license.check.warn.expired: The license for package "Anti_ransomware" expired on 11/14/2025 23:59:59.
+3/13/2026 11:56:50  FAS2750-02       ERROR         callhome.dsk.redun.fault: Call home for DISK REDUNDANCY FAILED
+3/12/2026 11:56:50  FAS2750-02       ERROR         callhome.dsk.redun.fault: Call home for DISK REDUNDANCY FAILED
+3/12/2026 00:00:03  FAS2750-02       ALERT         license.term.enforcement: WARNING: Your license has expired. Please contact NetApp to renew your license term as soon as possible.
+3/12/2026 00:00:03  FAS2750-02       ALERT         license.term.enforcement: Data tiering has been stopped because of one of these issues: Your Tiering license has expired. You are managing more tiered data than allowed by your license. Connectivity has been lost between the cluster and BlueXP Connector.Verify cluster connectivity in the BlueXP Canvas or Tiering Clusters dashboard. For licensing, in BlueXP, go to All Governance > Digital Wallet > Data Services Licenses to view the status and update your Tiering license.
+3/12/2026 00:00:03  FAS2750-02       ERROR         license.check.warn.expired: The license for package "Anti_ransomware" expired on 11/14/2025 23:59:59.
+3/11/2026 11:43:14  FAS2750-02       ERROR         callhome.dsk.redun.fault: Call home for DISK REDUNDANCY FAILED
+3/10/2026 11:43:14  FAS2750-02       ERROR         callhome.dsk.redun.fault: Call home for DISK REDUNDANCY FAILED
+3/10/2026 00:00:03  FAS2750-02       ALERT         license.term.enforcement: WARNING: Your license has expired. Please contact NetApp to renew your license term as soon as possible.
+3/10/2026 00:00:03  FAS2750-02       ALERT         license.term.enforcement: Data tiering has been stopped because of one of these issues: Your Tiering license has expired. You are managing more tiered data than allowed by your license. Connectivity has been lost between the cluster and BlueXP Connector.Verify cluster connectivity in the BlueXP Canvas or Tiering Clusters dashboard. For licensing, in BlueXP, go to All Governance > Digital Wallet > Data Services Licenses to view the status and update your Tiering license.
+3/10/2026 00:00:03  FAS2750-02       ERROR         license.check.warn.expired: The license for package "Anti_ransomware" expired on 11/14/2025 23:59:59.
+3/9/2026 11:29:21   FAS2750-02       ERROR         callhome.dsk.redun.fault: Call home for DISK REDUNDANCY FAILED
+3/8/2026 11:29:20   FAS2750-02       ERROR         callhome.dsk.redun.fault: Call home for DISK REDUNDANCY FAILED
+3/8/2026 00:15:05   FAS2750-02       ERROR         vifmgr.lif.subnetMisconfig: LIFs in subnet 192.168.0.0/24 of IPspace "Default" are configured on ports in multiple broadcast domains:  Data, mgmt
+3/7/2026 11:29:20   FAS2750-02       ERROR         callhome.dsk.redun.fault: Call home for DISK REDUNDANCY FAILED
+3/7/2026 00:00:03   FAS2750-02       ALERT         license.term.enforcement: WARNING: Your license has expired. Please contact NetApp to renew your license term as soon as possible.
+3/7/2026 00:00:03   FAS2750-02       ALERT         license.term.enforcement: Data tiering has been stopped because of one of these issues: Your Tiering license has expired. You are managing more tiered data than allowed by your license. Connectivity has been lost between the cluster and BlueXP Connector.Verify cluster connectivity in the BlueXP Canvas or Tiering Clusters dashboard. For licensing, in BlueXP, go to All Governance > Digital Wallet > Data Services Licenses to view the status and update your Tiering license.
+3/7/2026 00:00:03   FAS2750-02       ERROR         license.check.warn.expired: The license for package "Anti_ransomware" expired on 11/14/2025 23:59:59.
+3/6/2026 11:29:16   FAS2750-02       ERROR         callhome.dsk.redun.fault: Call home for DISK REDUNDANCY FAILED
+3/6/2026 00:00:03   FAS2750-02       ERROR         mgmtgwd.sign.cert.expired: A digital certificate with Fully Qualified Domain Name (FQDN) jjy_object, Serial Number 1872861FAE38A008, Certificate Authority 'jjy_ca' and Certificate Authority Serial Number 18728382D5293FE5 for Vserver jjy_object has expired.
+3/6/2026 00:00:03   FAS2750-02       ERROR         mgmtgwd.certificate.expired: A digital certificate with Fully Qualified Domain Name (FQDN) jjy, Serial Number 17DE9B0C71F4A38B, Certificate Authority 'jjy' and type server for Vserver svm01 has expired.
+3/6/2026 00:00:03   FAS2750-02       ERROR         mgmtgwd.certificate.expired: A digital certificate with Fully Qualified Domain Name (FQDN) lsw, Serial Number 18090198F30D44B1, Certificate Authority 'lsw' and type server for Vserver lsw_FAS2750 has expired.
+3/6/2026 00:00:03   FAS2750-02       ERROR         mgmtgwd.certificate.expired: A digital certificate with Fully Qualified Domain Name (FQDN) jjy_object, Serial Number 1872861FAE38A008, Certificate Authority 'jjy_ca' and type server for Vserver jjy_object has expired.
+3/6/2026 00:00:03   FAS2750-02       ERROR         mgmtgwd.certificate.expired: A digital certificate with Fully Qualified Domain Name (FQDN) jjy_dr, Serial Number 1801A590754012C2, Certificate Authority 'jjy_dr' and type server for Vserver jjy_dr has expired.
+3/6/2026 00:00:03   FAS2750-02       ERROR         mgmtgwd.certificate.expired: A digital certificate with Fully Qualified Domain Name (FQDN) iskwon_svm_ca, Serial Number 181D3FCADC892448, Certificate Authority 'iskwon_svm_ca' and type server-ca for Vserver iskwon_svm has expired.
+3/6/2026 00:00:03   FAS2750-02       ERROR         mgmtgwd.certificate.expired: A digital certificate with Fully Qualified Domain Name (FQDN) iskwon_svm_ca, Serial Number 181D3FCADC892448, Certificate Authority 'iskwon_svm_ca' and type client-ca for Vserver iskwon_svm has expired.
+3/6/2026 00:00:03   FAS2750-02       ERROR         mgmtgwd.certificate.expired: A digital certificate with Fully Qualified Domain Name (FQDN) iskwon_svm_ca, Serial Number 181D3FCADC892448, Certificate Authority 'iskwon_svm_ca' and type root-ca for Vserver iskwon_svm has expired.
+3/6/2026 00:00:03   FAS2750-02       ERROR         mgmtgwd.certificate.expired: A digital certificate with Fully Qualified Domain Name (FQDN) iskwon_svm, Serial Number 17DE9356A470411D, Certificate Authority 'iskwon_svm' and type server for Vserver iskwon_svm has expired.
+3/6/2026 00:00:03   FAS2750-02       ERROR         mgmtgwd.certificate.expired: A digital certificate with Fully Qualified Domain Name (FQDN) hs_svm, Serial Number 17E29A835F8839F0, Certificate Authority 'hs_svm' and type server for Vserver hs_svm has expired.
+3/6/2026 00:00:03   FAS2750-02       ERROR         mgmtgwd.certificate.expired: A digital certificate with Fully Qualified Domain Name (FQDN) admin, Serial Number 5F3CB8A3F864B328, Certificate Authority 'admin' and type client-ca for Vserver FAS2750 has expired.
+3/6/2026 00:00:03   FAS2750-02       ERROR         mgmtgwd.certificate.expired: A digital certificate with Fully Qualified Domain Name (FQDN) admin, Serial Number 17ED9E80D41B9EE7, Certificate Authority 'admin' and type server for Vserver FAS2750 has expired.
+3/6/2026 00:00:03   FAS2750-02       ERROR         mgmtgwd.certificate.expired: A digital certificate with Fully Qualified Domain Name (FQDN) admin, Serial Number 0B249471084A285C, Certificate Authority 'admin' and type client-ca for Vserver FAS2750 has expired.
+3/6/2026 00:00:03   FAS2750-02       ERROR         mgmtgwd.certificate.expired: A digital certificate with Fully Qualified Domain Name (FQDN) admin, Serial Number 05BCA2D4DCBC69F6, Certificate Authority 'admin' and type client-ca for Vserver FAS2750 has expired.
+3/6/2026 00:00:03   FAS2750-02       ERROR         mgmtgwd.certificate.expired: A digital certificate with Fully Qualified Domain Name (FQDN) BOBT, Serial Number 179B6DA6C6C81785, Certificate Authority 'BOBT' and type server-ca for Vserver FAS2750 has expired.
+3/6/2026 00:00:03   FAS2750-02       ERROR         mgmtgwd.certificate.expired: A digital certificate with Fully Qualified Domain Name (FQDN) BOBT, Serial Number 179B6DA6C6C81785, Certificate Authority 'BOBT' and type client-ca for Vserver FAS2750 has expired.
+3/6/2026 00:00:03   FAS2750-02       ERROR         mgmtgwd.certificate.expired: A digital certificate with Fully Qualified Domain Name (FQDN) BOBT, Serial Number 179B6DA6C6C81785, Certificate Authority 'BOBT' and type root-ca for Vserver FAS2750 has expired.
+3/6/2026 00:00:03   FAS2750-02       ERROR         mgmtgwd.certificate.expired: A digital certificate with Fully Qualified Domain Name (FQDN) 192.168.0.96, Serial Number 704CD258FEF697DB, Certificate Authority '192.168.0.96' and type server-ca for Vserver FAS2750 has expired.
+3/6/2026 00:00:03   FAS2750-02       ERROR         mgmtgwd.certificate.expired: A digital certificate with Fully Qualified Domain Name (FQDN) 192.168.0.59, Serial Number 35C066D00B039023, Certificate Authority '192.168.0.59' and type server-ca for Vserver FAS2750 has expired.
+3/6/2026 00:00:03   FAS2750-02       ERROR         mgmtgwd.certificate.expired: A digital certificate with Fully Qualified Domain Name (FQDN) 192.168.0.5, Serial Number 6AF94D9313FE408C, Certificate Authority '192.168.0.5' and type server-ca for Vserver FAS2750 has expired.
+3/6/2026 00:00:03   FAS2750-02       ERROR         mgmtgwd.certificate.expired: A digital certificate with Fully Qualified Domain Name (FQDN) 192.168.0.2, Serial Number 1E5785D5F372AD08, Certificate Authority '192.168.0.2' and type server-ca for Vserver FAS2750 has expired.
+3/6/2026 00:00:03   FAS2750-02       ERROR         mgmtgwd.certificate.expired: A digital certificate with Fully Qualified Domain Name (FQDN) 192.168.0.164, Serial Number 7EEC3637E32140A3, Certificate Authority 'localhost' and type server-ca for Vserver FAS2750 has expired.
+3/6/2026 00:00:03   FAS2750-02       ERROR         mgmtgwd.certificate.expired: A digital certificate with Fully Qualified Domain Name (FQDN) 192.168.0.104, Serial Number 038F6DC8D85AB6BD, Certificate Authority '192.168.0.104' and type server-ca for Vserver FAS2750 has expired.
+3/5/2026 20:55:10   FAS2750-02       ERROR         xinetd.hit.cps.limit: Number of incoming network connections exceeded the configured limit of 10 connections per second for the service ssh. This service will be stopped and restarted after 60 seconds.
+3/5/2026 11:29:13   FAS2750-02       ERROR         callhome.dsk.redun.fault: Call home for DISK REDUNDANCY FAILED
+3/5/2026 00:00:03   FAS2750-02       ERROR         mgmtgwd.sign.cert.expired: A digital certificate with Fully Qualified Domain Name (FQDN) jjy_object, Serial Number 1872861FAE38A008, Certificate Authority 'jjy_ca' and Certificate Authority Serial Number 18728382D5293FE5 for Vserver jjy_object has expired.
+3/5/2026 00:00:03   FAS2750-02       ERROR         mgmtgwd.certificate.expired: A digital certificate with Fully Qualified Domain Name (FQDN) jjy, Serial Number 17DE9B0C71F4A38B, Certificate Authority 'jjy' and type server for Vserver svm01 has expired.
+3/5/2026 00:00:03   FAS2750-02       ERROR         mgmtgwd.certificate.expired: A digital certificate with Fully Qualified Domain Name (FQDN) lsw, Serial Number 18090198F30D44B1, Certificate Authority 'lsw' and type server for Vserver lsw_FAS2750 has expired.
+3/5/2026 00:00:03   FAS2750-02       ERROR         mgmtgwd.certificate.expired: A digital certificate with Fully Qualified Domain Name (FQDN) jjy_object, Serial Number 1872861FAE38A008, Certificate Authority 'jjy_ca' and type server for Vserver jjy_object has expired.
+3/5/2026 00:00:03   FAS2750-02       ERROR         mgmtgwd.certificate.expired: A digital certificate with Fully Qualified Domain Name (FQDN) jjy_dr, Serial Number 1801A590754012C2, Certificate Authority 'jjy_dr' and type server for Vserver jjy_dr has expired.
+3/5/2026 00:00:03   FAS2750-02       ERROR         mgmtgwd.certificate.expired: A digital certificate with Fully Qualified Domain Name (FQDN) iskwon_svm_ca, Serial Number 181D3FCADC892448, Certificate Authority 'iskwon_svm_ca' and type server-ca for Vserver iskwon_svm has expired.
+3/5/2026 00:00:03   FAS2750-02       ERROR         mgmtgwd.certificate.expired: A digital certificate with Fully Qualified Domain Name (FQDN) iskwon_svm_ca, Serial Number 181D3FCADC892448, Certificate Authority 'iskwon_svm_ca' and type client-ca for Vserver iskwon_svm has expired.
+3/5/2026 00:00:03   FAS2750-02       ERROR         mgmtgwd.certificate.expired: A digital certificate with Fully Qualified Domain Name (FQDN) iskwon_svm_ca, Serial Number 181D3FCADC892448, Certificate Authority 'iskwon_svm_ca' and type root-ca for Vserver iskwon_svm has expired.
+3/5/2026 00:00:03   FAS2750-02       ERROR         mgmtgwd.certificate.expired: A digital certificate with Fully Qualified Domain Name (FQDN) iskwon_svm, Serial Number 17DE9356A470411D, Certificate Authority 'iskwon_svm' and type server for Vserver iskwon_svm has expired.
+3/5/2026 00:00:03   FAS2750-02       ERROR         mgmtgwd.certificate.expired: A digital certificate with Fully Qualified Domain Name (FQDN) hs_svm, Serial Number 17E29A835F8839F0, Certificate Authority 'hs_svm' and type server for Vserver hs_svm has expired.
+3/5/2026 00:00:03   FAS2750-02       ERROR         mgmtgwd.certificate.expired: A digital certificate with Fully Qualified Domain Name (FQDN) admin, Serial Number 5F3CB8A3F864B328, Certificate Authority 'admin' and type client-ca for Vserver FAS2750 has expired.
+3/5/2026 00:00:03   FAS2750-02       ERROR         mgmtgwd.certificate.expired: A digital certificate with Fully Qualified Domain Name (FQDN) admin, Serial Number 17ED9E80D41B9EE7, Certificate Authority 'admin' and type server for Vserver FAS2750 has expired.
+3/5/2026 00:00:03   FAS2750-02       ERROR         mgmtgwd.certificate.expired: A digital certificate with Fully Qualified Domain Name (FQDN) admin, Serial Number 0B249471084A285C, Certificate Authority 'admin' and type client-ca for Vserver FAS2750 has expired.
+3/5/2026 00:00:03   FAS2750-02       ERROR         mgmtgwd.certificate.expired: A digital certificate with Fully Qualified Domain Name (FQDN) admin, Serial Number 05BCA2D4DCBC69F6, Certificate Authority 'admin' and type client-ca for Vserver FAS2750 has expired.
+3/5/2026 00:00:03   FAS2750-02       ERROR         mgmtgwd.certificate.expired: A digital certificate with Fully Qualified Domain Name (FQDN) BOBT, Serial Number 179B6DA6C6C81785, Certificate Authority 'BOBT' and type server-ca for Vserver FAS2750 has expired.
+3/5/2026 00:00:03   FAS2750-02       ERROR         mgmtgwd.certificate.expired: A digital certificate with Fully Qualified Domain Name (FQDN) BOBT, Serial Number 179B6DA6C6C81785, Certificate Authority 'BOBT' and type client-ca for Vserver FAS2750 has expired.
+3/5/2026 00:00:03   FAS2750-02       ERROR         mgmtgwd.certificate.expired: A digital certificate with Fully Qualified Domain Name (FQDN) BOBT, Serial Number 179B6DA6C6C81785, Certificate Authority 'BOBT' and type root-ca for Vserver FAS2750 has expired.
+3/5/2026 00:00:03   FAS2750-02       ERROR         mgmtgwd.certificate.expired: A digital certificate with Fully Qualified Domain Name (FQDN) 192.168.0.96, Serial Number 704CD258FEF697DB, Certificate Authority '192.168.0.96' and type server-ca for Vserver FAS2750 has expired.
+3/5/2026 00:00:03   FAS2750-02       ERROR         mgmtgwd.certificate.expired: A digital certificate with Fully Qualified Domain Name (FQDN) 192.168.0.59, Serial Number 35C066D00B039023, Certificate Authority '192.168.0.59' and type server-ca for Vserver FAS2750 has expired.
+3/5/2026 00:00:03   FAS2750-02       ERROR         mgmtgwd.certificate.expired: A digital certificate with Fully Qualified Domain Name (FQDN) 192.168.0.5, Serial Number 6AF94D9313FE408C, Certificate Authority '192.168.0.5' and type server-ca for Vserver FAS2750 has expired.
+3/5/2026 00:00:03   FAS2750-02       ERROR         mgmtgwd.certificate.expired: A digital certificate with Fully Qualified Domain Name (FQDN) 192.168.0.2, Serial Number 1E5785D5F372AD08, Certificate Authority '192.168.0.2' and type server-ca for Vserver FAS2750 has expired.
+3/5/2026 00:00:03   FAS2750-02       ERROR         mgmtgwd.certificate.expired: A digital certificate with Fully Qualified Domain Name (FQDN) 192.168.0.164, Serial Number 7EEC3637E32140A3, Certificate Authority 'localhost' and type server-ca for Vserver FAS2750 has expired.
+3/5/2026 00:00:03   FAS2750-02       ERROR         mgmtgwd.certificate.expired: A digital certificate with Fully Qualified Domain Name (FQDN) 192.168.0.104, Serial Number 038F6DC8D85AB6BD, Certificate Authority '192.168.0.104' and type server-ca for Vserver FAS2750 has expired.
+3/4/2026 16:16:29   FAS2750-02       ERROR         vifmgr.lif.subnetMisconfig: LIFs in subnet 192.168.0.0/24 of IPspace "Default" are configured on ports in multiple broadcast domains:  Data, mgmt
+3/4/2026 15:55:27   FAS2750-02       ERROR         fp.est.scan.start.failed: Volume footprint estimator scan fails to start on "lsw_cifs" - Aggregate is Migrating.
+3/4/2026 15:55:00   FAS2750-02       ERROR         smc.snapmir.update.fail: Snapmirror update from source volume 'jjy:source_vol' to destination volume 'jjy_dr:target_vol' failed with error 'Destination jjy_dr:target_vol must be a data-protection volume.'. Relationship UUID '3ecf9d39-70f0-11f0-81b2-d039ea285b84'.
+3/4/2026 15:54:24   FAS2750-02       ALERT         sfo.giveback.failed: Giveback of aggregate n1_DATA failed due to Giveback was vetoed..
+3/4/2026 15:54:24   FAS2750-02       ALERT         sfo.sendhome.subsystemAbort: The giveback operation of 'n1_DATA' was aborted by 'lock_manager'.
+3/4/2026 15:54:24   FAS2750-02       ERROR         gb.sfo.veto.lmgr.nonCA.locks: Could not complete giveback because of non-CA locks on volume lsw_cifs@vserver:3e1a14aa-a584-11ef-b24b-d039ea28614e SFO aggregate n1_DATA.
+3/4/2026 15:53:01   FAS2750-02       ERROR         sms.resync.attempt.failed: Resynchronize operation between source volume "hs_svm:vol2" and destination volume "hs_svm_dr:vol2_sync" with relationship UUID "add47706-b0b3-11f0-b4cd-d039ea28614e" has failed. The next auto-resync will be attempted after "15" mins.
+3/4/2026 15:51:25   FAS2750-02       ERROR         vifmgr.reach.multireach: Network port e0d on node FAS2750-02 can reach the following broadcast domains: Default:mgmt,Default:Data.
+3/4/2026 15:51:25   FAS2750-02       ERROR         vifmgr.reach.multireach: Network port e0M on node FAS2750-02 can reach the following broadcast domains: Default:mgmt,Default:Data.
+3/4/2026 15:50:47   FAS2750-02       ALERT         clus.net.noNeighbors: The cluster ports with "link" reported as "up" are neither receiving CDP nor LLDP neighbor announcements.
+3/4/2026 15:50:41   FAS2750-02       ERROR         cf.fsm.takeoverOfPartnerDisabled: Failover monitor: takeover of FAS2750-01 disabled (unsynchronized log).
+3/4/2026 15:50:38   FAS2750-02       ERROR         cf.fsm.takeoverOfPartnerDisabled: Failover monitor: takeover of FAS2750-01 disabled (partner booting).
+3/4/2026 15:50:36   FAS2750-02       ERROR         cf.fsm.takeoverByPartnerDisabled: Failover monitor: Takeover of FAS2750-02 by FAS2750-01 disabled. Reason: unsynchronized log.
+264 entries were displayed.
+
+FAS2750::> dqp show
+  (storage dqp show)
+Node             Package Date     Version
+---------------- ---------------- ---------
+FAS2750-01       20250304         3.18
+FAS2750-02       20250304         3.18
+2 entries were displayed.
+
+FAS2750::> version
+NetApp Release 9.17.1P2: Fri Nov 07 09:39:01 UTC 2025
+
+FAS2750::> snmp
+enabled:
+        on
+contact:
+
+location:
+
+authtrap:
+        0
+init:
+        1
+traphosts:
+        -
+community:
+        ro  test
+
+FAS2750::> timezone 
+    Timezone: Asia/Seoul
+
+FAS2750::> ntp status show
+
+Error: "status" is not a recognized command
+
+FAS2750::> set d
+
+Warning: These diagnostic commands are for use by NetApp personnel only.
+Do you want to continue? {y|n}: y
+
+FAS2750::*> ntp status show
+  (cluster time-service ntp status show)
+
+Node: FAS2750-01
+Server                  Reachable  Selection State                Offset (ms)
+----------------------- ---------  ------------------------------ ------------
+192.168.0.124               false  Server Not Responding or Too           0.00
+                                   Distant
+
+Node: FAS2750-02
+Server                  Reachable  Selection State                Offset (ms)
+----------------------- ---------  ------------------------------ ------------
+192.168.0.124               false  Server Not Responding or Too           0.00
+                                   Distant
+2 entries were displayed.
+
+FAS2750::*> memerr
+Correctable ECC Memory Errors:
+
+Node: FAS2750-01
+
+DIMM      CECC  Multiple Err
+Name     Count  Same Address
+------- ------  ------------
+DIMM-1       0  false
+DIMM-2       0  false
+Node: FAS2750-02
+
+DIMM      CECC  Multiple Err
+Name     Count  Same Address
+------- ------  ------------
+DIMM-1       0  false
+DIMM-2       0  false
+4 entries were displayed.
+
+FAS2750::*> dimm show
+  (system controller memory dimm show)
+              DIMM     UECC  CECC  Alert    CPU           Slot          Failure
+Node          Name    Count Count Method Socket Channel Number Status    Reason
+------------- ------- ----- ----- ------ ------ ------- ------ ------- --------
+FAS2750-01
+              DIMM-1      0     0 bucket      0       0      0 ok          none
+              DIMM-2      0     0 bucket      0       1      0 ok          none
+FAS2750-02
+              DIMM-1      0     0 bucket      0       0      0 ok          none
+              DIMM-2      0     0 bucket      0       1      0 ok          none
+4 entries were displayed.
+
+FAS2750::*> vol show
+Vserver   Volume       Aggregate    State      Type       Size  Available Used%
+--------- ------------ ------------ ---------- ---- ---------- ---------- -----
+FAS2750   MDV_aud_8246749f0605453cb59d6663c1ce4926 n1_DATA online RW 5GB 4.75GB  0%
+FAS2750-01 vol0        OS_n1        online     RW      161.3GB    91.87GB   40%
+FAS2750-02 vol0        OS_n2        online     RW      151.3GB    86.43GB   39%
+JH        JH_root      n1_DATA      online     RW          1GB    971.0MB    0%
+JH        quota        n1_DATA      online     RW         20MB    18.55MB    2%
+JH        test         n1_DATA      online     RW          4GB     3.79GB    0%
+JH_dr     JH_dr_root   n1_DATA      online     RW          1GB    971.2MB    0%
+JH_s3     JH_s3_root   n1_DATA      online     RW          1GB    971.0MB    0%
+TD_test   TD_test_root n1_DATA      online     RW          1GB    971.0MB    0%
+ehk       ehk_dr_root  n1_DATA      online     RW          1GB    971.5MB    0%
+ehk       fg_oss_1766733384 -       online     RW      105.3GB    99.75GB    0%
+ehk       fg_oss_1766733384__0001 n1_DATA online RW    105.3GB    99.75GB    0%
+ehk       nfs01        n1_DATA      online     RW         40GB    37.93GB    0%
+ehk       one          n1_DATA      online     RW          5GB     4.74GB    0%
+ehk       trident_pvc_8632b639_6e83_42bd_acb7_5a460bd65ef9 n1_DATA online RW 1.10GB 1.07GB  3%
+ehk       wintest      n1_DATA      online     RW         40GB    37.99GB    0%
+ehk_dp    ehk_dp_root  n1_DATA      online     RW          1GB    970.9MB    0%
+ehk_dp    nfs_dp       n1_DATA      online     DP         40GB    39.93GB    0%
+ehk_dp    three        n1_DATA      online     DP          3GB     2.98GB    0%
+ehk_dp    win_dp       n1_DATA      online     DP         40GB    40.00GB    0%
+fcsdf     fcsdf_root   n1_DATA      online     RW          1GB    971.5MB    0%
+gtlee_svm gtlee_svm_root n1_DATA    online     RW          1GB    970.7MB    0%
+hs_svm    dbvol01      n1_DATA      online     RW      11.81GB     1.87GB   84%
+hs_svm    fg1          -            online     RW         10GB     8.99GB    5%
+hs_svm    fg1__0001    n1_DATA      online     RW       1.25GB     1.12GB    5%
+hs_svm    fg1__0002    n1_DATA      online     RW       1.25GB     1.12GB    5%
+hs_svm    fg1__0003    n1_DATA      online     RW       1.25GB     1.12GB    5%
+hs_svm    fg1__0004    n1_DATA      online     RW       1.25GB     1.12GB    5%
+hs_svm    fg1__0005    n1_DATA      online     RW       1.25GB     1.12GB    5%
+hs_svm    fg1__0006    n1_DATA      online     RW       1.25GB     1.12GB    5%
+hs_svm    fg1__0007    n1_DATA      online     RW       1.25GB     1.12GB    5%
+hs_svm    fg1__0008    n1_DATA      online     RW       1.25GB     1.12GB    5%
+hs_svm    fgvol1_dr    -            online     RW         50GB    28.13GB   40%
+hs_svm    fgvol1_dr__0001 n1_DATA   online     RW      12.50GB     6.88GB   42%
+hs_svm    fgvol1_dr__0002 n1_DATA   online     RW      12.50GB     7.00GB   41%
+hs_svm    fgvol1_dr__0003 n1_DATA   online     RW      12.50GB     6.75GB   43%
+hs_svm    fgvol1_dr__0004 n1_DATA   online     RW      12.50GB     7.49GB   36%
+hs_svm    hs_svm_root  n1_DATA      online     RW          1GB    971.8MB    0%
+hs_svm    lunvol1      n1_DATA      online     RW         10GB     3.47GB   63%
+hs_svm    lunvol1_clone_25 n1_DATA  online     RW         10GB     3.47GB   63%
+hs_svm    lunvol1_clone_450 n1_DATA online     RW         10GB     3.47GB   63%
+hs_svm    lunvol1_clone_677 n1_DATA online     RW         10GB     3.47GB   63%
+hs_svm    lunvol1_clone_770 n1_DATA online     RW         10GB     3.47GB   63%
+hs_svm    testvol1     n1_DATA      online     RW        125GB    76.98GB   35%
+hs_svm    testvol1_dr  n1_DATA      online     DP      46.46GB     4.20GB   90%
+hs_svm    vol1         n1_DATA      online     RW         50GB    47.48GB    0%
+hs_svm    vol2         n1_DATA      online     RW          5GB     3.30GB   30%
+hs_svm    vol_ex       n1_DATA      online     RW      105.3MB    99.74MB    0%
+hs_svm    vol_test1    n1_DATA      online     RW      21.05GB    20.00GB    0%
+hs_svm    volx         n1_DATA      online     RW          5GB     4.71GB    0%
+hs_svm    xcp_catalog  n1_DATA      online     RW         50GB    47.43GB    0%
+hs_svm_dr hs_svm_dr_root n1_DATA    online     RW          1GB    970.7MB    0%
+hs_svm_dr vol1_dr      n1_DATA      online     DP         20MB     4.64MB   76%
+hs_svm_dr vol2_sync    n1_DATA      online     DP       1.74GB    289.8MB   83%
+iskwon_svm bucket2     -            online     RW        400GB    398.7GB    0%
+iskwon_svm bucket2__0001 n1_DATA    online     RW        100GB    99.49GB    0%
+iskwon_svm bucket2__0002 n1_DATA    online     RW        100GB    99.75GB    0%
+iskwon_svm bucket2__0003 n1_DATA    online     RW        100GB    99.75GB    0%
+iskwon_svm bucket2__0004 n1_DATA    online     RW        100GB    99.75GB    0%
+iskwon_svm catalog     n1_DATA      online     RW        110TB     1.89TB    0%
+iskwon_svm catalog_dp  n1_DATA      online     DP      128.0MB    127.0MB    0%
+iskwon_svm cinder_clone n1_DATA     online     RW        500GB    499.8GB    0%
+iskwon_svm cinder_vol  n1_DATA      online     RW        500GB    499.8GB    0%
+iskwon_svm fg_oss_1732508446 -      online     RW       6.74TB     1.89TB    0%
+iskwon_svm fg_oss_1732508446__0001 n1_DATA online RW    1.68TB     1.60TB    0%
+iskwon_svm fg_oss_1732508446__0002 n1_DATA online RW    1.68TB     1.60TB    0%
+iskwon_svm fg_oss_1732508446__0003 n1_DATA online RW    1.68TB     1.60TB    0%
+iskwon_svm fg_oss_1732508446__0004 n1_DATA online RW    1.68TB     1.60TB    0%
+iskwon_svm fg_oss_1758271224 -      online     RW      842.1GB    799.5GB    0%
+iskwon_svm fg_oss_1758271224__0001 n1_DATA online RW   421.1GB    399.7GB    0%
+iskwon_svm fg_oss_1758271224__0002 n1_DATA online RW   421.1GB    399.7GB    0%
+iskwon_svm iscsi_vol   n1_DATA      online     RW       1.10GB     1.08GB    2%
+iskwon_svm iskwon_svm_root n1_DATA  online     RW          1GB    970.9MB    0%
+iskwon_svm lun_test    n1_DATA      online     RW       1.05GB    44.16MB   95%
+iskwon_svm lun_test1   n1_DATA      online     RW       1.10TB     1.10TB    0%
+iskwon_svm quota       n1_DATA      online     RW         10TB     1.89TB    0%
+iskwon_svm share_a4402fab_82d1_4873_be35_ad38854d5b83 n1_DATA online RW 100GB 95.00GB  0%
+iskwon_svm share_d01625a2_da45_4469_be95_dcae7fc3d81a n1_DATA online RW 100GB 95.00GB  0%
+jjy       NFS          n1_DATA      online     DP        100GB    95.00GB    0%
+jjy       cifs_vol     n1_DATA      online     RW        100GB    95.00GB    0%
+jjy       jjy_root     n1_DATA      online     RW          1GB    972.4MB    0%
+jjy       jjy_vol      n1_DATA      online     RW        300GB    290.0GB    3%
+jjy       nfs_vol      n1_DATA      online     RW        100GB    93.25GB    1%
+jjy       nfs_vol2     n1_DATA      online     RW        100GB    93.25GB    1%
+jjy       source_vol   n1_DATA      online     DP        100GB    81.54GB   14%
+jjy       thintick     n1_DATA      online     RW        100GB    95.00GB    0%
+jjy       thintick2    n1_DATA      online     RW        200GB    190.0GB    0%
+jjy_cinder cinder_iscsi n1_DATA     online     RW        100GB    54.82GB   45%
+jjy_cinder cinder_nfs  n1_DATA      online     RW        100GB    99.93GB    0%
+jjy_cinder jjy_cinder_root n1_DATA  online     RW          1GB    971.6MB    0%
+jjy_dr    NFS2         n1_DATA      online     RW        100GB   100.00GB    0%
+jjy_dr    cifs_ad      n1_DATA      online     RW        101GB    95.95GB    0%
+jjy_dr    jjy_dr_root  n1_DATA      online     RW          1GB    972.3MB    0%
+jjy_dr    jjy_vol_dr   n1_DATA      online     RW        200GB    200.0GB    0%
+jjy_dr    target_vol   n1_DATA      online     RW        100GB    86.47GB   13%
+jjy_glance jjy_glance_root n1_DATA  online     RW          1GB    971.3MB    0%
+jjy_manila jjy_manila_root n1_DATA  online     RW          1GB    971.3MB    0%
+jjy_manila share_0d31ee70_1bb4_479a_a1dc_911f62998a62 n1_DATA online RW 10GB 9.50GB  0%
+jjy_manila share_10f4885c_b028_4ae6_a2fd_ae625a77f35b n1_DATA online RW 10GB 9.50GB  0%
+jjy_manila share_446a9c72_b47c_42c7_9d92_d04b1b20c318 n1_DATA online RW 10GB 9.50GB  0%
+jjy_manila share_c7e507ee_0135_466f_a767_d1e3b09ce8ea n1_DATA online RW 10GB 9.50GB  0%
+jjy_manila share_fbd2d183_7c02_4f6f_8d49_efcd16c1d5b5 n1_DATA online RW 100GB 94.99GB  0%
+jjy_object fg_oss_1761732350 -      online     RW      105.3GB    99.75GB    0%
+jjy_object fg_oss_1761732350__0001 n1_DATA online RW   105.3GB    99.75GB    0%
+jjy_object jjy_object_root n1_DATA  online     RW          1GB    971.5MB    0%
+jjy_swift jjy_swift_root n1_DATA    online     RW          1GB    971.3MB    0%
+lsw_FAS2750 lsw_catalog n1_DATA     online     RW         10GB     9.50GB    0%
+lsw_FAS2750 lsw_cifs   n1_DATA      online     RW         13GB    13.61MB   99%
+lsw_FAS2750 lsw_netapp n1_DATA      online     RW        105GB     4.57GB   95%
+lsw_FAS2750 lsw_nfs    n1_DATA      online     RW         10GB     9.00GB    0%
+lsw_FAS2750 lsw_root   n1_DATA      online     RW          1GB    972.2MB    0%
+lsw_FAS2750 lsw_test   n1_DATA      online     RW       1.10TB     1.04TB    0%
+lsw_FAS2750 lsw_win    n1_DATA      online     RW        100GB    94.99GB    0%
+lsw_FAS2750 lsw_xen    n1_DATA      online     RW         50GB    47.49GB    0%
+lsw_FAS2750 lsw_xen_iso n1_DATA     online     RW         50GB    43.29GB    8%
+pmh       data         n1_DATA      online     RW         10GB     9.97GB    0%
+pmh       data_dr      n1_DATA      online     RW         10GB     9.99GB    0%
+pmh       data_restore n1_DATA      online     RW         10GB    10.00GB    0%
+pmh       fg_oss_1757659851 -       online     RW       1000GB    946.5GB    0%
+pmh       fg_oss_1757659851__0001 n1_DATA online RW     1000GB    946.5GB    0%
+pmh       pmh_root     n1_DATA      online     RW          1GB    970.9MB    0%
+pmh       sm_sync      n1_DATA      online     DP         15GB    15.00GB    0%
+pmh       xcp          n1_DATA      online     RW        100MB    74.93MB   25%
+svm01     catalog      n1_DATA      online     RW        100GB    99.99GB    0%
+svm01     jjy_root     n1_DATA      online     RW          1GB    970.6MB    0%
+svm01     source_vol   n1_DATA      online     RW        100GB    94.99GB    0%
+svm01     target_cifs  n1_DATA      online     RW        100GB    62.88GB   37%
+svm01     target_nfs   n1_DATA      online     RW        100GB    62.88GB   37%
+svm01     target_nfs2  n1_DATA      online     RW        100GB   100.00GB    0%
+test      test_root    n1_DATA      online     RW          1GB    972.0MB    0%
+tmp       tmp_root     n1_DATA      online     RW          1GB    970.8MB    0%
+trident   trident_pvc_aaca1db1_2439_40a3_a9de_399848e3d5f7 n1_DATA online RW 1GB 1023MB  0%
+trident   trident_root n1_DATA      online     RW          1GB    971.4MB    0%
+veritas   veritas_root n1_DATA      online     RW          1GB    971.6MB    0%
+vmdata    ESXi_VM      n1_DATA      online     RW       2.69TB     1.41TB   44%
+vmdata    XEN_VM       n1_DATA      online     RW       1.49TB     1.36TB    3%
+vmdata    iso          n1_DATA      online     RW      100.0GB    88.01GB   12%
+vmdata    iso_cifs     n1_DATA      online     RW        200GB    166.2GB   16%
+vmdata    vs01_root    n1_DATA      online     RW          1GB     1023MB    0%
+139 entries were displayed.
+
+FAS2750::*> aggr show
+                                                                      
+
+Aggregate     Size Available Used% State   #Vols  Nodes            RAID Status
+--------- -------- --------- ----- ------- ------ ---------------- ------------
+OS_n1      239.8GB   77.61GB   68% online       1 FAS2750-01       raid_dp,
+                                                                   normal
+OS_n2      159.9GB    7.75GB   95% online       1 FAS2750-02       raid_dp,
+                                                                   normal
+n1_DATA     4.78TB    1.89TB   60% online     129 FAS2750-01       raid_dp,
+                                                                   normal
+3 entries were displayed.
+
+FAS2750::*> aggr status -          show -fields maxraidsize ,disc k
+    diskcount disklist  
+
+FAS2750::*> aggr show -fields maxraidsize ,disk
+Error: Ambiguous argument.  Possible matches include:
+    Fields:
+       diskcount
+       disklist
+
+FAS2750::*> aggr show -fields maxraidsize ,diskcount 
+aggregate diskcount maxraidsize 
+--------- --------- ----------- 
+OS_n1     5         16          
+OS_n2     4         16          
+n1_DATA   14        16          
+3 entries were displayed.
+
+FAS2750::*> storage failover show
+                              Takeover                                       
+                                 by                                          
+Node           Partner        Possible State Description                     
+-------------- -------------- -------- --------------------------------------
+FAS2750-01     FAS2750-02     true     Connected to FAS2750-02
+FAS2750-02     FAS2750-01     true     Connected to FAS2750-01
+2 entries were displayed.
+
+FAS2750::*> dsk op      disk option show
+Node           BKg. FW. Upd.  Auto Copy     Auto Assign    Auto Assign Policy
+-------------  -------------  ------------  -------------  ------------------
+FAS2750-01     off            on            off            default
+FAS2750-02     off            on            off            default
+2 entries were displayed.
+
+FAS2750::*> disk    storage failover show -fiels 
+
+Error: invalid argument "-fiels"
+FAS2750::*> storage failover show -fiels       fields a
+    auto-giveback                 attempts
+    attempts-time                 auto-giveback-after-panic
+    auto-giveback-last-veto-check aggregate-migration-timeout
+
+FAS2750::*> storage failover show -fields auto-giveback
+    auto-giveback                 auto-giveback-after-panic
+    auto-giveback-last-veto-check 
+FAS2750::*> storage failover show -fields auto-giveback
+node       auto-giveback 
+---------- ------------- 
+FAS2750-01 true          
+FAS2750-02 true          
+2 entries were displayed.
+
+FAS2750::*> autosupport show
+Node                  State     From          To            Mail Hosts
+--------------------- --------- ------------- ------------- ----------
+FAS2750-01            disable   FAS2750@bobt.co.kr support@bobt.co.kr 192.168.0.102:25
+FAS2750-02            disable   FAS2750@bobt.co.kr support@bobt.co.kr 192.168.0.102:25
+2 entries were displayed.
+
+FAS2750::*> route show
+Vserver             Destination     Gateway         Metric
+------------------- --------------- --------------- ------
+FAS2750
+                    0.0.0.0/0       192.168.0.1     20
+hs_svm
+                    0.0.0.0/0       192.168.0.1     20
+jjy_dr
+                    0.0.0.0/0       192.168.0.1     20
+lsw_FAS2750
+                    0.0.0.0/0       192.168.0.1     20
+                    10.0.0.0/16     192.168.0.123   20
+                    192.168.1.0/24  192.168.0.123   20
+vmdata
+                    10.10.10.0/24   10.10.10.241    20
+7 entries were displayed.
+
+FAS2750::*> snapmirror show
+                                                                       Progress
+Source            Destination Mirror  Relationship   Total             Last
+Path        Type  Path        State   Status         Progress  Healthy Updated
+----------- ---- ------------ ------- -------------- --------- ------- --------
+ehk:nfs01   XDP  ehk_dp:nfs_dp Snapmirrored Idle     -         true    -
+ehk:one     XDP  ehk_dp:three Snapmirrored Idle      -         true    -
+ehk:wintest XDP  ehk_dp:win_dp Snapmirrored Idle     -         true    -
+hs_svm:testvol1 XDP hs_svm:testvol1_dr Snapmirrored Idle -     true    -
+hs_svm:vol1 XDP  hs_svm_dr:vol1_dr Snapmirrored Idle -         true    -
+hs_svm:vol2 XDP  hs_svm_dr:vol2_sync Snapmirrored InSync -     true    -
+iskwon_svm:catalog XDP iskwon_svm:catalog_dp Snapmirrored Idle - true  -
+jjy:source_vol XDP jjy_dr:target_vol Broken-off Idle -         false   -
+jjy_dr:NFS2 XDP  jjy:NFS      Snapmirrored Idle      -         true    -
+jjy_dr:target_vol XDP jjy:source_vol Snapmirrored Idle -       true    -
+pmh:data    XDP  pmh:sm_sync  Uninitialized Idle     -         true    -
+11 entries were displayed.
+
+FAS2750::*> cluster peer show
+This table is currently empty.
+
+FAS2750::*> vserver peer show
+            Peer        Peer                           Peering        Remote
+Vserver     Vserver     State        Peer Cluster      Applications   Vserver
+----------- ----------- ------------ ----------------- -------------- ---------
+ehk         ehk_dp      peered       FAS2750           snapmirror     ehk_dp
+ehk_dp      ehk         peered       FAS2750           snapmirror     ehk
+hs_svm      hs_svm_dr   peered       FAS2750           snapmirror     hs_svm_dr
+hs_svm_dr   hs_svm      peered       FAS2750           snapmirror     hs_svm
+jjy         jjy_dr      peered       FAS2750           snapmirror     jjy_dr
+jjy_dr      jjy         peered       FAS2750           snapmirror     jjy
+pmh         pmh-dest    peered       FAS2750           snapmirror     pmh-dest
+pmh-dest    pmh         peered       FAS2750           snapmirror     pmh
+8 entries were displayed.
+
+FAS2750::*> snapmirror list-destinations 
+                                                  Progress
+Source             Destination         Transfer   Last         Relationship
+Path         Type  Path         Status Progress   Updated      Id
+----------- ----- ------------ ------- --------- ------------ ---------------
+ehk:nfs01   XDP   ehk_dp:nfs_dp Idle   -         -            b8cc165d-d720-11f0-af15-d039ea28614e
+ehk:one     XDP   ehk_dp:three Idle    -         -            42b21299-7722-11f0-af50-d039ea28614e
+ehk:wintest XDP   ehk_dp:win_dp Idle   -         -            4d0c278c-d63b-11f0-9844-d039ea28614e
+hs_svm:testvol1 XDP hs_svm:testvol1_dr Idle -    -            78bd1da6-4b1f-11ef-b934-d039ea285b84
+hs_svm:vol1 XDP   hs_svm_dr:vol1_dr -  -         -            e8598e3b-b0b1-11f0-b4cd-d039ea28614e
+hs_svm:vol2 XDP   hs_svm_dr:vol2_sync InSync -   -            add47706-b0b3-11f0-b4cd-d039ea28614e
+iskwon_svm:catalog XDP iskwon_svm:catalog_dp - - -            54fe62b4-4bdc-11f0-bfd9-d039ea28614e
+jjy:NFS     XDP   jjy_dr:NFS2  -       -         -            75abf111-fdf0-11f0-b3d4-d039ea28614e
+jjy:source_vol XDP jjy_dr:target_vol - -         -            3ecf9d39-70f0-11f0-81b2-d039ea285b84
+jjy_dr:NFS2 XDP   jjy:NFS      -       -         -            da5bbb29-fdf0-11f0-b3d4-d039ea28614e
+jjy_dr:target_vol XDP jjy:source_vol - -         -            5b569e02-fcf7-11f0-b3d4-d039ea28614e
+pmh:data    XDP   pmh:sm_sync  -       -         -            b428c019-1094-11f1-a6d0-d039ea28614e
+12 entries were displayed.
+
+FAS2750::*> snapmirror show -h   0h
+
+Error: "show0h" is not a recognized command
+
+FAS2750::*> snapmirror show0h  -h
+
+Destination Source                Start       End
+Path        Path        Operation Time        Time        Result
+----------- ----------- --------- ----------- ----------- -------
+ehk_dp:nfs_dp ehk:nfs01 scheduled-update 3/16/2026 12:15:00 3/16/2026 12:15:03 success
+ehk_dp:nfs_dp ehk:nfs01 scheduled-update 3/16/2026 00:15:00 3/16/2026 00:15:02 success
+ehk_dp:three ehk:one    scheduled-update 3/16/2026 00:10:00 3/16/2026 00:10:20 success
+ehk_dp:win_dp ehk:wintest scheduled-update 3/16/2026 00:10:00 3/16/2026 00:10:03 success
+hs_svm:testvol1_dr hs_svm:testvol1 scheduled-update 3/16/2026 15:50:00 3/16/2026 15:50:02 success
+hs_svm:testvol1_dr hs_svm:testvol1 scheduled-update 3/16/2026 15:40:00 3/16/2026 15:40:02 success
+hs_svm:testvol1_dr hs_svm:testvol1 scheduled-update 3/16/2026 15:30:00 3/16/2026 15:30:02 success
+hs_svm:testvol1_dr hs_svm:testvol1 scheduled-update 3/16/2026 15:20:00 3/16/2026 15:20:03 success
+hs_svm:testvol1_dr hs_svm:testvol1 scheduled-update 3/16/2026 15:10:00 3/16/2026 15:11:02 success
+hs_svm:testvol1_dr hs_svm:testvol1 scheduled-update 3/16/2026 15:00:00 3/16/2026 15:00:02 success
+hs_svm:testvol1_dr hs_svm:testvol1 scheduled-update 3/16/2026 14:50:00 3/16/2026 14:50:02 success
+hs_svm:testvol1_dr hs_svm:testvol1 scheduled-update 3/16/2026 14:40:00 3/16/2026 14:40:02 success
+hs_svm:testvol1_dr hs_svm:testvol1 scheduled-update 3/16/2026 14:30:00 3/16/2026 14:30:02 success
+hs_svm:testvol1_dr hs_svm:testvol1 scheduled-update 3/16/2026 14:20:00 3/16/2026 14:20:02 success
+hs_svm:testvol1_dr hs_svm:testvol1 scheduled-update 3/16/2026 14:10:00 3/16/2026 14:11:02 success
+hs_svm:testvol1_dr hs_svm:testvol1 scheduled-update 3/16/2026 14:00:00 3/16/2026 14:00:02 success
+hs_svm:testvol1_dr hs_svm:testvol1 scheduled-update 3/16/2026 13:50:00 3/16/2026 13:50:02 success
+hs_svm:testvol1_dr hs_svm:testvol1 scheduled-update 3/16/2026 13:40:00 3/16/2026 13:40:02 success
+hs_svm:testvol1_dr hs_svm:testvol1 scheduled-update 3/16/2026 13:30:00 3/16/2026 13:30:02 success
+hs_svm:testvol1_dr hs_svm:testvol1 scheduled-update 3/16/2026 13:20:00 3/16/2026 13:20:02 success
+hs_svm:testvol1_dr hs_svm:testvol1 scheduled-update 3/16/2026 13:10:00 3/16/2026 13:11:02 success
+hs_svm:testvol1_dr hs_svm:testvol1 scheduled-update 3/16/2026 13:00:00 3/16/2026 13:00:02 success
+hs_svm:testvol1_dr hs_svm:testvol1 scheduled-update 3/16/2026 12:50:00 3/16/2026 12:50:02 success
+hs_svm:testvol1_dr hs_svm:testvol1 scheduled-update 3/16/2026 12:40:00 3/16/2026 12:40:02 success
+hs_svm:testvol1_dr hs_svm:testvol1 scheduled-update 3/16/2026 12:30:00 3/16/2026 12:30:02 success
+hs_svm:testvol1_dr hs_svm:testvol1 scheduled-update 3/16/2026 12:20:00 3/16/2026 12:20:02 success
+hs_svm:testvol1_dr hs_svm:testvol1 scheduled-update 3/16/2026 12:10:00 3/16/2026 12:10:03 success
+hs_svm:testvol1_dr hs_svm:testvol1 scheduled-update 3/16/2026 12:00:00 3/16/2026 12:00:02 success
+hs_svm:testvol1_dr hs_svm:testvol1 scheduled-update 3/16/2026 11:50:00 3/16/2026 11:50:02 success
+hs_svm:testvol1_dr hs_svm:testvol1 scheduled-update 3/16/2026 11:40:00 3/16/2026 11:40:02 success
+hs_svm:testvol1_dr hs_svm:testvol1 scheduled-update 3/16/2026 11:30:00 3/16/2026 11:30:02 success
+hs_svm:testvol1_dr hs_svm:testvol1 scheduled-update 3/16/2026 11:20:00 3/16/2026 11:20:02 success
+hs_svm:testvol1_dr hs_svm:testvol1 scheduled-update 3/16/2026 11:10:00 3/16/2026 11:10:02 success
+hs_svm:testvol1_dr hs_svm:testvol1 scheduled-update 3/16/2026 11:00:00 3/16/2026 11:00:02 success
+hs_svm:testvol1_dr hs_svm:testvol1 scheduled-update 3/16/2026 10:50:00 3/16/2026 10:50:02 success
+hs_svm:testvol1_dr hs_svm:testvol1 scheduled-update 3/16/2026 10:40:00 3/16/2026 10:40:02 success
+hs_svm:testvol1_dr hs_svm:testvol1 scheduled-update 3/16/2026 10:30:00 3/16/2026 10:30:02 success
+hs_svm:testvol1_dr hs_svm:testvol1 scheduled-update 3/16/2026 10:20:00 3/16/2026 10:20:02 success
+hs_svm:testvol1_dr hs_svm:testvol1 scheduled-update 3/16/2026 10:10:00 3/16/2026 10:10:03 success
+hs_svm:testvol1_dr hs_svm:testvol1 scheduled-update 3/16/2026 10:00:00 3/16/2026 10:00:03 success
+hs_svm:testvol1_dr hs_svm:testvol1 scheduled-update 3/16/2026 09:50:00 3/16/2026 09:50:02 success
+hs_svm:testvol1_dr hs_svm:testvol1 scheduled-update 3/16/2026 09:40:00 3/16/2026 09:40:02 success
+hs_svm:testvol1_dr hs_svm:testvol1 scheduled-update 3/16/2026 09:30:00 3/16/2026 09:30:02 success
+hs_svm:testvol1_dr hs_svm:testvol1 scheduled-update 3/16/2026 09:20:00 3/16/2026 09:20:02 success
+hs_svm:testvol1_dr hs_svm:testvol1 scheduled-update 3/16/2026 09:10:00 3/16/2026 09:10:02 success
+hs_svm:testvol1_dr hs_svm:testvol1 scheduled-update 3/16/2026 09:00:00 3/16/2026 09:00:02 success
+hs_svm:testvol1_dr hs_svm:testvol1 scheduled-update 3/16/2026 08:50:00 3/16/2026 08:50:02 success
+hs_svm:testvol1_dr hs_svm:testvol1 scheduled-update 3/16/2026 08:40:00 3/16/2026 08:40:02 success
+hs_svm:testvol1_dr hs_svm:testvol1 scheduled-update 3/16/2026 08:30:00 3/16/2026 08:30:02 success
+hs_svm:testvol1_dr hs_svm:testvol1 scheduled-update 3/16/2026 08:20:00 3/16/2026 08:20:02 success
+hs_svm:testvol1_dr hs_svm:testvol1 scheduled-update 3/16/2026 08:10:00 3/16/2026 08:11:02 success
+hs_svm:testvol1_dr hs_svm:testvol1 scheduled-update 3/16/2026 08:00:00 3/16/2026 08:00:02 success
+hs_svm:testvol1_dr hs_svm:testvol1 scheduled-update 3/16/2026 07:50:00 3/16/2026 07:50:02 success
+hs_svm:testvol1_dr hs_svm:testvol1 scheduled-update 3/16/2026 07:40:00 3/16/2026 07:40:02 success
+hs_svm:testvol1_dr hs_svm:testvol1 scheduled-update 3/16/2026 07:30:00 3/16/2026 07:30:02 success
+hs_svm:testvol1_dr hs_svm:testvol1 scheduled-update 3/16/2026 07:20:00 3/16/2026 07:20:02 success
+hs_svm:testvol1_dr hs_svm:testvol1 scheduled-update 3/16/2026 07:10:00 3/16/2026 07:11:02 success
+hs_svm:testvol1_dr hs_svm:testvol1 scheduled-update 3/16/2026 07:00:00 3/16/2026 07:00:02 success
+hs_svm:testvol1_dr hs_svm:testvol1 scheduled-update 3/16/2026 06:50:00 3/16/2026 06:50:02 success
+hs_svm:testvol1_dr hs_svm:testvol1 scheduled-update 3/16/2026 06:40:00 3/16/2026 06:40:02 success
+hs_svm:testvol1_dr hs_svm:testvol1 scheduled-update 3/16/2026 06:30:00 3/16/2026 06:30:02 success
+hs_svm:testvol1_dr hs_svm:testvol1 scheduled-update 3/16/2026 06:20:00 3/16/2026 06:20:02 success
+hs_svm:testvol1_dr hs_svm:testvol1 scheduled-update 3/16/2026 06:10:00 3/16/2026 06:11:02 success
+hs_svm:testvol1_dr hs_svm:testvol1 scheduled-update 3/16/2026 06:00:00 3/16/2026 06:00:02 success
+hs_svm:testvol1_dr hs_svm:testvol1 scheduled-update 3/16/2026 05:50:00 3/16/2026 05:50:02 success
+hs_svm:testvol1_dr hs_svm:testvol1 scheduled-update 3/16/2026 05:40:00 3/16/2026 05:40:02 success
+hs_svm:testvol1_dr hs_svm:testvol1 scheduled-update 3/16/2026 05:30:00 3/16/2026 05:30:02 success
+hs_svm:testvol1_dr hs_svm:testvol1 scheduled-update 3/16/2026 05:20:00 3/16/2026 05:20:02 success
+hs_svm:testvol1_dr hs_svm:testvol1 scheduled-update 3/16/2026 05:10:00 3/16/2026 05:10:03 success
+hs_svm:testvol1_dr hs_svm:testvol1 scheduled-update 3/16/2026 05:00:00 3/16/2026 05:00:02 success
+hs_svm:testvol1_dr hs_svm:testvol1 scheduled-update 3/16/2026 04:50:00 3/16/2026 04:50:02 success
+hs_svm:testvol1_dr hs_svm:testvol1 scheduled-update 3/16/2026 04:40:00 3/16/2026 04:40:02 success
+hs_svm:testvol1_dr hs_svm:testvol1 scheduled-update 3/16/2026 04:30:00 3/16/2026 04:30:02 success
+hs_svm:testvol1_dr hs_svm:testvol1 scheduled-update 3/16/2026 04:20:00 3/16/2026 04:20:02 success
+hs_svm:testvol1_dr hs_svm:testvol1 scheduled-update 3/16/2026 04:10:00 3/16/2026 04:11:02 success
+hs_svm:testvol1_dr hs_svm:testvol1 scheduled-update 3/16/2026 04:00:00 3/16/2026 04:00:02 success
+hs_svm:testvol1_dr hs_svm:testvol1 scheduled-update 3/16/2026 03:50:00 3/16/2026 03:50:02 success
+hs_svm:testvol1_dr hs_svm:testvol1 scheduled-update 3/16/2026 03:40:00 3/16/2026 03:40:02 success
+hs_svm:testvol1_dr hs_svm:testvol1 scheduled-update 3/16/2026 03:30:00 3/16/2026 03:30:02 success
+hs_svm:testvol1_dr hs_svm:testvol1 scheduled-update 3/16/2026 03:20:00 3/16/2026 03:20:02 success
+hs_svm:testvol1_dr hs_svm:testvol1 scheduled-update 3/16/2026 03:10:00 3/16/2026 03:11:02 success
+hs_svm:testvol1_dr hs_svm:testvol1 scheduled-update 3/16/2026 03:00:00 3/16/2026 03:00:02 success
+hs_svm:testvol1_dr hs_svm:testvol1 scheduled-update 3/16/2026 02:50:00 3/16/2026 02:50:02 success
+hs_svm:testvol1_dr hs_svm:testvol1 scheduled-update 3/16/2026 02:40:00 3/16/2026 02:40:02 success
+hs_svm:testvol1_dr hs_svm:testvol1 scheduled-update 3/16/2026 02:30:00 3/16/2026 02:30:02 success
+hs_svm:testvol1_dr hs_svm:testvol1 scheduled-update 3/16/2026 02:20:00 3/16/2026 02:20:02 success
+hs_svm:testvol1_dr hs_svm:testvol1 scheduled-update 3/16/2026 02:10:00 3/16/2026 02:10:02 success
+hs_svm:testvol1_dr hs_svm:testvol1 scheduled-update 3/16/2026 02:00:00 3/16/2026 02:00:02 success
+hs_svm:testvol1_dr hs_svm:testvol1 scheduled-update 3/16/2026 01:50:00 3/16/2026 01:50:02 success
+hs_svm:testvol1_dr hs_svm:testvol1 scheduled-update 3/16/2026 01:40:00 3/16/2026 01:40:03 success
+hs_svm:testvol1_dr hs_svm:testvol1 scheduled-update 3/16/2026 01:30:00 3/16/2026 01:30:02 success
+hs_svm:testvol1_dr hs_svm:testvol1 scheduled-update 3/16/2026 01:20:00 3/16/2026 01:20:02 success
+hs_svm:testvol1_dr hs_svm:testvol1 scheduled-update 3/16/2026 01:10:00 3/16/2026 01:11:02 success
+hs_svm:testvol1_dr hs_svm:testvol1 scheduled-update 3/16/2026 01:00:00 3/16/2026 01:00:02 success
+hs_svm:testvol1_dr hs_svm:testvol1 scheduled-update 3/16/2026 00:50:00 3/16/2026 00:50:02 success
+hs_svm:testvol1_dr hs_svm:testvol1 scheduled-update 3/16/2026 00:40:00 3/16/2026 00:40:02 success
+hs_svm:testvol1_dr hs_svm:testvol1 scheduled-update 3/16/2026 00:30:00 3/16/2026 00:30:02 success
+hs_svm:testvol1_dr hs_svm:testvol1 scheduled-update 3/16/2026 00:20:00 3/16/2026 00:20:02 success
+hs_svm:testvol1_dr hs_svm:testvol1 scheduled-update 3/16/2026 00:10:00 3/16/2026 00:11:03 success
+hs_svm:testvol1_dr hs_svm:testvol1 scheduled-update 3/16/2026 00:00:00 3/16/2026 00:00:02 success
+hs_svm:testvol1_dr hs_svm:testvol1 scheduled-update 3/15/2026 23:50:00 3/15/2026 23:50:02 success
+hs_svm:testvol1_dr hs_svm:testvol1 scheduled-update 3/15/2026 23:40:00 3/15/2026 23:40:02 success
+hs_svm:testvol1_dr hs_svm:testvol1 scheduled-update 3/15/2026 23:30:00 3/15/2026 23:30:02 success
+hs_svm:testvol1_dr hs_svm:testvol1 scheduled-update 3/15/2026 23:20:00 3/15/2026 23:20:02 success
+hs_svm:testvol1_dr hs_svm:testvol1 scheduled-update 3/15/2026 23:10:00 3/15/2026 23:10:03 success
+hs_svm:testvol1_dr hs_svm:testvol1 scheduled-update 3/15/2026 23:00:00 3/15/2026 23:00:02 success
+hs_svm:testvol1_dr hs_svm:testvol1 scheduled-update 3/15/2026 22:50:00 3/15/2026 22:50:02 success
+hs_svm_dr:vol2_sync hs_svm:vol2 scheduled-update 3/16/2026 12:15:00 3/16/2026 12:15:00 success
+hs_svm_dr:vol2_sync hs_svm:vol2 scheduled-update 3/16/2026 06:15:00 3/16/2026 06:15:00 success
+hs_svm_dr:vol2_sync hs_svm:vol2 scheduled-update 3/16/2026 00:15:00 3/16/2026 00:15:01 success
+hs_svm_dr:vol2_sync hs_svm:vol2 scheduled-update 3/15/2026 18:15:00 3/15/2026 18:15:00 success
+jjy_dr:target_vol jjy:source_vol scheduled-update 3/16/2026 15:50:00 3/16/2026 15:50:00 failure
+jjy_dr:target_vol jjy:source_vol scheduled-update 3/16/2026 15:45:00 3/16/2026 15:45:00 failure
+jjy_dr:target_vol jjy:source_vol scheduled-update 3/16/2026 15:40:00 3/16/2026 15:40:00 failure
+jjy_dr:target_vol jjy:source_vol scheduled-update 3/16/2026 15:35:00 3/16/2026 15:35:00 failure
+jjy_dr:target_vol jjy:source_vol scheduled-update 3/16/2026 15:30:00 3/16/2026 15:30:00 failure
+jjy_dr:target_vol jjy:source_vol scheduled-update 3/16/2026 15:25:00 3/16/2026 15:25:00 failure
+jjy_dr:target_vol jjy:source_vol scheduled-update 3/16/2026 15:20:00 3/16/2026 15:20:00 failure
+jjy_dr:target_vol jjy:source_vol scheduled-update 3/16/2026 15:15:00 3/16/2026 15:15:00 failure
+jjy_dr:target_vol jjy:source_vol scheduled-update 3/16/2026 15:10:00 3/16/2026 15:10:00 failure
+jjy_dr:target_vol jjy:source_vol scheduled-update 3/16/2026 15:05:00 3/16/2026 15:05:00 failure
+jjy_dr:target_vol jjy:source_vol scheduled-update 3/16/2026 15:00:00 3/16/2026 15:00:00 failure
+jjy_dr:target_vol jjy:source_vol scheduled-update 3/16/2026 14:55:00 3/16/2026 14:55:00 failure
+jjy_dr:target_vol jjy:source_vol scheduled-update 3/16/2026 14:50:00 3/16/2026 14:50:00 failure
+jjy_dr:target_vol jjy:source_vol scheduled-update 3/16/2026 14:45:00 3/16/2026 14:45:00 failure
+jjy_dr:target_vol jjy:source_vol scheduled-update 3/16/2026 14:40:00 3/16/2026 14:40:00 failure
+jjy_dr:target_vol jjy:source_vol scheduled-update 3/16/2026 14:35:00 3/16/2026 14:35:00 failure
+jjy_dr:target_vol jjy:source_vol scheduled-update 3/16/2026 14:30:00 3/16/2026 14:30:00 failure
+jjy_dr:target_vol jjy:source_vol scheduled-update 3/16/2026 14:25:00 3/16/2026 14:25:00 failure
+jjy_dr:target_vol jjy:source_vol scheduled-update 3/16/2026 14:20:00 3/16/2026 14:20:00 failure
+jjy_dr:target_vol jjy:source_vol scheduled-update 3/16/2026 14:15:00 3/16/2026 14:15:00 failure
+jjy_dr:target_vol jjy:source_vol scheduled-update 3/16/2026 14:10:00 3/16/2026 14:10:00 failure
+jjy_dr:target_vol jjy:source_vol scheduled-update 3/16/2026 14:05:00 3/16/2026 14:05:00 failure
+jjy_dr:target_vol jjy:source_vol scheduled-update 3/16/2026 14:00:00 3/16/2026 14:00:00 failure
+jjy_dr:target_vol jjy:source_vol scheduled-update 3/16/2026 13:55:00 3/16/2026 13:55:00 failure
+jjy_dr:target_vol jjy:source_vol scheduled-update 3/16/2026 13:50:00 3/16/2026 13:50:00 failure
+jjy_dr:target_vol jjy:source_vol scheduled-update 3/16/2026 13:45:00 3/16/2026 13:45:00 failure
+jjy_dr:target_vol jjy:source_vol scheduled-update 3/16/2026 13:40:00 3/16/2026 13:40:00 failure
+jjy_dr:target_vol jjy:source_vol scheduled-update 3/16/2026 13:35:00 3/16/2026 13:35:00 failure
+jjy_dr:target_vol jjy:source_vol scheduled-update 3/16/2026 13:30:00 3/16/2026 13:30:00 failure
+jjy_dr:target_vol jjy:source_vol scheduled-update 3/16/2026 13:25:00 3/16/2026 13:25:00 failure
+jjy_dr:target_vol jjy:source_vol scheduled-update 3/16/2026 13:20:00 3/16/2026 13:20:00 failure
+jjy_dr:target_vol jjy:source_vol scheduled-update 3/16/2026 13:15:00 3/16/2026 13:15:00 failure
+jjy_dr:target_vol jjy:source_vol scheduled-update 3/16/2026 13:10:00 3/16/2026 13:10:00 failure
+jjy_dr:target_vol jjy:source_vol scheduled-update 3/16/2026 13:05:00 3/16/2026 13:05:00 failure
+jjy_dr:target_vol jjy:source_vol scheduled-update 3/16/2026 13:00:00 3/16/2026 13:00:00 failure
+jjy_dr:target_vol jjy:source_vol scheduled-update 3/16/2026 12:55:00 3/16/2026 12:55:00 failure
+jjy_dr:target_vol jjy:source_vol scheduled-update 3/16/2026 12:50:00 3/16/2026 12:50:00 failure
+jjy_dr:target_vol jjy:source_vol scheduled-update 3/16/2026 12:45:00 3/16/2026 12:45:00 failure
+jjy_dr:target_vol jjy:source_vol scheduled-update 3/16/2026 12:40:00 3/16/2026 12:40:00 failure
+jjy_dr:target_vol jjy:source_vol scheduled-update 3/16/2026 12:35:00 3/16/2026 12:35:00 failure
+jjy_dr:target_vol jjy:source_vol scheduled-update 3/16/2026 12:30:00 3/16/2026 12:30:00 failure
+jjy_dr:target_vol jjy:source_vol scheduled-update 3/16/2026 12:25:00 3/16/2026 12:25:00 failure
+jjy_dr:target_vol jjy:source_vol scheduled-update 3/16/2026 12:20:00 3/16/2026 12:20:00 failure
+jjy_dr:target_vol jjy:source_vol scheduled-update 3/16/2026 12:15:00 3/16/2026 12:15:00 failure
+jjy_dr:target_vol jjy:source_vol scheduled-update 3/16/2026 12:10:00 3/16/2026 12:10:00 failure
+jjy_dr:target_vol jjy:source_vol scheduled-update 3/16/2026 12:05:00 3/16/2026 12:05:00 failure
+jjy_dr:target_vol jjy:source_vol scheduled-update 3/16/2026 12:00:00 3/16/2026 12:00:00 failure
+jjy_dr:target_vol jjy:source_vol scheduled-update 3/16/2026 11:55:00 3/16/2026 11:55:00 failure
+jjy_dr:target_vol jjy:source_vol scheduled-update 3/16/2026 11:50:00 3/16/2026 11:50:00 failure
+jjy_dr:target_vol jjy:source_vol scheduled-update 3/16/2026 11:45:00 3/16/2026 11:45:00 failure
+jjy_dr:target_vol jjy:source_vol scheduled-update 3/16/2026 11:40:00 3/16/2026 11:40:00 failure
+jjy_dr:target_vol jjy:source_vol scheduled-update 3/16/2026 11:35:00 3/16/2026 11:35:00 failure
+jjy_dr:target_vol jjy:source_vol scheduled-update 3/16/2026 11:30:00 3/16/2026 11:30:00 failure
+jjy_dr:target_vol jjy:source_vol scheduled-update 3/16/2026 11:25:00 3/16/2026 11:25:00 failure
+jjy_dr:target_vol jjy:source_vol scheduled-update 3/16/2026 11:20:00 3/16/2026 11:20:00 failure
+jjy_dr:target_vol jjy:source_vol scheduled-update 3/16/2026 11:15:00 3/16/2026 11:15:00 failure
+jjy_dr:target_vol jjy:source_vol scheduled-update 3/16/2026 11:10:00 3/16/2026 11:10:00 failure
+jjy_dr:target_vol jjy:source_vol scheduled-update 3/16/2026 11:05:00 3/16/2026 11:05:00 failure
+jjy_dr:target_vol jjy:source_vol scheduled-update 3/16/2026 11:00:00 3/16/2026 11:00:00 failure
+jjy_dr:target_vol jjy:source_vol scheduled-update 3/16/2026 10:55:00 3/16/2026 10:55:00 failure
+jjy_dr:target_vol jjy:source_vol scheduled-update 3/16/2026 10:50:00 3/16/2026 10:50:00 failure
+jjy_dr:target_vol jjy:source_vol scheduled-update 3/16/2026 10:45:00 3/16/2026 10:45:00 failure
+jjy_dr:target_vol jjy:source_vol scheduled-update 3/16/2026 10:40:00 3/16/2026 10:40:00 failure
+jjy_dr:target_vol jjy:source_vol scheduled-update 3/16/2026 10:35:00 3/16/2026 10:35:00 failure
+jjy_dr:target_vol jjy:source_vol scheduled-update 3/16/2026 10:30:00 3/16/2026 10:30:00 failure
+jjy_dr:target_vol jjy:source_vol scheduled-update 3/16/2026 10:25:00 3/16/2026 10:25:00 failure
+jjy_dr:target_vol jjy:source_vol scheduled-update 3/16/2026 10:20:00 3/16/2026 10:20:00 failure
+jjy_dr:target_vol jjy:source_vol scheduled-update 3/16/2026 10:15:00 3/16/2026 10:15:00 failure
+jjy_dr:target_vol jjy:source_vol scheduled-update 3/16/2026 10:10:00 3/16/2026 10:10:00 failure
+jjy_dr:target_vol jjy:source_vol scheduled-update 3/16/2026 10:05:00 3/16/2026 10:05:00 failure
+jjy_dr:target_vol jjy:source_vol scheduled-update 3/16/2026 10:00:00 3/16/2026 10:00:00 failure
+jjy_dr:target_vol jjy:source_vol scheduled-update 3/16/2026 09:55:00 3/16/2026 09:55:00 failure
+jjy_dr:target_vol jjy:source_vol scheduled-update 3/16/2026 09:50:00 3/16/2026 09:50:00 failure
+jjy_dr:target_vol jjy:source_vol scheduled-update 3/16/2026 09:45:00 3/16/2026 09:45:00 failure
+jjy_dr:target_vol jjy:source_vol scheduled-update 3/16/2026 09:40:00 3/16/2026 09:40:00 failure
+jjy_dr:target_vol jjy:source_vol scheduled-update 3/16/2026 09:35:00 3/16/2026 09:35:00 failure
+jjy_dr:target_vol jjy:source_vol scheduled-update 3/16/2026 09:30:00 3/16/2026 09:30:00 failure
+jjy_dr:target_vol jjy:source_vol scheduled-update 3/16/2026 09:25:00 3/16/2026 09:25:00 failure
+jjy_dr:target_vol jjy:source_vol scheduled-update 3/16/2026 09:20:00 3/16/2026 09:20:00 failure
+jjy_dr:target_vol jjy:source_vol scheduled-update 3/16/2026 09:15:00 3/16/2026 09:15:00 failure
+jjy_dr:target_vol jjy:source_vol scheduled-update 3/16/2026 09:10:00 3/16/2026 09:10:00 failure
+jjy_dr:target_vol jjy:source_vol scheduled-update 3/16/2026 09:05:00 3/16/2026 09:05:00 failure
+jjy_dr:target_vol jjy:source_vol scheduled-update 3/16/2026 09:00:00 3/16/2026 09:00:00 failure
+jjy_dr:target_vol jjy:source_vol scheduled-update 3/16/2026 08:55:00 3/16/2026 08:55:00 failure
+jjy_dr:target_vol jjy:source_vol scheduled-update 3/16/2026 08:50:00 3/16/2026 08:50:00 failure
+jjy_dr:target_vol jjy:source_vol scheduled-update 3/16/2026 08:45:00 3/16/2026 08:45:00 failure
+jjy_dr:target_vol jjy:source_vol scheduled-update 3/16/2026 08:40:00 3/16/2026 08:40:00 failure
+jjy_dr:target_vol jjy:source_vol scheduled-update 3/16/2026 08:35:00 3/16/2026 08:35:00 failure
+jjy_dr:target_vol jjy:source_vol scheduled-update 3/16/2026 08:30:00 3/16/2026 08:30:00 failure
+jjy_dr:target_vol jjy:source_vol scheduled-update 3/16/2026 08:25:00 3/16/2026 08:25:00 failure
+jjy_dr:target_vol jjy:source_vol scheduled-update 3/16/2026 08:20:00 3/16/2026 08:20:00 failure
+jjy_dr:target_vol jjy:source_vol scheduled-update 3/16/2026 08:15:00 3/16/2026 08:15:00 failure
+jjy_dr:target_vol jjy:source_vol scheduled-update 3/16/2026 08:10:00 3/16/2026 08:10:00 failure
+jjy_dr:target_vol jjy:source_vol scheduled-update 3/16/2026 08:05:00 3/16/2026 08:05:00 failure
+jjy_dr:target_vol jjy:source_vol scheduled-update 3/16/2026 08:00:00 3/16/2026 08:00:00 failure
+jjy_dr:target_vol jjy:source_vol scheduled-update 3/16/2026 07:55:00 3/16/2026 07:55:00 failure
+jjy_dr:target_vol jjy:source_vol scheduled-update 3/16/2026 07:50:00 3/16/2026 07:50:00 failure
+jjy_dr:target_vol jjy:source_vol scheduled-update 3/16/2026 07:45:00 3/16/2026 07:45:00 failure
+jjy_dr:target_vol jjy:source_vol scheduled-update 3/16/2026 07:40:00 3/16/2026 07:40:00 failure
+jjy_dr:target_vol jjy:source_vol scheduled-update 3/16/2026 07:35:00 3/16/2026 07:35:00 failure
+jjy_dr:target_vol jjy:source_vol scheduled-update 3/16/2026 07:30:00 3/16/2026 07:30:00 failure
+jjy_dr:target_vol jjy:source_vol scheduled-update 3/16/2026 07:25:00 3/16/2026 07:25:00 failure
+jjy_dr:target_vol jjy:source_vol scheduled-update 3/16/2026 07:20:00 3/16/2026 07:20:00 failure
+jjy_dr:target_vol jjy:source_vol scheduled-update 3/16/2026 07:15:00 3/16/2026 07:15:00 failure
+jjy_dr:target_vol jjy:source_vol scheduled-update 3/16/2026 07:10:00 3/16/2026 07:10:00 failure
+jjy_dr:target_vol jjy:source_vol scheduled-update 3/16/2026 07:05:00 3/16/2026 07:05:00 failure
+217 entries were displayed.
+
+FAS2750::*> disk show -fields model ,firmware-revision 
+                                                                      disk     firmware-revision model            
+-------- ----------------- ---------------- 
+9.0.2    NA02              X422_HCOBE600A10 
+9.0.3    NA01              X422_TAL13600A10 
+9.0.5    NA02              X422_HCOBE600A10 
+9.0.6    NA01              X422_TAL13600A10 
+9.0.9    NA02              X422_HCOBE600A10 
+9.0.10   NA08              X422_HCBFE600A10 
+9.0.11   NA02              X422_HCOBE600A10 
+9.0.12   NA02              X422_HCOBE600A10 
+9.0.13   NA02              X422_HCOBE600A10 
+9.0.14   NA01              X422_TAL13600A10 
+9.0.15   NA01              X422_TAL13600A10 
+9.0.16   NA02              X422_HCOBE600A10 
+9.0.17   NA02              X422_HCOBE600A10 
+9.0.18   NA01              X422_TAL13600A10 
+9.0.19   NA02              X422_HCOBE600A10 
+DGC-1.1  0533              VRAID            
+DGC-1.2  0533              VRAID            
+DGC-1.4  0533              VRAID            
+DGC-1.5  0533              VRAID            
+DGC-1.6  0533              VRAID            
+DGC-1.7  0533              VRAID            
+DGC-1.8  0533              VRAID            
+DGC-1.9  0533              VRAID            
+DGC-1.10 0533              VRAID            
+DGC-1.11 0533              VRAID            
+DGC-1.12 0533              VRAID            
+DGC-1.13 0533              VRAID            
+DGC-1.14 0533              VRAID            
+28 entries were displayed.
+
+FAS2750::*> a storage shelf show -felds psu-po
+
+Error: invalid argument "-felds"
+FAS2750::*> storage shelf show -felds psu-po
+
+Error: invalid argument "-felds"
+
+FAS2750::*> storage shelf show -felds psu-po  0p            fields -psu-op
+
+Error: -fields takes a list of field names without a leading "-"
+FAS2750::*> storage shelf show -fields -psu-op       psu-op
+                                                                      shelf psu-op-status 
+----- ------------- 
+9.0   normal,normal 
+
+FAS2750::*> storage shelf show -fields psu-op      md odule-
+    module-type                 module-id
+    module-location             module-part-number
+    module-fru-id               module-is-reporting-element
+    module-fw-revision          module-latest-fw-revision
+    module-fw-progress          module-swap-count
+    module-op-status            
+FAS2750::*> storage shelf show -fields module-fw-
+    module-fw-revision module-fw-progress 
+FAS2750::*> storage shelf show -fields module-fw-revision ,module-
+    module-type                 module-id
+    module-location             module-part-number
+    module-fru-id               module-is-reporting-element
+    module-fw-revision          module-latest-fw-revision
+    module-fw-progress          module-swap-count
+    module-op-status            
+FAS2750::*> storage shelf show -fields module-fw-revision ,module-type 
+                                                                      shelf module-type module-fw-revision 
+----- ----------- ------------------ 
+9.0   IOM12E      0251,0251          
+
+FAS2750::*> run -node FAS2750-0
+    FAS2750-01 FAS2750-02 
+FAS2750::*> run -node FAS2750-0* sasadmin shelf
+2 entries were acted on.
+
+Node: FAS2750-01
+
+Expanders on channel 0a: 
+Cannot Complete operation on channel 0a; Status Not Available.
+
+Expanders on channel 0b: 
+     +-----------------------------------------------------------------------+
+   0 |DD|DD| 2| 3|DD| 5| 6|DD|DD| 9|10|11|12|13|14|15|16|17|18|19|DD|DD|DD|DD|
+     +-----------------------------------------------------------------------+
+
+
+Node: FAS2750-02
+
+Expanders on channel 0a: 
+Cannot Complete operation on channel 0a; Status Not Available.
+
+Expanders on channel 0b: 
+     +-----------------------------------------------------------------------+
+   0 |DD|DD| 2| 3|DD| 5| 6|DD|DD| 9|10|11|12|13|14|15|16|17|18|19|DD|DD|DD|DD|
+     +-----------------------------------------------------------------------+
+
+
+FAS2750::*> run -node FAS2750-0* sasadmin shelf     expander_map
+2 entries were acted on.
+
+Node: FAS2750-01
+
+Expanders on channel 0a: 
+Cannot Complete operation on channel 0a; Status Not Available.
+
+Expanders on channel 0b: 
+Level    1: WWN 500a09800e56c9bf, ID  0, Serial Number ' SHFNC2050000238', Product 'DS22412IOM12E   ', Rev '0251', Slot A
+
+Node: FAS2750-02
+
+Expanders on channel 0a: 
+Cannot Complete operation on channel 0a; Status Not Available.
+
+Expanders on channel 0b: 
+Level    1: WWN 500a09800e56b4bf, ID  0, Serial Number ' SHFNC2050000238', Product 'DS22412IOM12E   ', Rev '0251', Slot B
+
+FAS2750::*> net int show
+  (network interface show)
+            Logical    Status     Network            Current       Current Is
+Vserver     Interface  Admin/Oper Address/Mask       Node          Port    Home
+----------- ---------- ---------- ------------------ ------------- ------- ----
+Cluster
+            FAS2750-01_clus1 up/up 169.254.245.228/16 FAS2750-01   e0a     true
+            FAS2750-01_clus2 up/up 169.254.87.41/16  FAS2750-01    e0b     true
+            FAS2750-02_clus1 up/up 169.254.143.178/16 FAS2750-02   e0b     true
+            FAS2750-02_clus2 up/up 169.254.237.16/16 FAS2750-02    e0b     true
+FAS2750
+            FAS2750-01_mgmt1 up/up 192.168.0.31/24   FAS2750-01    e0M     true
+            FAS2750-02_mgmt1 up/up 192.168.0.32/24   FAS2750-02    e0M     true
+            cluster_mgmt up/up    192.168.0.30/24    FAS2750-01    e0M     true
+            n1_e0c_sm    up/up    100.100.100.2/24   FAS2750-01    e0d     false
+            n2_e0c_sm    up/up    100.100.100.3/24   FAS2750-02    e0d     false
+JH
+            lif1         up/up    192.168.0.78/24    FAS2750-01    e0d     true
+ehk
+            ehk_fcp_n1   up/up    20:19:d0:39:ea:28:61:4e FAS2750-01 0e    true
+            ehk_fcp_n2   up/up    20:1b:d0:39:ea:28:61:4e FAS2750-02 0e    true
+            n1_data01    up/up    192.168.0.71/24    FAS2750-01    e0d     true
+            n1_iscsi     up/up    192.168.0.73/24    FAS2750-01    e0d     true
+hs_svm
+            iscsi_n1     up/up    192.168.0.131/24   FAS2750-01    e0d     true
+            iscsi_n2     up/up    192.168.0.132/24   FAS2750-02    e0d     true
+            n1_lif2      up/up    192.168.0.134/24   FAS2750-02    e0d     true
+            n2_lif1      up/up    192.168.0.135/24   FAS2750-02    e0d     true
+hs_svm_dr
+            n1_lif1_dr   up/up    192.168.0.133/24   FAS2750-02    e0d     true
+iskwon_svm
+            lif1         up/up    192.168.0.53/24    FAS2750-01    e0d     true
+jjy
+            n1_e0d       up/up    192.168.0.97/24    FAS2750-02    e0d     true
+jjy_cinder
+            jjy_cinder_n1_e0d up/up 192.168.0.174/24 FAS2750-01    e0d     true
+jjy_dr
+            n1_cifs_ad down/down  192.168.0.128/24   FAS2750-01    e0d     true
+            n1_lif_e0d   up/down  192.168.0.99/24    FAS2750-01    e0d     true
+jjy_glance
+            jjy_glance_n1_e0d up/up 192.168.0.176/24 FAS2750-01    e0d     true
+jjy_manila
+            jjy_manila_n1_e0d up/up 192.168.0.175/24 FAS2750-01    e0d     true
+jjy_object
+            jjy_object_n1_e0d up/up 192.168.0.179/24 FAS2750-01    e0d     true
+lsw_FAS2750
+            lsw_n1_0e    up/up    20:21:d0:39:ea:28:61:4e FAS2750-01 0e    true
+            lsw_n2_0e    up/up    20:23:d0:39:ea:28:61:4e FAS2750-02 0e    true
+            n1_nfs       up/up    192.168.0.120/24   FAS2750-01    e0d     true
+pmh
+            data02       up/up    192.168.0.86/24    FAS2750-02    e0d     true
+            iscsi01      up/up    192.168.0.190/24   FAS2750-01    e0d     true
+            iscsi02      up/up    192.168.0.191/24   FAS2750-02    e0d     true
+            lif_pmh_4284 up/up    192.168.0.83/24    FAS2750-01    e0d     true
+            mgmt         up/up    1.1.1.1/24         FAS2750-01    e0M     true
+svm01
+            n1_e0d_catalog down/down 192.168.0.122/24 FAS2750-02   e0d     true
+            n1_e0d_cifs down/down 192.168.0.124/24   FAS2750-01    e0d     true
+test
+            lif_test_7440 up/up   20:25:d0:39:ea:28:61:4e FAS2750-02 0e    true
+            lif_test_8678 up/up   20:05:d0:39:ea:28:61:4e FAS2750-01 0e    true
+trident
+            trident_lif  up/up    192.168.0.77/24    FAS2750-01    e0d     false
+vmdata
+            1            up/up    192.168.0.41/24    FAS2750-01    e0d     true
+            esxi_01      up/up    192.168.0.40/24    FAS2750-02    e0d     true
+42 entries were displayed.
+
+FAS2750::*> 
