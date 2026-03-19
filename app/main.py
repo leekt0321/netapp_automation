@@ -8,6 +8,7 @@ from sqlalchemy.orm import Session
 from app.config import settings
 from app.db import Base, engine, get_db
 from app.models import UploadedLog
+from app.parser_netapp import decode_text_content, format_summary_text, parse_netapp_log
 
 
 app = FastAPI(title=settings.app_name)
@@ -47,6 +48,11 @@ def get_unique_filename(filename: str) -> str:
         counter += 1
 
     return unique_name
+
+
+def get_summary_filename(filename: str) -> str:
+    candidate = Path(filename)
+    return get_unique_filename(f"{candidate.stem}_summary.txt")
 
 
 @app.on_event("startup")
@@ -95,6 +101,12 @@ async def upload_log(
 
     saved_path.write_bytes(content)
 
+    text_content = decode_text_content(content)
+    summary = parse_netapp_log(text_content)
+    summary_name = get_summary_filename(saved_name)
+    summary_path = upload_dir / summary_name
+    summary_path.write_text(format_summary_text(summary), encoding="utf-8")
+
     log = UploadedLog(
         filename=saved_name,
         stored_path=str(saved_path),
@@ -113,6 +125,9 @@ async def upload_log(
         "stored_path": log.stored_path,
         "size": log.size,
         "status": log.status,
+        "summary_filename": summary_name,
+        "summary_stored_path": str(summary_path),
+        "summary": summary,
     }
 
 

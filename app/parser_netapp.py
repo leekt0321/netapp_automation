@@ -1,5 +1,15 @@
 import re
-from typing import Dict, List
+from typing import Any, Dict, List
+
+
+SUMMARY_FIELDS = (
+    "vendor",
+    "cluster_name",
+    "model_name",
+    "ontap_version",
+    "disk_count",
+    "controller_serial",
+)
 
 
 def _dedupe_keep_order(items: List[str]) -> List[str]:
@@ -10,6 +20,16 @@ def _dedupe_keep_order(items: List[str]) -> List[str]:
             seen.add(item)
             result.append(item)
     return result
+
+
+def decode_text_content(content: bytes) -> str:
+    for encoding in ("utf-8-sig", "utf-8", "cp949", "euc-kr"):
+        try:
+            return content.decode(encoding)
+        except UnicodeDecodeError:
+            continue
+
+    return content.decode("utf-8", errors="replace")
 
 
 def extract_cluster_name(text: str) -> str:
@@ -70,7 +90,7 @@ def extract_disk_count(text: str) -> int:
     return len(disk_ids)
 
 
-def parse_netapp_log(text: str) -> Dict[str, str]:
+def parse_netapp_log(text: str) -> Dict[str, Any]:
     return {
         "vendor": "NetApp",
         "cluster_name": extract_cluster_name(text),
@@ -79,3 +99,8 @@ def parse_netapp_log(text: str) -> Dict[str, str]:
         "disk_count": extract_disk_count(text),
         "controller_serial": extract_controller_serial(text),
     }
+
+
+def format_summary_text(summary: Dict[str, Any]) -> str:
+    lines = [f"{field}: {summary.get(field, '')}" for field in SUMMARY_FIELDS]
+    return "\n".join(lines) + "\n"

@@ -782,14 +782,16 @@ pmh       test01       iscsi    linux    iqn.1994-05.com.redhat:bb751f5d055
 8 entries were displayed.
 
 FAS2750::*> storage shelf show
-                                                                      
+                                                                      
+
                                                         Module  Operational
        Shelf Name Shelf ID Serial Number   Model        Type    Status
 ----------------- -------- --------------- ------------ ------- -----------
               9.0        0 SHFNC2050000238 DS224-12     IOM12E  Normal
 
 FAS2750::*> disk show
-                                                                                           Usable           Disk    Container   Container
+                                                                      
+                     Usable           Disk    Container   Container
 Disk                   Size Shelf Bay Type    Type        Name      Owner
 ---------------- ---------- ----- --- ------- ----------- --------- --------
 9.0.2               546.9GB     0   2 SAS     shared      n1_DATA   FAS2750-01
@@ -826,7 +828,8 @@ FAS2750::*> disk show -broken
 There are no entries matching your query.
 
 FAS2750::*> aggr show
-                                                                      
+                                                                      
+
 
 Aggregate     Size Available Used% State   #Vols  Nodes            RAID Status
 --------- -------- --------- ----- ------- ------ ---------------- ------------
@@ -839,7 +842,8 @@ n1_DATA     4.78TB    1.89TB   60% online     129 FAS2750-01       raid_dp,
 3 entries were displayed.
 
 FAS2750::*> aggr status -s
-                                                                      
+                                                                      
+
  Owner Node: FAS2750-01
  Pool0
   Root-Data Partitioned Spares
@@ -1565,7 +1569,8 @@ vmdata    vs01_root    n1_DATA      online     RW          1GB     1023MB    0%
 139 entries were displayed.
 
 FAS2750::*> aggr show
-                                                                      
+                                                                      
+
 
 Aggregate     Size Available Used% State   #Vols  Nodes            RAID Status
 --------- -------- --------- ----- ------- ------ ---------------- ------------
@@ -1935,7 +1940,8 @@ jjy_dr:target_vol jjy:source_vol scheduled-update 3/16/2026 07:05:00 3/16/2026 0
 217 entries were displayed.
 
 FAS2750::*> disk show -fields model ,firmware-revision 
-                                                                      disk     firmware-revision model            
+                                                                      
+disk     firmware-revision model            
 -------- ----------------- ---------------- 
 9.0.2    NA02              X422_HCOBE600A10 
 9.0.3    NA01              X422_TAL13600A10 
@@ -1978,7 +1984,8 @@ FAS2750::*> storage shelf show -felds psu-po  0p            fields -psu-op
 
 Error: -fields takes a list of field names without a leading "-"
 FAS2750::*> storage shelf show -fields -psu-op       psu-op
-                                                                      shelf psu-op-status 
+                                                                      
+shelf psu-op-status 
 ----- ------------- 
 9.0   normal,normal 
 
@@ -1999,7 +2006,8 @@ FAS2750::*> storage shelf show -fields module-fw-revision ,module-
     module-fw-progress          module-swap-count
     module-op-status            
 FAS2750::*> storage shelf show -fields module-fw-revision ,module-type 
-                                                                      shelf module-type module-fw-revision 
+                                                                      
+shelf module-type module-fw-revision 
 ----- ----------- ------------------ 
 9.0   IOM12E      0251,0251          
 
