@@ -1,0 +1,49 @@
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Storage AI Upload</title>
+  <link rel="stylesheet" href="/static/app.css">
+</head>
+<body>
+  <main>
+    <h1>Storage AI Upload</h1>
+    <p>업로드된 파일을 선택하면 미리보기에서 summary를 눌러 상세 정보를 볼 수 있습니다.</p>
+    <div class="layout">
+      <section class="panel">
+        <form id="upload-form">
+          <label>
+            파일 선택
+            <input id="file" name="file" type="file" required>
+          </label>
+          <label>
+            저장 이름
+            <input id="save_name" name="save_name" type="text" placeholder="예: fas2750.txt" required>
+          </label>
+          <button type="submit">업로드</button>
+        </form>
+        <div id="status" class="status"></div>
+        <div id="log-list" class="log-list"></div>
+      </section>
+      <section class="panel">
+        <div id="preview-empty" class="empty">왼쪽 목록에서 업로드된 파일을 선택하세요.</div>
+        <div id="preview" hidden>
+          <div class="preview-head">
+            <div>
+              <h2 id="preview-name"></h2>
+              <p id="preview-meta"></p>
+            </div>
+            <button id="summary-trigger" class="secondary summary-link" type="button">summary 보기</button>
+          </div>
+          <div id="summary-box" class="summary-box">
+            <p id="summary-file"></p>
+            <div id="summary-grid" class="summary-grid"></div>
+            <pre id="summary-raw"></pre>
+          </div>
+        </div>
+      </section>
+    </div>
+  </main>
+  <script src="/static/app.js"></script>
+</body>
+</html>

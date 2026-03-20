@@ -2,6 +2,8 @@ from pathlib import Path
 import re
 
 from fastapi import Depends, FastAPI, File, Form, HTTPException, UploadFile
+from fastapi.responses import HTMLResponse
+from fastapi.staticfiles import StaticFiles
 from sqlalchemy import text
 from sqlalchemy.orm import Session
 
@@ -13,8 +15,14 @@ from app.parser_netapp import decode_text_content, format_summary_text, parse_ne
 
 app = FastAPI(title=settings.app_name)
 
+BASE_DIR = Path(__file__).resolve().parent
+TEMPLATE_DIR = BASE_DIR / "templates"
+STATIC_DIR = BASE_DIR / "static"
+INDEX_PAGE = TEMPLATE_DIR / "index.html"
 upload_dir = Path(settings.upload_dir)
 upload_dir.mkdir(parents=True, exist_ok=True)
+
+app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
 
 INVALID_FILENAME_CHARS = re.compile(r'[<>:"/\\|?*\x00-\x1f]')
 
@@ -62,6 +70,11 @@ def on_startup():
 
 @app.get("/")
 def root():
+    return HTMLResponse(INDEX_PAGE.read_text(encoding="utf-8"))
+
+
+@app.get("/api")
+def api_root():
     return {
         "message": "Storage AI Web API",
         "env": settings.app_env,
@@ -147,3 +160,32 @@ def list_logs(db: Session = Depends(get_db)):
         }
         for row in rows
     ]
+
+
+@app.get("/logs/{log_id}/summary")
+def get_log_summary(log_id: int, db: Session = Depends(get_db)):
+    log = db.query(UploadedLog).filter(UploadedLog.id == log_id).first()
+    if not log:
+        raise HTTPException(status_code=404, detail="업로드 파일을 찾을 수 없습니다.")
+
+    summary_filename = f"{Path(log.filename).stem}_summary.txt"
+    summary_path = upload_dir / summary_filename
+    if not summary_path.exists():
+        raise HTTPException(status_code=404, detail="summary 파일을 찾을 수 없습니다.")
+
+    raw_text = summary_path.read_text(encoding="utf-8")
+    summary = {}
+    for line in raw_text.splitlines():
+        if ":" not in line:
+            continue
+        key, value = line.split(":", 1)
+        summary[key.strip()] = value.strip()
+
+    return {
+        "id": log.id,
+        "filename": log.filename,
+        "summary_filename": summary_filename,
+        "summary_stored_path": str(summary_path),
+        "summary": summary,
+        "raw_text": raw_text,
+    }

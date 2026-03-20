@@ -3,6 +3,8 @@ import importlib
 import sys
 from pathlib import Path
 
+from fastapi.responses import HTMLResponse
+
 
 ROOT_DIR = Path(__file__).resolve().parents[1]
 if str(ROOT_DIR) not in sys.path:
@@ -40,10 +42,7 @@ def load_app(monkeypatch, tmp_path: Path):
     return importlib.import_module("app.main")
 
 
-def test_upload_creates_original_and_summary_files(monkeypatch, tmp_path):
-    main_module = load_app(monkeypatch, tmp_path)
-    main_module.on_startup()
-
+def create_uploaded_log(main_module):
     db_generator = main_module.get_db()
     db = next(db_generator)
     upload_file = DummyUploadFile("fas2750.log", SAMPLE_LOG.encode("utf-8"))
@@ -54,6 +53,29 @@ def test_upload_creates_original_and_summary_files(monkeypatch, tmp_path):
         )
     finally:
         db_generator.close()
+
+    return payload
+
+
+def test_root_serves_html_ui(monkeypatch, tmp_path):
+    main_module = load_app(monkeypatch, tmp_path)
+
+    response = main_module.root()
+    body = response.body.decode("utf-8")
+
+    assert isinstance(response, HTMLResponse)
+    assert "/static/app.css" in body
+    assert "/static/app.js" in body
+    assert (Path(main_module.TEMPLATE_DIR) / "index.html").exists()
+    assert (Path(main_module.STATIC_DIR) / "app.css").exists()
+    assert (Path(main_module.STATIC_DIR) / "app.js").exists()
+
+
+def test_upload_creates_original_and_summary_files(monkeypatch, tmp_path):
+    main_module = load_app(monkeypatch, tmp_path)
+    main_module.on_startup()
+
+    payload = create_uploaded_log(main_module)
 
     original_path = Path(payload["stored_path"])
     summary_path = Path(payload["summary_stored_path"])
@@ -78,3 +100,29 @@ def test_upload_creates_original_and_summary_files(monkeypatch, tmp_path):
         "disk_count: 2\n"
         "controller_serial: 952047001063,952047000902\n"
     )
+
+
+def test_get_log_summary_returns_detail_payload(monkeypatch, tmp_path):
+    main_module = load_app(monkeypatch, tmp_path)
+    main_module.on_startup()
+
+    upload_payload = create_uploaded_log(main_module)
+
+    db_generator = main_module.get_db()
+    db = next(db_generator)
+    try:
+        payload = main_module.get_log_summary(upload_payload["id"], db=db)
+    finally:
+        db_generator.close()
+
+    assert payload["summary_filename"] == "fas2750_summary.txt"
+    assert payload["summary_stored_path"].endswith("fas2750_summary.txt")
+    assert payload["summary"] == {
+        "vendor": "NetApp",
+        "cluster_name": "FAS2750",
+        "model_name": "FAS2750",
+        "ontap_version": "9.17.1P2",
+        "disk_count": "2",
+        "controller_serial": "952047001063,952047000902",
+    }
+    assert "vendor: NetApp" in payload["raw_text"]
