@@ -1,0 +1,6 @@
+vendor: NetApp
+cluster_name: KT7F_A50
+model_name: ASA-A50
+ontap_version: 9.17.1P2
+disk_count: 10
+controller_serial: 722540000836,722541000684

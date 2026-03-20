@@ -82,12 +82,15 @@ def extract_disk_count(text: str) -> int:
     괄호 안 마지막 고유 식별자(시리얼/WWID) 기준으로 dedupe 한다.
     """
     pattern = re.compile(
-        r"^\S+\s*:\s+\S+\s+\S+.*\d+(?:\.\d+)?(?:GB|TB|MB)\s+\d+B/sect\s+\(([^()]+)\)\s*$",
-        re.MULTILINE
+    r"^(\d+\.\d+\.\d+)\s+\d+(?:\.\d+)?(?:GB|TB|MB)\s+\d+\s+\d+\s+\S+\s+\S+.+$",
+    re.MULTILINE,
     )
+
     disk_ids = pattern.findall(text)
     disk_ids = _dedupe_keep_order(disk_ids)
     return len(disk_ids)
+
+
 
 
 def parse_netapp_log(text: str) -> Dict[str, Any]:

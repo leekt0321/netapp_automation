@@ -1,0 +1,6 @@
+vendor: NetApp
+cluster_name: IV_ONAS
+model_name: AFF-A20
+ontap_version: 
+disk_count: 22
+controller_serial: 
