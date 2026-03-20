@@ -1,15 +1,18 @@
 from pathlib import Path
 import re
+from typing import Optional
 
 from fastapi import Depends, FastAPI, File, Form, HTTPException, UploadFile
-from fastapi.responses import HTMLResponse
+from fastapi.responses import FileResponse, HTMLResponse
 from fastapi.staticfiles import StaticFiles
+from pydantic import BaseModel
 from sqlalchemy import text
 from sqlalchemy.orm import Session
 
+from app.auth import hash_password, verify_password
 from app.config import settings
 from app.db import Base, engine, get_db
-from app.models import UploadedLog
+from app.models import UploadedLog, User
 from app.parser_netapp import decode_text_content, format_summary_text, parse_netapp_log
 
 
@@ -25,6 +28,22 @@ upload_dir.mkdir(parents=True, exist_ok=True)
 app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
 
 INVALID_FILENAME_CHARS = re.compile(r'[<>:"/\\|?*\x00-\x1f]')
+
+
+class LoginPayload(BaseModel):
+    username: str
+    password: str
+
+
+class RegisterPayload(BaseModel):
+    username: str
+    password: str
+    full_name: Optional[str] = None
+
+
+class DeleteUserPayload(BaseModel):
+    username: str
+    password: str
 
 
 def normalize_filename(requested_name: str, original_filename: str) -> str:
@@ -63,9 +82,29 @@ def get_summary_filename(filename: str) -> str:
     return get_unique_filename(f"{candidate.stem}_summary.txt")
 
 
+def ensure_admin_user(db: Session) -> None:
+    existing_user = db.query(User).filter(User.username == settings.admin_username).first()
+    if existing_user:
+        return
+
+    admin_user = User(
+        username=settings.admin_username,
+        password_hash=hash_password(settings.admin_password),
+        full_name=settings.admin_full_name,
+        is_active=True,
+    )
+    db.add(admin_user)
+    db.commit()
+
+
 @app.on_event("startup")
 def on_startup():
     Base.metadata.create_all(bind=engine)
+    db = next(get_db())
+    try:
+        ensure_admin_user(db)
+    finally:
+        db.close()
 
 
 @app.get("/")
@@ -92,6 +131,78 @@ def health(db: Session = Depends(get_db)):
     return {
         "app": "ok",
         "db": db_status,
+    }
+
+
+@app.post("/auth/register")
+def register_user(payload: RegisterPayload, db: Session = Depends(get_db)):
+    username = payload.username.strip()
+    password = payload.password.strip()
+    full_name = payload.full_name.strip() if payload.full_name else None
+    if not username or not password:
+        raise HTTPException(status_code=400, detail="아이디와 비밀번호를 입력해주세요.")
+
+    existing_user = db.query(User).filter(User.username == username).first()
+    if existing_user:
+        raise HTTPException(status_code=409, detail="이미 존재하는 사용자입니다.")
+
+    user = User(
+        username=username,
+        password_hash=hash_password(password),
+        full_name=full_name,
+        is_active=True,
+    )
+    db.add(user)
+    db.commit()
+    db.refresh(user)
+
+    return {
+        "id": user.id,
+        "username": user.username,
+        "full_name": user.full_name,
+        "is_active": user.is_active,
+    }
+
+
+@app.post("/auth/login")
+def login(payload: LoginPayload, db: Session = Depends(get_db)):
+    username = payload.username.strip()
+    password = payload.password.strip()
+    if not username or not password:
+        raise HTTPException(status_code=400, detail="아이디와 비밀번호를 입력해주세요.")
+
+    user = db.query(User).filter(User.username == username).first()
+    if not user or not verify_password(password, user.password_hash):
+        raise HTTPException(status_code=401, detail="로그인 정보가 올바르지 않습니다.")
+
+    if not user.is_active:
+        raise HTTPException(status_code=403, detail="비활성화된 사용자입니다.")
+
+    return {
+        "id": user.id,
+        "username": user.username,
+        "full_name": user.full_name,
+        "is_active": user.is_active,
+    }
+
+
+@app.delete("/auth/delete")
+def delete_user(payload: DeleteUserPayload, db: Session = Depends(get_db)):
+    username = payload.username.strip()
+    password = payload.password.strip()
+    if not username or not password:
+        raise HTTPException(status_code=400, detail="아이디와 비밀번호를 입력해주세요.")
+
+    user = db.query(User).filter(User.username == username).first()
+    if not user or not verify_password(password, user.password_hash):
+        raise HTTPException(status_code=401, detail="회원탈퇴 정보가 올바르지 않습니다.")
+
+    db.delete(user)
+    db.commit()
+
+    return {
+        "deleted": True,
+        "username": username,
     }
 
 
@@ -160,6 +271,64 @@ def list_logs(db: Session = Depends(get_db)):
         }
         for row in rows
     ]
+
+
+@app.get("/logs/{log_id}/raw")
+def get_raw_log(log_id: int, db: Session = Depends(get_db)):
+    log = db.query(UploadedLog).filter(UploadedLog.id == log_id).first()
+    if not log:
+        raise HTTPException(status_code=404, detail="업로드 파일을 찾을 수 없습니다.")
+
+    raw_path = Path(log.stored_path)
+    if not raw_path.exists():
+        raise HTTPException(status_code=404, detail="원본 로그 파일을 찾을 수 없습니다.")
+
+    return {
+        "id": log.id,
+        "filename": log.filename,
+        "stored_path": log.stored_path,
+        "size": log.size,
+        "status": log.status,
+        "raw_text": raw_path.read_text(encoding="utf-8", errors="replace"),
+    }
+
+
+@app.get("/logs/{log_id}/download")
+def download_log(log_id: int, db: Session = Depends(get_db)):
+    log = db.query(UploadedLog).filter(UploadedLog.id == log_id).first()
+    if not log:
+        raise HTTPException(status_code=404, detail="업로드 파일을 찾을 수 없습니다.")
+
+    raw_path = Path(log.stored_path)
+    if not raw_path.exists():
+        raise HTTPException(status_code=404, detail="원본 로그 파일을 찾을 수 없습니다.")
+
+    return FileResponse(path=raw_path, filename=log.filename, media_type=log.content_type or "application/octet-stream")
+
+
+@app.delete("/logs/{log_id}")
+def delete_log(log_id: int, db: Session = Depends(get_db)):
+    log = db.query(UploadedLog).filter(UploadedLog.id == log_id).first()
+    if not log:
+        raise HTTPException(status_code=404, detail="업로드 파일을 찾을 수 없습니다.")
+
+    raw_path = Path(log.stored_path)
+    summary_path = upload_dir / f"{Path(log.filename).stem}_summary.txt"
+
+    if raw_path.exists():
+        raw_path.unlink()
+    if summary_path.exists():
+        summary_path.unlink()
+
+    filename = log.filename
+    db.delete(log)
+    db.commit()
+
+    return {
+        "deleted": True,
+        "id": log_id,
+        "filename": filename,
+    }
 
 
 @app.get("/logs/{log_id}/summary")

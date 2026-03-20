@@ -1,19 +1,206 @@
+const SESSION_KEY = "baobab-user";
+const SESSION_NAME_KEY = "baobab-display-name";
+
+const loginScreenEl = document.getElementById("login-screen");
+const appShellEl = document.getElementById("app-shell");
+const loginFormEl = document.getElementById("login-form");
+const loginIdEl = document.getElementById("login-id");
+const loginPasswordEl = document.getElementById("login-password");
+const loginStatusEl = document.getElementById("login-status");
+const registerFormEl = document.getElementById("register-form");
+const registerNameEl = document.getElementById("register-name");
+const registerIdEl = document.getElementById("register-id");
+const registerPasswordEl = document.getElementById("register-password");
+const registerStatusEl = document.getElementById("register-status");
+const loginUserEl = document.getElementById("login-user");
+const logoutButtonEl = document.getElementById("logout-button");
+const deleteFormEl = document.getElementById("delete-form");
+const deletePasswordEl = document.getElementById("delete-password");
+const deleteStatusEl = document.getElementById("delete-status");
+
+const navButtons = Array.from(document.querySelectorAll(".nav-button"));
+const pageSections = Array.from(document.querySelectorAll(".page-section"));
+const pageTitleEl = document.getElementById("page-title");
+const pageDescriptionEl = document.getElementById("page-description");
+const pageLinkButtons = Array.from(document.querySelectorAll(".page-link"));
+const logsBackButtonEl = document.getElementById("logs-back-button");
+const summaryBackButtonEl = document.getElementById("summary-back-button");
+
 const form = document.getElementById("upload-form");
 const fileInput = document.getElementById("file");
 const saveNameInput = document.getElementById("save_name");
 const statusEl = document.getElementById("status");
-const logListEl = document.getElementById("log-list");
-const previewEmptyEl = document.getElementById("preview-empty");
-const previewEl = document.getElementById("preview");
-const previewNameEl = document.getElementById("preview-name");
-const previewMetaEl = document.getElementById("preview-meta");
-const summaryTriggerEl = document.getElementById("summary-trigger");
-const summaryBoxEl = document.getElementById("summary-box");
-const summaryFileEl = document.getElementById("summary-file");
+const totalLogCountEl = document.getElementById("total-log-count");
+const latestLogNameEl = document.getElementById("latest-log-name");
+
+const rawLogListEl = document.getElementById("raw-log-list");
+const rawEmptyEl = document.getElementById("raw-empty");
+const rawPreviewEl = document.getElementById("raw-preview");
+const rawNameEl = document.getElementById("raw-name");
+const rawMetaEl = document.getElementById("raw-meta");
+const rawContentEl = document.getElementById("raw-content");
+
+const summaryLogListEl = document.getElementById("summary-log-list");
+const summaryEmptyEl = document.getElementById("summary-empty");
+const summaryPreviewEl = document.getElementById("summary-preview");
+const summaryNameEl = document.getElementById("summary-name");
+const summaryMetaEl = document.getElementById("summary-meta");
 const summaryGridEl = document.getElementById("summary-grid");
 const summaryRawEl = document.getElementById("summary-raw");
+const rawDownloadButtonEl = document.getElementById("raw-download-button");
+const rawDeleteButtonEl = document.getElementById("raw-delete-button");
+const summaryDownloadButtonEl = document.getElementById("summary-download-button");
+const summaryDeleteButtonEl = document.getElementById("summary-delete-button");
 
-let selectedLogId = null;
+const pageMeta = {
+  dashboard: {
+    title: "Dashboard",
+    description: "업로드와 최근 현황을 확인합니다.",
+  },
+  logs: {
+    title: "Original Logs",
+    description: "원본 로그 파일 내용을 직접 검토합니다.",
+  },
+  summary: {
+    title: "Summary Info",
+    description: "summary 정보를 확인합니다.",
+  },
+};
+
+let selectedRawLogId = null;
+let selectedSummaryLogId = null;
+
+loginFormEl.addEventListener("submit", async (event) => {
+  event.preventDefault();
+  const username = loginIdEl.value.trim();
+  const password = loginPasswordEl.value.trim();
+
+  if (username === "" || password === "") {
+    loginStatusEl.textContent = "아이디와 비밀번호를 입력하세요.";
+    return;
+  }
+
+  loginStatusEl.textContent = "로그인 확인 중...";
+  const response = await fetch("/auth/login", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ username, password }),
+  });
+  const payload = await response.json();
+
+  if (response.ok === false) {
+    loginStatusEl.textContent = payload.detail || "로그인에 실패했습니다.";
+    return;
+  }
+
+  localStorage.setItem(SESSION_KEY, payload.username);
+  localStorage.setItem(SESSION_NAME_KEY, payload.full_name || payload.username);
+  loginStatusEl.textContent = "";
+  loginFormEl.reset();
+  openApp(payload.full_name || payload.username);
+});
+
+registerFormEl.addEventListener("submit", async (event) => {
+  event.preventDefault();
+  const username = registerIdEl.value.trim();
+  const password = registerPasswordEl.value.trim();
+  const fullName = registerNameEl.value.trim();
+
+  if (username === "" || password === "") {
+    registerStatusEl.textContent = "아이디와 비밀번호를 입력하세요.";
+    return;
+  }
+
+  registerStatusEl.textContent = "회원가입 처리 중...";
+  const response = await fetch("/auth/register", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ username, password, full_name: fullName || null }),
+  });
+  const payload = await response.json();
+
+  if (response.ok === false) {
+    registerStatusEl.textContent = payload.detail || "회원가입에 실패했습니다.";
+    return;
+  }
+
+  registerStatusEl.textContent = payload.username + " 계정이 생성되었습니다. 로그인하세요.";
+  registerFormEl.reset();
+});
+
+logoutButtonEl.addEventListener("click", () => {
+  clearSession();
+  loginStatusEl.textContent = "로그아웃되었습니다.";
+});
+
+deleteFormEl.addEventListener("submit", async (event) => {
+  event.preventDefault();
+  const username = localStorage.getItem(SESSION_KEY);
+  const password = deletePasswordEl.value.trim();
+
+  if (username === null || password === "") {
+    deleteStatusEl.textContent = "비밀번호를 입력하세요.";
+    return;
+  }
+
+  deleteStatusEl.textContent = "회원탈퇴 처리 중...";
+  const response = await fetch("/auth/delete", {
+    method: "DELETE",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ username, password }),
+  });
+  const payload = await response.json();
+
+  if (response.ok === false) {
+    deleteStatusEl.textContent = payload.detail || "회원탈퇴에 실패했습니다.";
+    return;
+  }
+
+  deleteFormEl.reset();
+  deleteStatusEl.textContent = "회원탈퇴가 완료되었습니다.";
+  clearSession();
+  loginStatusEl.textContent = payload.username + " 계정이 삭제되었습니다.";
+});
+
+for (const button of navButtons) {
+  button.addEventListener("click", () => {
+    showPage(button.dataset.page);
+  });
+}
+
+for (const button of pageLinkButtons) {
+  button.addEventListener("click", () => {
+    showPage(button.dataset.targetPage);
+  });
+}
+
+logsBackButtonEl.addEventListener("click", () => {
+  showPage("dashboard");
+});
+
+summaryBackButtonEl.addEventListener("click", () => {
+  showPage("dashboard");
+});
+
+rawDownloadButtonEl.addEventListener("click", () => {
+  if (selectedRawLogId !== null) {
+    window.location.href = "/logs/" + selectedRawLogId + "/download";
+  }
+});
+
+summaryDownloadButtonEl.addEventListener("click", () => {
+  if (selectedSummaryLogId !== null) {
+    window.location.href = "/logs/" + selectedSummaryLogId + "/download";
+  }
+});
+
+rawDeleteButtonEl.addEventListener("click", async () => {
+  await deleteSelectedLog(selectedRawLogId, "logs");
+});
+
+summaryDeleteButtonEl.addEventListener("click", async () => {
+  await deleteSelectedLog(selectedSummaryLogId, "summary");
+});
 
 fileInput.addEventListener("change", () => {
   if (saveNameInput.value === "" && fileInput.files.length > 0) {
@@ -46,41 +233,143 @@ form.addEventListener("submit", async (event) => {
 
   statusEl.textContent = payload.filename + " 업로드 완료";
   form.reset();
-  await loadLogs(payload.id);
+  await loadLogs(payload.id, payload.id);
+  showPage("summary");
 });
 
-summaryTriggerEl.addEventListener("click", async () => {
-  if (selectedLogId === null) {
+function clearSession() {
+  localStorage.removeItem(SESSION_KEY);
+  localStorage.removeItem(SESSION_NAME_KEY);
+  appShellEl.hidden = true;
+  loginScreenEl.hidden = false;
+}
+
+function openApp(displayName) {
+  loginUserEl.textContent = displayName + " 님";
+  loginScreenEl.hidden = true;
+  appShellEl.hidden = false;
+  deleteStatusEl.textContent = "";
+  showPage("dashboard");
+  loadLogs();
+}
+
+function showPage(page) {
+  for (const button of navButtons) {
+    button.classList.toggle("active", button.dataset.page === page);
+  }
+
+  for (const section of pageSections) {
+    section.classList.toggle("active", section.id === "page-" + page);
+  }
+
+  pageTitleEl.textContent = pageMeta[page].title;
+  pageDescriptionEl.textContent = pageMeta[page].description;
+}
+
+async function loadLogs(rawSelectId, summarySelectId) {
+  const response = await fetch("/logs");
+  const logs = await response.json();
+
+  updateDashboard(logs);
+  renderRawLogs(logs, rawSelectId);
+  renderSummaryLogs(logs, summarySelectId);
+}
+
+function updateDashboard(logs) {
+  totalLogCountEl.textContent = String(logs.length);
+  latestLogNameEl.textContent = logs.length > 0 ? logs[0].filename : "-";
+}
+
+function renderRawLogs(logs, selectId) {
+  if (logs.length === 0) {
+    rawLogListEl.innerHTML = "<div class='empty'>업로드된 원본 로그가 없습니다.</div>";
+    rawPreviewEl.hidden = true;
+    rawEmptyEl.hidden = false;
+    selectedRawLogId = null;
     return;
   }
 
-  const shouldOpen = summaryBoxEl.classList.contains("open") === false;
-  if (shouldOpen === false) {
-    summaryBoxEl.classList.remove("open");
-    summaryTriggerEl.textContent = "summary 보기";
+  selectedRawLogId = selectId || selectedRawLogId || logs[0].id;
+  rawLogListEl.innerHTML = logs.map((log) => renderListButton(log, selectedRawLogId)).join("");
+
+  for (const item of rawLogListEl.querySelectorAll(".log-item")) {
+    item.addEventListener("click", () => {
+      selectedRawLogId = Number(item.dataset.id);
+      renderRawLogs(logs, selectedRawLogId);
+      loadRawLog(selectedRawLogId);
+    });
+  }
+
+  loadRawLog(selectedRawLogId);
+}
+
+function renderSummaryLogs(logs, selectId) {
+  if (logs.length === 0) {
+    summaryLogListEl.innerHTML = "<div class='empty'>업로드된 summary가 없습니다.</div>";
+    summaryPreviewEl.hidden = true;
+    summaryEmptyEl.hidden = false;
+    selectedSummaryLogId = null;
     return;
   }
 
-  summaryTriggerEl.disabled = true;
-  summaryTriggerEl.textContent = "summary 불러오는 중...";
-  const response = await fetch("/logs/" + selectedLogId + "/summary");
+  selectedSummaryLogId = selectId || selectedSummaryLogId || logs[0].id;
+  summaryLogListEl.innerHTML = logs.map((log) => renderListButton(log, selectedSummaryLogId)).join("");
+
+  for (const item of summaryLogListEl.querySelectorAll(".log-item")) {
+    item.addEventListener("click", () => {
+      selectedSummaryLogId = Number(item.dataset.id);
+      renderSummaryLogs(logs, selectedSummaryLogId);
+      loadSummary(selectedSummaryLogId);
+    });
+  }
+
+  loadSummary(selectedSummaryLogId);
+}
+
+function renderListButton(log, activeId) {
+  const activeClass = log.id === activeId ? "active" : "";
+  return "<button class='log-item " + activeClass + "' data-id='" + log.id + "' type='button'>" +
+    "<strong>" + escapeHtml(log.filename) + "</strong>" +
+    "<div class='meta'><span>ID " + log.id + "</span><span>" + formatBytes(log.size) + "</span></div>" +
+  "</button>";
+}
+
+async function loadRawLog(logId) {
+  const response = await fetch("/logs/" + logId + "/raw");
   const payload = await response.json();
-  summaryTriggerEl.disabled = false;
-  summaryTriggerEl.textContent = "summary 접기";
 
   if (response.ok === false) {
-    summaryFileEl.textContent = payload.detail || "summary를 불러오지 못했습니다.";
-    summaryGridEl.innerHTML = "";
-    summaryRawEl.textContent = "";
-    summaryBoxEl.classList.add("open");
+    rawPreviewEl.hidden = true;
+    rawEmptyEl.hidden = false;
+    rawEmptyEl.textContent = payload.detail || "원본 로그를 불러오지 못했습니다.";
     return;
   }
 
-  summaryFileEl.textContent = payload.summary_filename;
+  rawEmptyEl.hidden = true;
+  rawPreviewEl.hidden = false;
+  rawNameEl.textContent = payload.filename;
+  rawMetaEl.textContent = "상태: " + payload.status + " / 크기: " + formatBytes(payload.size);
+  rawContentEl.textContent = payload.raw_text || "";
+}
+
+async function loadSummary(logId) {
+  const response = await fetch("/logs/" + logId + "/summary");
+  const payload = await response.json();
+
+  if (response.ok === false) {
+    summaryPreviewEl.hidden = true;
+    summaryEmptyEl.hidden = false;
+    summaryEmptyEl.textContent = payload.detail || "summary를 불러오지 못했습니다.";
+    return;
+  }
+
+  summaryEmptyEl.hidden = true;
+  summaryPreviewEl.hidden = false;
+  summaryNameEl.textContent = payload.summary_filename;
+  summaryMetaEl.textContent = payload.filename + " 에서 생성된 summary";
   renderSummaryFields(payload.summary || {});
   summaryRawEl.textContent = payload.raw_text || "";
-  summaryBoxEl.classList.add("open");
-});
+}
 
 function renderSummaryFields(summary) {
   const entries = Object.entries(summary);
@@ -95,64 +384,33 @@ function renderSummaryFields(summary) {
   }).join("");
 }
 
-async function loadLogs(selectId) {
-  const response = await fetch("/logs");
-  const logs = await response.json();
-  renderLogs(logs, selectId);
-}
-
-function renderLogs(logs, selectId) {
-  if (logs.length === 0) {
-    logListEl.innerHTML = "<div class='empty'>업로드된 파일이 없습니다.</div>";
-    resetPreview();
+async function deleteSelectedLog(logId, page) {
+  if (logId === null) {
     return;
   }
 
-  logListEl.innerHTML = logs.map((log) => {
-    const activeClass = log.id === selectId ? "active" : "";
-    return "<button class='log-item " + activeClass + "' data-id='" + log.id + "' type='button'>" +
-      "<strong>" + escapeHtml(log.filename) + "</strong>" +
-      "<div class='meta'><span>ID " + log.id + "</span><span>" + formatBytes(log.size) + "</span></div>" +
-    "</button>";
-  }).join("");
-
-  for (const item of logListEl.querySelectorAll(".log-item")) {
-    item.addEventListener("click", () => {
-      const id = Number(item.dataset.id);
-      const log = logs.find((entry) => entry.id === id);
-      if (log) {
-        showPreview(log);
-        renderLogs(logs, id);
-      }
-    });
-  }
-
-  const target = logs.find((log) => log.id === selectId) || logs[0];
-  showPreview(target);
-  if (target.id === selectId) {
+  const confirmed = window.confirm("선택한 업로드 파일을 삭제하시겠습니까?");
+  if (confirmed === false) {
     return;
   }
-  renderLogs(logs, target.id);
-}
 
-function showPreview(log) {
-  selectedLogId = log.id;
-  previewEmptyEl.hidden = true;
-  previewEl.hidden = false;
-  previewNameEl.textContent = log.filename;
-  previewMetaEl.textContent = "상태: " + log.status + " / 크기: " + formatBytes(log.size);
-  summaryBoxEl.classList.remove("open");
-  summaryTriggerEl.textContent = "summary 보기";
-  summaryTriggerEl.disabled = false;
-  summaryFileEl.textContent = "";
-  summaryGridEl.innerHTML = "";
-  summaryRawEl.textContent = "";
-}
+  const response = await fetch("/logs/" + logId, {
+    method: "DELETE",
+  });
+  const payload = await response.json();
 
-function resetPreview() {
-  selectedLogId = null;
-  previewEl.hidden = true;
-  previewEmptyEl.hidden = false;
+  if (response.ok === false) {
+    const message = payload.detail || "파일 삭제에 실패했습니다.";
+    statusEl.textContent = message;
+    deleteStatusEl.textContent = message;
+    return;
+  }
+
+  selectedRawLogId = null;
+  selectedSummaryLogId = null;
+  statusEl.textContent = payload.filename + " 삭제 완료";
+  await loadLogs();
+  showPage(page);
 }
 
 function formatBytes(bytes) {
@@ -178,4 +436,8 @@ function escapeHtml(value) {
     .replaceAll("'", "&#39;");
 }
 
-loadLogs();
+const savedUser = localStorage.getItem(SESSION_KEY);
+const savedDisplayName = localStorage.getItem(SESSION_NAME_KEY);
+if (savedUser !== null && savedDisplayName !== null) {
+  openApp(savedDisplayName);
+}

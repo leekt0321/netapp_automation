@@ -6,6 +6,9 @@ class Settings(BaseSettings):
     app_env: str = "dev"
     database_url: str
     upload_dir: str = "uploads"
+    admin_username: str = "admin"
+    admin_password: str = "admin1234"
+    admin_full_name: str = "Baobab Administrator"
 
     model_config = SettingsConfigDict(
         env_file=".env",

@@ -2,48 +2,216 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Storage AI Upload</title>
+  <title>Baobab Technology</title>
   <link rel="stylesheet" href="/static/app.css">
 </head>
 <body>
-  <main>
-    <h1>Storage AI Upload</h1>
-    <p>업로드된 파일을 선택하면 미리보기에서 summary를 눌러 상세 정보를 볼 수 있습니다.</p>
-    <div class="layout">
-      <section class="panel">
-        <form id="upload-form">
-          <label>
-            파일 선택
-            <input id="file" name="file" type="file" required>
-          </label>
-          <label>
-            저장 이름
-            <input id="save_name" name="save_name" type="text" placeholder="예: fas2750.txt" required>
-          </label>
-          <button type="submit">업로드</button>
-        </form>
-        <div id="status" class="status"></div>
-        <div id="log-list" class="log-list"></div>
-      </section>
-      <section class="panel">
-        <div id="preview-empty" class="empty">왼쪽 목록에서 업로드된 파일을 선택하세요.</div>
-        <div id="preview" hidden>
-          <div class="preview-head">
-            <div>
-              <h2 id="preview-name"></h2>
-              <p id="preview-meta"></p>
-            </div>
-            <button id="summary-trigger" class="secondary summary-link" type="button">summary 보기</button>
+  <div id="login-screen" class="login-screen">
+    <section class="login-panel wide">
+      <div class="auth-columns">
+        <div>
+          <p class="eyebrow">Baobab Technology</p>
+          <h1>Storage Insight Portal</h1>
+          <p class="login-copy">안녕하세요. 바오밥테크놀로지 장비현황관리 페이지입니다.</p>
+          <form id="login-form" class="login-form">
+            <label>
+              아이디
+              <input id="login-id" type="text" placeholder="아이디를 입력하세요" required>
+            </label>
+            <label>
+              비밀번호
+              <input id="login-password" type="password" placeholder="비밀번호를 입력하세요" required>
+            </label>
+            <button type="submit">로그인</button>
+          </form>
+          <p id="login-status" class="status"></p>
+        </div>
+        <div class="register-panel">
+          <h2>회원가입</h2>
+          <p class="login-copy">계정 생성</p>
+          <form id="register-form" class="login-form compact">
+            <label>
+              이름
+              <input id="register-name" type="text" placeholder="표시 이름">
+            </label>
+            <label>
+              아이디
+              <input id="register-id" type="text" placeholder="새 아이디" required>
+            </label>
+            <label>
+              비밀번호
+              <input id="register-password" type="password" placeholder="새 비밀번호" required>
+            </label>
+            <button type="submit">회원가입</button>
+          </form>
+          <p id="register-status" class="status"></p>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <div id="app-shell" class="app-shell" hidden>
+    <aside class="sidebar">
+      <div>
+        <p class="eyebrow">Baobab Technology</p>
+        <h2 class="brand-title">Storage Status Management</h2>
+        <p class="sidebar-copy">NetApp 로그를 업로드하면 원본 로그와 summary 정보 확인 할 수 있습니다.</p>
+      </div>
+      <nav class="nav-list">
+        <button class="nav-button active" data-page="dashboard" type="button">Dashboard</button>
+        <button class="nav-button" data-page="logs" type="button">Original Logs</button>
+        <button class="nav-button" data-page="summary" type="button">Summary Info</button>
+      </nav>
+      <div class="sidebar-footer">
+        <p id="login-user" class="sidebar-user"></p>
+        <button id="logout-button" class="secondary" type="button">로그아웃</button>
+      </div>
+    </aside>
+
+    <main class="content-shell">
+      <header class="topbar">
+        <div>
+          <p class="eyebrow">Operations Console</p>
+          <h1 id="page-title">Dashboard</h1>
+        </div>
+        <p id="page-description" class="page-description">업로드 파일 수와 최근 업로드 파일을 확인합니다.</p>
+      </header>
+
+      <section id="page-dashboard" class="page-section active">
+        <div class="hero-card">
+          <div>
+            <p class="eyebrow">Baobab Technology</p>
+            <h2>안녕하세요. 바오밥테크놀로지 입니다.</h2>
+            <p>대시보드에서 파일 업로드하고 저장할 이름을 지정해 주세요.</p>
           </div>
-          <div id="summary-box" class="summary-box">
-            <p id="summary-file"></p>
-            <div id="summary-grid" class="summary-grid"></div>
-            <pre id="summary-raw"></pre>
+          <div class="hero-stats">
+            <div class="stat-card">
+              <strong id="total-log-count">0</strong>
+              <span>Uploaded Logs</span>
+            </div>
+            <div class="stat-card">
+              <strong id="latest-log-name">-</strong>
+              <span>Latest File</span>
+            </div>
           </div>
         </div>
+
+        <div class="dashboard-grid">
+          <section class="panel upload-panel">
+            <div class="section-head">
+              <div>
+                <h3>파일 업로드</h3>
+                <p>업로드 후 Original Logs 와 Summary Info 화면에서 각각 확인합니다.</p>
+              </div>
+            </div>
+            <form id="upload-form" class="upload-form">
+              <label>
+                파일 선택
+                <input id="file" name="file" type="file" required>
+              </label>
+              <label>
+                저장 이름
+                <input id="save_name" name="save_name" type="text" placeholder="예: fas2750.txt" required>
+              </label>
+              <button type="submit">업로드</button>
+            </form>
+            <p id="status" class="status"></p>
+          </section>
+
+          <section class="panel account-panel">
+            <div class="section-head">
+              <div>
+                <h3>회원 관리</h3>
+                <p>현재 로그인한 계정을 탈퇴할 수 있습니다.</p>
+              </div>
+            </div>
+            <form id="delete-form" class="upload-form compact">
+              <label>
+                비밀번호 확인
+                <input id="delete-password" type="password" placeholder="현재 비밀번호" required>
+              </label>
+              <button id="delete-button" class="danger" type="submit">회원탈퇴</button>
+            </form>
+            <p id="delete-status" class="status"></p>
+          </section>
+        </div>
       </section>
-    </div>
-  </main>
+
+      <section id="page-logs" class="page-section">
+        <div class="page-actions">
+          <button class="page-link secondary" data-target-page="dashboard" type="button">Dashboard</button>
+          <button class="page-link secondary" data-target-page="logs" type="button">Original Logs</button>
+          <button class="page-link secondary" data-target-page="summary" type="button">Summary Info</button>
+          <button id="logs-back-button" class="page-back secondary" type="button">뒤로가기</button>
+        </div>
+        <div class="page-grid">
+          <section class="panel list-panel">
+            <div class="section-head">
+              <div>
+                <h3>Original Logs</h3>
+                <p>업로드된 로그 원본 목록입니다.</p>
+              </div>
+            </div>
+            <div id="raw-log-list" class="log-list"></div>
+          </section>
+          <section class="panel detail-panel">
+            <div id="raw-empty" class="empty">왼쪽에서 로그를 선택하세요.</div>
+            <div id="raw-preview" hidden>
+              <div class="preview-head">
+                <div>
+                  <h3 id="raw-name"></h3>
+                  <p id="raw-meta"></p>
+                </div>
+                <div class="detail-actions">
+                  <button id="raw-download-button" class="secondary" type="button">다운로드</button>
+                  <button id="raw-delete-button" class="danger" type="button">삭제</button>
+                </div>
+              </div>
+              <pre id="raw-content"></pre>
+            </div>
+          </section>
+        </div>
+      </section>
+
+      <section id="page-summary" class="page-section">
+        <div class="page-actions">
+          <button class="page-link secondary" data-target-page="dashboard" type="button">Dashboard</button>
+          <button class="page-link secondary" data-target-page="logs" type="button">Original Logs</button>
+          <button class="page-link secondary" data-target-page="summary" type="button">Summary Info</button>
+          <button id="summary-back-button" class="page-back secondary" type="button">뒤로가기</button>
+        </div>
+        <div class="page-grid">
+          <section class="panel list-panel">
+            <div class="section-head">
+              <div>
+                <h3>Summary Info</h3>
+                <p>업로드된 로그의 summary 목록입니다.</p>
+              </div>
+            </div>
+            <div id="summary-log-list" class="log-list"></div>
+          </section>
+          <section class="panel detail-panel">
+            <div id="summary-empty" class="empty">왼쪽에서 summary를 선택하세요.</div>
+            <div id="summary-preview" hidden>
+              <div class="preview-head">
+                <div>
+                  <h3 id="summary-name"></h3>
+                  <p id="summary-meta"></p>
+                </div>
+                <div class="detail-actions">
+                  <button id="summary-download-button" class="secondary" type="button">원본 다운로드</button>
+                  <button id="summary-delete-button" class="danger" type="button">삭제</button>
+                </div>
+              </div>
+              <div id="summary-grid" class="summary-grid"></div>
+              <pre id="summary-raw"></pre>
+            </div>
+          </section>
+        </div>
+      </section>
+    </main>
+  </div>
+
   <script src="/static/app.js"></script>
 </body>
 </html>

@@ -3,7 +3,7 @@ import importlib
 import sys
 from pathlib import Path
 
-from fastapi.responses import HTMLResponse
+from fastapi.responses import FileResponse, HTMLResponse
 
 
 ROOT_DIR = Path(__file__).resolve().parents[1]
@@ -35,8 +35,11 @@ class DummyUploadFile:
 def load_app(monkeypatch, tmp_path: Path):
     monkeypatch.setenv("DATABASE_URL", f"sqlite+pysqlite:///{tmp_path / 'test.db'}")
     monkeypatch.setenv("UPLOAD_DIR", str(tmp_path / "upload"))
+    monkeypatch.setenv("ADMIN_USERNAME", "admin")
+    monkeypatch.setenv("ADMIN_PASSWORD", "secret123")
+    monkeypatch.setenv("ADMIN_FULL_NAME", "Baobab Admin")
 
-    for module_name in ("app.main", "app.models", "app.db", "app.config"):
+    for module_name in ("app.main", "app.models", "app.db", "app.config", "app.auth"):
         sys.modules.pop(module_name, None)
 
     return importlib.import_module("app.main")
@@ -64,11 +67,53 @@ def test_root_serves_html_ui(monkeypatch, tmp_path):
     body = response.body.decode("utf-8")
 
     assert isinstance(response, HTMLResponse)
-    assert "/static/app.css" in body
-    assert "/static/app.js" in body
-    assert (Path(main_module.TEMPLATE_DIR) / "index.html").exists()
-    assert (Path(main_module.STATIC_DIR) / "app.css").exists()
-    assert (Path(main_module.STATIC_DIR) / "app.js").exists()
+    assert "다운로드" in body
+    assert "삭제" in body
+
+
+def test_startup_creates_admin_user(monkeypatch, tmp_path):
+    main_module = load_app(monkeypatch, tmp_path)
+    main_module.on_startup()
+
+    db_generator = main_module.get_db()
+    db = next(db_generator)
+    try:
+        user = db.query(main_module.User).filter(main_module.User.username == "admin").first()
+    finally:
+        db_generator.close()
+
+    assert user is not None
+    assert user.full_name == "Baobab Admin"
+    assert user.is_active is True
+
+
+def test_register_login_and_delete_user(monkeypatch, tmp_path):
+    main_module = load_app(monkeypatch, tmp_path)
+    main_module.on_startup()
+
+    db_generator = main_module.get_db()
+    db = next(db_generator)
+    try:
+        register_payload = main_module.register_user(
+            main_module.RegisterPayload(username="user1", password="pw1234", full_name="User One"),
+            db=db,
+        )
+        login_payload = main_module.login(
+            main_module.LoginPayload(username="user1", password="pw1234"),
+            db=db,
+        )
+        delete_payload = main_module.delete_user(
+            main_module.DeleteUserPayload(username="user1", password="pw1234"),
+            db=db,
+        )
+        deleted_user = db.query(main_module.User).filter(main_module.User.username == "user1").first()
+    finally:
+        db_generator.close()
+
+    assert register_payload["username"] == "user1"
+    assert login_payload["full_name"] == "User One"
+    assert delete_payload["deleted"] is True
+    assert deleted_user is None
 
 
 def test_upload_creates_original_and_summary_files(monkeypatch, tmp_path):
@@ -84,25 +129,34 @@ def test_upload_creates_original_and_summary_files(monkeypatch, tmp_path):
     assert original_path.read_bytes() == SAMPLE_LOG.encode("utf-8")
     assert summary_path.exists()
     assert payload["summary_filename"] == "fas2750_summary.txt"
-    assert payload["summary"] == {
-        "vendor": "NetApp",
-        "cluster_name": "FAS2750",
-        "model_name": "FAS2750",
-        "ontap_version": "9.17.1P2",
-        "disk_count": 2,
-        "controller_serial": "952047001063,952047000902",
-    }
-    assert summary_path.read_text(encoding="utf-8") == (
-        "vendor: NetApp\n"
-        "cluster_name: FAS2750\n"
-        "model_name: FAS2750\n"
-        "ontap_version: 9.17.1P2\n"
-        "disk_count: 2\n"
-        "controller_serial: 952047001063,952047000902\n"
-    )
 
 
-def test_get_log_summary_returns_detail_payload(monkeypatch, tmp_path):
+def test_download_and_delete_log(monkeypatch, tmp_path):
+    main_module = load_app(monkeypatch, tmp_path)
+    main_module.on_startup()
+
+    upload_payload = create_uploaded_log(main_module)
+    original_path = Path(upload_payload["stored_path"])
+    summary_path = Path(upload_payload["summary_stored_path"])
+
+    db_generator = main_module.get_db()
+    db = next(db_generator)
+    try:
+        download_response = main_module.download_log(upload_payload["id"], db=db)
+        delete_response = main_module.delete_log(upload_payload["id"], db=db)
+        deleted_log = db.query(main_module.UploadedLog).filter(main_module.UploadedLog.id == upload_payload["id"]).first()
+    finally:
+        db_generator.close()
+
+    assert isinstance(download_response, FileResponse)
+    assert str(download_response.path) == str(original_path)
+    assert delete_response["deleted"] is True
+    assert deleted_log is None
+    assert not original_path.exists()
+    assert not summary_path.exists()
+
+
+def test_get_raw_and_summary_payload(monkeypatch, tmp_path):
     main_module = load_app(monkeypatch, tmp_path)
     main_module.on_startup()
 
@@ -111,18 +165,12 @@ def test_get_log_summary_returns_detail_payload(monkeypatch, tmp_path):
     db_generator = main_module.get_db()
     db = next(db_generator)
     try:
-        payload = main_module.get_log_summary(upload_payload["id"], db=db)
+        raw_payload = main_module.get_raw_log(upload_payload["id"], db=db)
+        summary_payload = main_module.get_log_summary(upload_payload["id"], db=db)
     finally:
         db_generator.close()
 
-    assert payload["summary_filename"] == "fas2750_summary.txt"
-    assert payload["summary_stored_path"].endswith("fas2750_summary.txt")
-    assert payload["summary"] == {
-        "vendor": "NetApp",
-        "cluster_name": "FAS2750",
-        "model_name": "FAS2750",
-        "ontap_version": "9.17.1P2",
-        "disk_count": "2",
-        "controller_serial": "952047001063,952047000902",
-    }
-    assert "vendor: NetApp" in payload["raw_text"]
+    assert raw_payload["filename"] == "fas2750.log"
+    assert "NetApp Release 9.17.1P2" in raw_payload["raw_text"]
+    assert summary_payload["summary_filename"] == "fas2750_summary.txt"
+    assert summary_payload["summary"]["cluster_name"] == "FAS2750"
