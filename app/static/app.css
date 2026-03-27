@@ -150,6 +150,32 @@ input[type="file"] {
   color: var(--muted);
 }
 
+.upload-help {
+  margin-bottom: 10px;
+  font-size: 0.95rem;
+  font-weight: 600;
+}
+
+.upload-file-list {
+  display: grid;
+  gap: 12px;
+}
+
+.file-name-row {
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  background: #fff;
+}
+
+.file-name-title {
+  display: block;
+  margin-bottom: 8px;
+  font-size: 0.88rem;
+  color: var(--muted);
+  word-break: break-all;
+}
+
 .app-shell {
   min-height: 100vh;
   display: grid;

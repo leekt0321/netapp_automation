@@ -1,6 +1,0 @@
-vendor: NetApp
-cluster_name: AFF300A
-model_name: AFF-A300
-ontap_version: 9.9.1P18
-disk_count: 20
-controller_serial: 451950000054,451950000053

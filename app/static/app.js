@@ -28,7 +28,7 @@ const summaryBackButtonEl = document.getElementById("summary-back-button");
 
 const form = document.getElementById("upload-form");
 const fileInput = document.getElementById("file");
-const saveNameInput = document.getElementById("save_name");
+const uploadFileListEl = document.getElementById("upload-file-list");
 const statusEl = document.getElementById("status");
 const totalLogCountEl = document.getElementById("total-log-count");
 const latestLogNameEl = document.getElementById("latest-log-name");
@@ -203,39 +203,86 @@ summaryDeleteButtonEl.addEventListener("click", async () => {
 });
 
 fileInput.addEventListener("change", () => {
-  if (saveNameInput.value === "" && fileInput.files.length > 0) {
-    saveNameInput.value = fileInput.files[0].name;
-  }
+  renderSelectedFiles();
 });
 
 form.addEventListener("submit", async (event) => {
   event.preventDefault();
-  if (fileInput.files.length === 0) {
+  const selectedFiles = Array.from(fileInput.files || []);
+  if (selectedFiles.length === 0) {
     statusEl.textContent = "업로드할 파일을 선택하세요.";
     return;
   }
 
-  statusEl.textContent = "업로드 중...";
-  const formData = new FormData();
-  formData.append("file", fileInput.files[0]);
-  formData.append("save_name", saveNameInput.value);
-
-  const response = await fetch("/upload", {
-    method: "POST",
-    body: formData,
-  });
-
-  const payload = await response.json();
-  if (response.ok === false) {
-    statusEl.textContent = payload.detail || "업로드에 실패했습니다.";
+  if (uploadFileListEl === null) {
+    statusEl.textContent = "업로드 화면을 새로고침한 뒤 다시 시도해 주세요.";
     return;
   }
 
-  statusEl.textContent = payload.filename + " 업로드 완료";
-  form.reset();
-  await loadLogs(payload.id, payload.id);
-  showPage("summary");
+  const saveNameInputs = Array.from(document.querySelectorAll(".save-name-input"));
+  if (saveNameInputs.length !== selectedFiles.length) {
+    statusEl.textContent = "선택한 파일 목록을 다시 확인해 주세요.";
+    return;
+  }
+
+  const saveNames = saveNameInputs.map((input) => (typeof input.value === "string" ? input.value.trim() : ""));
+  if (saveNames.some((value) => value === "")) {
+    statusEl.textContent = "각 파일의 저장 이름을 모두 입력하세요.";
+    return;
+  }
+
+  statusEl.textContent = selectedFiles.length > 1 ? "여러 파일 업로드 중..." : "업로드 중...";
+  const formData = new FormData();
+  for (const file of selectedFiles) {
+    formData.append("files", file);
+  }
+  for (const saveName of saveNames) {
+    formData.append("save_names", saveName);
+  }
+
+  try {
+    const response = await fetch("/upload", {
+      method: "POST",
+      body: formData,
+    });
+
+    const payload = await response.json();
+    if (response.ok === false) {
+      statusEl.textContent = payload.detail || "업로드에 실패했습니다.";
+      return;
+    }
+
+    const latestItem = payload.latest || payload.items[payload.items.length - 1];
+    statusEl.textContent = payload.count + "개 파일 업로드 완료";
+    form.reset();
+    renderSelectedFiles();
+    await loadLogs(latestItem.id, latestItem.id);
+    showPage("summary");
+  } catch (error) {
+    console.error("upload failed", error);
+    statusEl.textContent = "서버에 연결하지 못했습니다. 서버 재시작 후 새로고침해서 다시 시도해 주세요.";
+  }
 });
+
+function renderSelectedFiles() {
+  const selectedFiles = Array.from(fileInput.files || []);
+
+  if (uploadFileListEl === null) {
+    return;
+  }
+
+  if (selectedFiles.length === 0) {
+    uploadFileListEl.innerHTML = "<div class='empty'>파일을 선택하면 각 파일의 저장 이름 입력칸이 여기에 표시됩니다.</div>";
+    return;
+  }
+
+  uploadFileListEl.innerHTML = selectedFiles.map((file, index) => {
+    return "<label class='file-name-row'>" +
+      "<span class='file-name-title'>" + escapeHtml(file.name) + "</span>" +
+      "<input class='save-name-input' type='text' name='save_names' value='" + escapeHtml(file.name) + "' data-index='" + index + "' required>" +
+    "</label>";
+  }).join("");
+}
 
 function clearSession() {
   localStorage.removeItem(SESSION_KEY);
@@ -428,7 +475,7 @@ function formatBytes(bytes) {
 }
 
 function escapeHtml(value) {
-  return value
+  return String(value)
     .replaceAll("&", "&amp;")
     .replaceAll("<", "&lt;")
     .replaceAll(">", "&gt;")

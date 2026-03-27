@@ -1,6 +1,6 @@
 from pathlib import Path
 import re
-from typing import Optional
+from typing import List, Optional
 
 from fastapi import Depends, FastAPI, File, Form, HTTPException, UploadFile
 from fastapi.responses import FileResponse, HTMLResponse
@@ -95,6 +95,69 @@ def ensure_admin_user(db: Session) -> None:
     )
     db.add(admin_user)
     db.commit()
+
+
+def resolve_save_name(file: UploadFile, requested_name: str = "") -> str:
+    original_filename = (file.filename or "").strip()
+    if not original_filename:
+        raise HTTPException(status_code=400, detail="파일명이 없습니다.")
+
+    final_name = requested_name.strip() or original_filename
+    return normalize_filename(final_name, original_filename)
+
+
+def resolve_save_names(upload_files: List[UploadFile], save_name: str, save_names: Optional[List[str]]) -> List[str]:
+    if save_names:
+        cleaned_names = [name for name in save_names if name is not None]
+        if len(cleaned_names) != len(upload_files):
+            raise HTTPException(status_code=400, detail="파일별 저장 이름 개수가 선택한 파일 수와 일치해야 합니다.")
+        return [resolve_save_name(file, requested_name) for file, requested_name in zip(upload_files, cleaned_names)]
+
+    if len(upload_files) == 1:
+        return [resolve_save_name(upload_files[0], save_name)]
+
+    return [resolve_save_name(file) for file in upload_files]
+
+
+async def upload_log(file: UploadFile, save_name: str, db: Session) -> dict:
+    requested_name = resolve_save_name(file, save_name)
+    saved_name = get_unique_filename(requested_name)
+    saved_path = upload_dir / saved_name
+
+    content = await file.read()
+    if not content:
+        raise HTTPException(status_code=400, detail="빈 파일은 업로드할 수 없습니다.")
+
+    saved_path.write_bytes(content)
+
+    text_content = decode_text_content(content)
+    summary = parse_netapp_log(text_content)
+    summary_name = get_summary_filename(saved_name)
+    summary_path = upload_dir / summary_name
+    summary_path.write_text(format_summary_text(summary), encoding="utf-8")
+
+    log = UploadedLog(
+        filename=saved_name,
+        stored_path=str(saved_path),
+        content_type=file.content_type,
+        size=len(content),
+        status="uploaded",
+    )
+
+    db.add(log)
+    db.commit()
+    db.refresh(log)
+
+    return {
+        "id": log.id,
+        "filename": log.filename,
+        "stored_path": log.stored_path,
+        "size": log.size,
+        "status": log.status,
+        "summary_filename": summary_name,
+        "summary_stored_path": str(summary_path),
+        "summary": summary,
+    }
 
 
 @app.on_event("startup")
@@ -207,51 +270,31 @@ def delete_user(payload: DeleteUserPayload, db: Session = Depends(get_db)):
 
 
 @app.post("/upload")
-async def upload_log(
-    file: UploadFile = File(...),
-    save_name: str = Form(...),
+async def upload_logs(
+    files: Optional[List[UploadFile]] = File(None),
+    file: Optional[UploadFile] = File(None),
+    save_name: str = Form(""),
+    save_names: Optional[List[str]] = Form(None),
     db: Session = Depends(get_db),
 ):
-    if not file.filename:
-        raise HTTPException(status_code=400, detail="파일명이 없습니다.")
+    upload_files = [current for current in (files or []) if hasattr(current, "filename")]
+    if file is not None and hasattr(file, "filename"):
+        upload_files.append(file)
 
-    requested_name = normalize_filename(save_name, file.filename)
-    saved_name = get_unique_filename(requested_name)
-    saved_path = upload_dir / saved_name
+    if not upload_files:
+        raise HTTPException(status_code=400, detail="업로드할 파일을 선택하세요.")
 
-    content = await file.read()
-    if not content:
-        raise HTTPException(status_code=400, detail="빈 파일은 업로드할 수 없습니다.")
+    resolved_names = resolve_save_names(upload_files, save_name, save_names)
 
-    saved_path.write_bytes(content)
+    items = []
+    for current_file, resolved_name in zip(upload_files, resolved_names):
+        items.append(await upload_log(file=current_file, save_name=resolved_name, db=db))
 
-    text_content = decode_text_content(content)
-    summary = parse_netapp_log(text_content)
-    summary_name = get_summary_filename(saved_name)
-    summary_path = upload_dir / summary_name
-    summary_path.write_text(format_summary_text(summary), encoding="utf-8")
-
-    log = UploadedLog(
-        filename=saved_name,
-        stored_path=str(saved_path),
-        content_type=file.content_type,
-        size=len(content),
-        status="uploaded",
-    )
-
-    db.add(log)
-    db.commit()
-    db.refresh(log)
-
+    latest_item = items[-1]
     return {
-        "id": log.id,
-        "filename": log.filename,
-        "stored_path": log.stored_path,
-        "size": log.size,
-        "status": log.status,
-        "summary_filename": summary_name,
-        "summary_stored_path": str(summary_path),
-        "summary": summary,
+        "count": len(items),
+        "items": items,
+        "latest": latest_item,
     }
 
 

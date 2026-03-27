@@ -1,6 +1,0 @@
-vendor: NetApp
-cluster_name: FAS2750
-model_name: FAS2750
-ontap_version: 9.17.1P2
-disk_count: 28
-controller_serial: 952047001063,952047000902

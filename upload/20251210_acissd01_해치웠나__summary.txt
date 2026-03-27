@@ -1,0 +1,6 @@
+vendor: NetApp
+cluster_name: acissd01
+model_name: AFF-A400
+ontap_version: 9.15.1P3
+disk_count: 96
+controller_serial: 952441000532,952441000397
