@@ -1,5 +1,7 @@
 const SESSION_KEY = "baobab-user";
 const SESSION_NAME_KEY = "baobab-display-name";
+const SESSION_DATE_KEY = "baobab-login-date";
+const SESSION_SERVER_KEY = "baobab-server-session";
 
 const loginScreenEl = document.getElementById("login-screen");
 const appShellEl = document.getElementById("app-shell");
@@ -95,6 +97,8 @@ loginFormEl.addEventListener("submit", async (event) => {
 
   localStorage.setItem(SESSION_KEY, payload.username);
   localStorage.setItem(SESSION_NAME_KEY, payload.full_name || payload.username);
+  localStorage.setItem(SESSION_DATE_KEY, getTodayKey());
+  localStorage.setItem(SESSION_SERVER_KEY, payload.server_session_id || "");
   loginStatusEl.textContent = "";
   loginFormEl.reset();
   openApp(payload.full_name || payload.username);
@@ -287,6 +291,8 @@ function renderSelectedFiles() {
 function clearSession() {
   localStorage.removeItem(SESSION_KEY);
   localStorage.removeItem(SESSION_NAME_KEY);
+  localStorage.removeItem(SESSION_DATE_KEY);
+  localStorage.removeItem(SESSION_SERVER_KEY);
   appShellEl.hidden = true;
   loginScreenEl.hidden = false;
 }
@@ -483,8 +489,41 @@ function escapeHtml(value) {
     .replaceAll("'", "&#39;");
 }
 
-const savedUser = localStorage.getItem(SESSION_KEY);
-const savedDisplayName = localStorage.getItem(SESSION_NAME_KEY);
-if (savedUser !== null && savedDisplayName !== null) {
-  openApp(savedDisplayName);
+function getTodayKey() {
+  return new Date().toISOString().slice(0, 10);
 }
+
+async function restoreSession() {
+  const savedUser = localStorage.getItem(SESSION_KEY);
+  const savedDisplayName = localStorage.getItem(SESSION_NAME_KEY);
+  const savedLoginDate = localStorage.getItem(SESSION_DATE_KEY);
+  const savedServerSession = localStorage.getItem(SESSION_SERVER_KEY);
+
+  if (savedUser === null || savedDisplayName === null || savedLoginDate === null || savedServerSession === null) {
+    clearSession();
+    return;
+  }
+
+  if (savedLoginDate !== getTodayKey()) {
+    clearSession();
+    loginStatusEl.textContent = "세션이 만료되었습니다. 다시 로그인해 주세요.";
+    return;
+  }
+
+  try {
+    const response = await fetch("/api", { cache: "no-store" });
+    const payload = await response.json();
+    if (response.ok === false || payload.server_session_id !== savedServerSession) {
+      clearSession();
+      loginStatusEl.textContent = "서버가 다시 시작되어 세션이 만료되었습니다. 다시 로그인해 주세요.";
+      return;
+    }
+
+    openApp(savedDisplayName);
+  } catch (error) {
+    clearSession();
+    loginStatusEl.textContent = "서버에 연결할 수 없어 다시 로그인해 주세요.";
+  }
+}
+
+restoreSession();

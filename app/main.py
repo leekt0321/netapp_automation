@@ -1,6 +1,7 @@
 from pathlib import Path
 import re
 from typing import List, Optional
+from uuid import uuid4
 
 from fastapi import Depends, FastAPI, File, Form, HTTPException, UploadFile
 from fastapi.responses import FileResponse, HTMLResponse
@@ -17,6 +18,7 @@ from app.parser_netapp import decode_text_content, format_summary_text, parse_ne
 
 
 app = FastAPI(title=settings.app_name)
+SERVER_SESSION_ID = str(uuid4())
 
 BASE_DIR = Path(__file__).resolve().parent
 TEMPLATE_DIR = BASE_DIR / "templates"
@@ -162,6 +164,7 @@ async def upload_log(file: UploadFile, save_name: str, db: Session) -> dict:
 
 @app.on_event("startup")
 def on_startup():
+    app.state.server_session_id = SERVER_SESSION_ID
     Base.metadata.create_all(bind=engine)
     db = next(get_db())
     try:
@@ -180,6 +183,7 @@ def api_root():
     return {
         "message": "Storage AI Web API",
         "env": settings.app_env,
+        "server_session_id": getattr(app.state, "server_session_id", SERVER_SESSION_ID),
     }
 
 
@@ -246,6 +250,7 @@ def login(payload: LoginPayload, db: Session = Depends(get_db)):
         "username": user.username,
         "full_name": user.full_name,
         "is_active": user.is_active,
+        "server_session_id": getattr(app.state, "server_session_id", SERVER_SESSION_ID),
     }
 
 

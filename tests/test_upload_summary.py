@@ -107,7 +107,19 @@ def test_root_serves_html_ui(monkeypatch, tmp_path):
     assert "삭제" in body
     assert "multiple" in body
     assert "upload-file-list" in body
+    assert "app.js?v=20260327c" in body
 
+
+
+def test_api_root_includes_server_session_id(monkeypatch, tmp_path):
+    main_module = load_app(monkeypatch, tmp_path)
+    main_module.on_startup()
+
+    payload = main_module.api_root()
+
+    assert payload["message"] == "Storage AI Web API"
+    assert isinstance(payload["server_session_id"], str)
+    assert payload["server_session_id"] != ""
 
 def test_startup_creates_admin_user(monkeypatch, tmp_path):
     main_module = load_app(monkeypatch, tmp_path)
@@ -150,6 +162,7 @@ def test_register_login_and_delete_user(monkeypatch, tmp_path):
 
     assert register_payload["username"] == "user1"
     assert login_payload["full_name"] == "User One"
+    assert login_payload["server_session_id"] == main_module.api_root()["server_session_id"]
     assert delete_payload["deleted"] is True
     assert deleted_user is None
 
