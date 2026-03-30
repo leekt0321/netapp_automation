@@ -13,7 +13,7 @@ from sqlalchemy.orm import Session
 from app.auth import hash_password, verify_password
 from app.config import settings
 from app.db import Base, engine, get_db
-from app.models import RequestPost, UploadedLog, User
+from app.models import RequestPost, StorageSite, UploadedLog, User
 from app.parser_netapp import decode_text_content, format_summary_text, parse_netapp_log
 
 
@@ -55,6 +55,11 @@ class RequestPostPayload(BaseModel):
     content: str
     status: str
     author: Optional[str] = None
+
+
+class StorageSitePayload(BaseModel):
+    storage_name: str
+    name: str
 
 
 def normalize_filename(requested_name: str, original_filename: str) -> str:
@@ -114,12 +119,17 @@ def ensure_admin_user(db: Session) -> None:
 
 def ensure_schema_updates() -> None:
     inspector = inspect(engine)
+    if not inspector.has_table("storage_sites"):
+        return
     if inspector.has_table("uploaded_logs"):
         columns = {column["name"] for column in inspector.get_columns("uploaded_logs")}
         if "storage_name" not in columns:
             with engine.begin() as connection:
                 connection.execute(text("ALTER TABLE uploaded_logs ADD COLUMN storage_name VARCHAR(50)"))
                 connection.execute(text("UPDATE uploaded_logs SET storage_name = 'storage1' WHERE storage_name IS NULL"))
+        if "site_id" not in columns:
+            with engine.begin() as connection:
+                connection.execute(text("ALTER TABLE uploaded_logs ADD COLUMN site_id INTEGER"))
 
 
 def validate_storage_name(storage_name: str) -> str:
@@ -141,6 +151,38 @@ def validate_request_post_payload(payload: RequestPostPayload) -> tuple[str, str
         raise HTTPException(status_code=400, detail="유효한 진행 상태를 선택해주세요.")
 
     return title, content, status, author
+
+
+def serialize_site(site: StorageSite) -> dict:
+    return {
+        "id": site.id,
+        "storage_name": site.storage_name,
+        "name": site.name,
+        "created_at": site.created_at,
+        "updated_at": site.updated_at,
+    }
+
+
+def validate_site_payload(payload: StorageSitePayload) -> tuple[str, str]:
+    storage_name = validate_storage_name(payload.storage_name)
+    site_name = payload.name.strip()
+    if not site_name:
+        raise HTTPException(status_code=400, detail="사이트 이름을 입력해주세요.")
+    return storage_name, site_name
+
+
+def get_site_or_404(db: Session, site_id: int) -> StorageSite:
+    site = db.query(StorageSite).filter(StorageSite.id == site_id).first()
+    if not site:
+        raise HTTPException(status_code=404, detail="사이트를 찾을 수 없습니다.")
+    return site
+
+
+def get_validated_site(db: Session, storage_name: str, site_id: int) -> StorageSite:
+    site = db.query(StorageSite).filter(StorageSite.id == site_id).first()
+    if not site or site.storage_name != storage_name:
+        raise HTTPException(status_code=400, detail="선택한 스토리지에 등록된 사이트만 업로드할 수 있습니다.")
+    return site
 
 
 def resolve_save_name(file: UploadFile, requested_name: str = "") -> str:
@@ -165,7 +207,7 @@ def resolve_save_names(upload_files: List[UploadFile], save_name: str, save_name
     return [resolve_save_name(file) for file in upload_files]
 
 
-async def upload_log(file: UploadFile, save_name: str, storage_name: str, db: Session) -> dict:
+async def upload_log(file: UploadFile, save_name: str, storage_name: str, site: StorageSite, db: Session) -> dict:
     requested_name = resolve_save_name(file, save_name)
     saved_name = get_unique_filename(requested_name)
     saved_path = upload_dir / saved_name
@@ -189,6 +231,7 @@ async def upload_log(file: UploadFile, save_name: str, storage_name: str, db: Se
         size=len(content),
         status="uploaded",
         storage_name=validate_storage_name(storage_name),
+        site_id=site.id,
     )
 
     db.add(log)
@@ -202,6 +245,8 @@ async def upload_log(file: UploadFile, save_name: str, storage_name: str, db: Se
         "size": log.size,
         "status": log.status,
         "storage_name": log.storage_name,
+        "site_id": site.id,
+        "site_name": site.name,
         "summary_filename": summary_name,
         "summary_stored_path": str(summary_path),
         "summary": summary,
@@ -330,6 +375,7 @@ async def upload_logs(
     save_name: str = Form(""),
     save_names: Optional[List[str]] = Form(None),
     storage_name: str = Form("storage1"),
+    site_id: int = Form(...),
     db: Session = Depends(get_db),
 ):
     upload_files = [current for current in (files or []) if hasattr(current, "filename")]
@@ -340,11 +386,12 @@ async def upload_logs(
         raise HTTPException(status_code=400, detail="업로드할 파일을 선택하세요.")
 
     validated_storage_name = validate_storage_name(storage_name)
+    validated_site = get_validated_site(db, validated_storage_name, site_id)
     resolved_names = resolve_save_names(upload_files, save_name, save_names)
 
     items = []
     for current_file, resolved_name in zip(upload_files, resolved_names):
-        items.append(await upload_log(file=current_file, save_name=resolved_name, storage_name=validated_storage_name, db=db))
+        items.append(await upload_log(file=current_file, save_name=resolved_name, storage_name=validated_storage_name, site=validated_site, db=db))
 
     latest_item = items[-1]
     return {
@@ -352,27 +399,37 @@ async def upload_logs(
         "items": items,
         "latest": latest_item,
         "storage_name": validated_storage_name,
+        "site_id": validated_site.id,
+        "site_name": validated_site.name,
     }
 
 
 @app.get("/logs")
-def list_logs(storage_name: Optional[str] = None, db: Session = Depends(get_db)):
-    query = db.query(UploadedLog)
+def list_logs(
+    storage_name: Optional[str] = None,
+    site_id: Optional[int] = None,
+    db: Session = Depends(get_db),
+):
+    query = db.query(UploadedLog, StorageSite.name.label("site_name")).outerjoin(StorageSite, UploadedLog.site_id == StorageSite.id)
     if storage_name:
         query = query.filter(UploadedLog.storage_name == validate_storage_name(storage_name))
+    if site_id is not None:
+        query = query.filter(UploadedLog.site_id == site_id)
 
     rows = query.order_by(UploadedLog.id.desc()).all()
 
     return [
         {
-            "id": row.id,
-            "filename": row.filename,
-            "stored_path": row.stored_path,
-            "content_type": row.content_type,
-            "size": row.size,
-            "status": row.status,
-            "storage_name": row.storage_name,
-            "created_at": row.created_at,
+            "id": row[0].id,
+            "filename": row[0].filename,
+            "stored_path": row[0].stored_path,
+            "content_type": row[0].content_type,
+            "size": row[0].size,
+            "status": row[0].status,
+            "storage_name": row[0].storage_name,
+            "site_id": row[0].site_id,
+            "site_name": row[1],
+            "created_at": row[0].created_at,
         }
         for row in rows
     ]
@@ -380,9 +437,10 @@ def list_logs(storage_name: Optional[str] = None, db: Session = Depends(get_db))
 
 @app.get("/logs/{log_id}/raw")
 def get_raw_log(log_id: int, db: Session = Depends(get_db)):
-    log = db.query(UploadedLog).filter(UploadedLog.id == log_id).first()
-    if not log:
+    row = db.query(UploadedLog, StorageSite.name.label("site_name")).outerjoin(StorageSite, UploadedLog.site_id == StorageSite.id).filter(UploadedLog.id == log_id).first()
+    if not row:
         raise HTTPException(status_code=404, detail="업로드 파일을 찾을 수 없습니다.")
+    log = row[0]
 
     raw_path = Path(log.stored_path)
     if not raw_path.exists():
@@ -395,6 +453,8 @@ def get_raw_log(log_id: int, db: Session = Depends(get_db)):
         "size": log.size,
         "status": log.status,
         "storage_name": log.storage_name,
+        "site_id": log.site_id,
+        "site_name": row[1],
         "raw_text": raw_path.read_text(encoding="utf-8", errors="replace"),
     }
 
@@ -428,6 +488,7 @@ def delete_log(log_id: int, db: Session = Depends(get_db)):
 
     filename = log.filename
     storage_name = log.storage_name
+    site_id = log.site_id
     db.delete(log)
     db.commit()
 
@@ -436,14 +497,16 @@ def delete_log(log_id: int, db: Session = Depends(get_db)):
         "id": log_id,
         "filename": filename,
         "storage_name": storage_name,
+        "site_id": site_id,
     }
 
 
 @app.get("/logs/{log_id}/summary")
 def get_log_summary(log_id: int, db: Session = Depends(get_db)):
-    log = db.query(UploadedLog).filter(UploadedLog.id == log_id).first()
-    if not log:
+    row = db.query(UploadedLog, StorageSite.name.label("site_name")).outerjoin(StorageSite, UploadedLog.site_id == StorageSite.id).filter(UploadedLog.id == log_id).first()
+    if not row:
         raise HTTPException(status_code=404, detail="업로드 파일을 찾을 수 없습니다.")
+    log = row[0]
 
     summary_filename = f"{Path(log.filename).stem}_summary.txt"
     summary_path = upload_dir / summary_filename
@@ -451,21 +514,91 @@ def get_log_summary(log_id: int, db: Session = Depends(get_db)):
         raise HTTPException(status_code=404, detail="summary 파일을 찾을 수 없습니다.")
 
     raw_text = summary_path.read_text(encoding="utf-8")
+    display_raw_text = raw_text.replace("cluster_name:", "hostname:")
     summary = {}
     for line in raw_text.splitlines():
         if ":" not in line:
             continue
         key, value = line.split(":", 1)
-        summary[key.strip()] = value.strip()
+        normalized_key = key.strip()
+        if normalized_key == "cluster_name":
+            normalized_key = "hostname"
+        summary[normalized_key] = value.strip()
 
     return {
         "id": log.id,
         "filename": log.filename,
         "storage_name": log.storage_name,
+        "site_id": log.site_id,
+        "site_name": row[1],
         "summary_filename": summary_filename,
         "summary_stored_path": str(summary_path),
         "summary": summary,
-        "raw_text": raw_text,
+        "raw_text": display_raw_text,
+    }
+
+
+@app.get("/sites")
+def list_storage_sites(storage_name: Optional[str] = None, db: Session = Depends(get_db)):
+    query = db.query(StorageSite)
+    if storage_name:
+        query = query.filter(StorageSite.storage_name == validate_storage_name(storage_name))
+
+    rows = query.order_by(StorageSite.name.asc(), StorageSite.id.asc()).all()
+    return [serialize_site(row) for row in rows]
+
+
+@app.post("/sites")
+def create_storage_site(payload: StorageSitePayload, db: Session = Depends(get_db)):
+    storage_name, site_name = validate_site_payload(payload)
+    existing = db.query(StorageSite).filter(StorageSite.storage_name == storage_name, StorageSite.name == site_name).first()
+    if existing:
+        raise HTTPException(status_code=409, detail="이미 등록된 사이트입니다.")
+
+    row = StorageSite(storage_name=storage_name, name=site_name)
+    db.add(row)
+    db.commit()
+    db.refresh(row)
+    return serialize_site(row)
+
+
+@app.put("/sites/{site_id}")
+def update_storage_site(site_id: int, payload: StorageSitePayload, db: Session = Depends(get_db)):
+    row = get_site_or_404(db, site_id)
+    storage_name, site_name = validate_site_payload(payload)
+
+    duplicate = db.query(StorageSite).filter(
+        StorageSite.storage_name == storage_name,
+        StorageSite.name == site_name,
+        StorageSite.id != site_id,
+    ).first()
+    if duplicate:
+        raise HTTPException(status_code=409, detail="이미 등록된 사이트입니다.")
+
+    row.storage_name = storage_name
+    row.name = site_name
+    db.commit()
+    db.refresh(row)
+    return serialize_site(row)
+
+
+@app.delete("/sites/{site_id}")
+def delete_storage_site(site_id: int, db: Session = Depends(get_db)):
+    row = get_site_or_404(db, site_id)
+    attached_log = db.query(UploadedLog).filter(UploadedLog.site_id == row.id).first()
+    if attached_log:
+        raise HTTPException(status_code=400, detail="이 사이트에 업로드된 로그가 있어 삭제할 수 없습니다.")
+
+    site_name = row.name
+    storage_name = row.storage_name
+    db.delete(row)
+    db.commit()
+
+    return {
+        "deleted": True,
+        "id": site_id,
+        "name": site_name,
+        "storage_name": storage_name,
     }
 
 

@@ -1,0 +1,6 @@
+vendor: NetApp
+cluster_name: BNAS01
+model_name: FAS8300
+ontap_version: 9.15.1P8
+disk_count: 408
+controller_serial: 952039001380,952039001387

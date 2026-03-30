@@ -3,7 +3,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Baobab Technology</title>
-  <link rel="stylesheet" href="/static/app.css?v=20260327d">
+  <link rel="stylesheet" href="/static/app.css?v=20260329-sites">
 </head>
 <body>
   <div id="login-screen" class="login-screen">
@@ -54,9 +54,11 @@
     <aside class="sidebar">
       <div>
         <div class="brand-lockup">
-          <div class="brand-mark">B</div>
-          <div>
-            <p class="eyebrow light">Baobab Technology</p>
+          <div class="brand-mark">
+            <img src="/static/baobab-logo.gif" alt="Baobab Technology 로고" class="brand-logo">
+          </div>
+          <div class="brand-copy">
+            <p class="eyebrow light brand-name">BAOBAB TECHNOLOGY</p>
             <h2 class="brand-title">Storage Control Center</h2>
           </div>
         </div>
@@ -121,6 +123,12 @@
                 </select>
               </label>
               <label>
+                사이트
+                <select id="site-id" name="site_id" required>
+                  <option value="">사이트를 먼저 선택하세요</option>
+                </select>
+              </label>
+              <label>
                 파일 선택
                 <input id="file" name="files" type="file" multiple required>
               </label>
@@ -160,58 +168,110 @@
           <h2>스토리지1 로그 센터</h2>
           <p>스토리지1에 지정된 원본 로그와 요약 로그를 함께 확인합니다.</p>
         </div>
-        <div class="storage-grid">
-          <section class="panel list-panel">
-            <div class="section-head">
-              <div>
-                <h3>원본 로그</h3>
-                <p>스토리지1 원본 로그 목록입니다.</p>
-              </div>
-            </div>
-            <div class="log-list" data-role="raw-log-list" data-storage="storage1"></div>
-          </section>
-          <section class="panel detail-panel">
-            <div class="empty" data-role="raw-empty" data-storage="storage1">왼쪽에서 원본 로그를 선택하세요.</div>
-            <div data-role="raw-preview" data-storage="storage1" hidden>
-              <div class="preview-head">
+        <div data-role="storage-logs-view" data-storage="storage1" hidden>
+          <div class="storage-site-grid">
+            <section class="panel site-switch-panel">
+              <div class="section-head">
                 <div>
-                  <h3 data-role="raw-name" data-storage="storage1"></h3>
-                  <p data-role="raw-meta" data-storage="storage1"></p>
+                  <h3>선택한 사이트 로그</h3>
+                  <p data-role="site-current" data-storage="storage1"></p>
                 </div>
-                <div class="detail-actions">
-                  <button class="secondary" data-action="download-raw" data-storage="storage1" type="button">다운로드</button>
-                  <button class="danger" data-action="delete-raw" data-storage="storage1" type="button">삭제</button>
-                </div>
+                <button class="secondary" data-action="storage-back" data-storage="storage1" type="button">사이트 목록으로</button>
               </div>
-              <pre data-role="raw-content" data-storage="storage1"></pre>
-            </div>
-          </section>
-          <section class="panel list-panel">
-            <div class="section-head">
-              <div>
-                <h3>요약 로그</h3>
-                <p>스토리지1 summary 목록입니다.</p>
+              <div class="storage-log-tabs">
+                <button class="log-tab-button active" data-action="storage-log-view" data-storage="storage1" data-log-view="raw" type="button">원본 로그</button>
+                <button class="log-tab-button" data-action="storage-log-view" data-storage="storage1" data-log-view="summary" type="button">요약 로그</button>
               </div>
-            </div>
-            <div class="log-list" data-role="summary-log-list" data-storage="storage1"></div>
-          </section>
-          <section class="panel detail-panel">
-            <div class="empty" data-role="summary-empty" data-storage="storage1">왼쪽에서 summary를 선택하세요.</div>
-            <div data-role="summary-preview" data-storage="storage1" hidden>
-              <div class="preview-head">
+            </section>
+          </div>
+          <div class="storage-grid" data-role="storage-raw-view" data-storage="storage1">
+            <section class="panel list-panel">
+              <div class="section-head">
                 <div>
-                  <h3 data-role="summary-name" data-storage="storage1"></h3>
-                  <p data-role="summary-meta" data-storage="storage1"></p>
-                </div>
-                <div class="detail-actions">
-                  <button class="secondary" data-action="download-summary" data-storage="storage1" type="button">원본 다운로드</button>
-                  <button class="danger" data-action="delete-summary" data-storage="storage1" type="button">삭제</button>
+                  <h3>원본 로그</h3>
+                  <p>스토리지1 원본 로그 목록입니다.</p>
                 </div>
               </div>
-              <div class="summary-grid" data-role="summary-grid" data-storage="storage1"></div>
-              <pre data-role="summary-raw" data-storage="storage1"></pre>
-            </div>
-          </section>
+              <div class="log-list" data-role="raw-log-list" data-storage="storage1"></div>
+            </section>
+            <section class="panel detail-panel">
+              <div class="empty" data-role="raw-empty" data-storage="storage1">왼쪽에서 원본 로그를 선택하세요.</div>
+              <div data-role="raw-preview" data-storage="storage1" hidden>
+                <div class="preview-head">
+                  <div>
+                    <h3 data-role="raw-name" data-storage="storage1"></h3>
+                    <p data-role="raw-meta" data-storage="storage1"></p>
+                  </div>
+                  <div class="detail-actions">
+                    <button class="secondary" data-action="download-raw" data-storage="storage1" type="button">다운로드</button>
+                    <button class="danger" data-action="delete-raw" data-storage="storage1" type="button">삭제</button>
+                  </div>
+                </div>
+                <pre data-role="raw-content" data-storage="storage1"></pre>
+              </div>
+            </section>
+          </div>
+          <div class="storage-grid" data-role="storage-summary-view" data-storage="storage1" hidden>
+            <section class="panel list-panel">
+              <div class="section-head">
+                <div>
+                  <h3>요약 로그</h3>
+                  <p>스토리지1 summary 목록입니다.</p>
+                </div>
+              </div>
+              <div class="log-list" data-role="summary-log-list" data-storage="storage1"></div>
+            </section>
+            <section class="panel detail-panel">
+              <div class="empty" data-role="summary-empty" data-storage="storage1">왼쪽에서 summary를 선택하세요.</div>
+              <div data-role="summary-preview" data-storage="storage1" hidden>
+                <div class="preview-head">
+                  <div>
+                    <h3 data-role="summary-name" data-storage="storage1"></h3>
+                    <p data-role="summary-meta" data-storage="storage1"></p>
+                  </div>
+                  <div class="detail-actions">
+                    <button class="secondary" data-action="download-summary" data-storage="storage1" type="button">원본 다운로드</button>
+                    <button class="danger" data-action="delete-summary" data-storage="storage1" type="button">삭제</button>
+                  </div>
+                </div>
+                <div class="summary-grid" data-role="summary-grid" data-storage="storage1"></div>
+                <pre data-role="summary-raw" data-storage="storage1"></pre>
+              </div>
+            </section>
+          </div>
+        </div>
+        <div data-role="storage-sites-view" data-storage="storage1">
+          <div class="storage-site-grid storage-site-grid-manage">
+            <section class="panel site-panel">
+              <div class="section-head">
+                <div>
+                  <h3>사이트 목록</h3>
+                  <p>사이트를 선택하면 해당 사이트 로그 화면으로 이동합니다.</p>
+                </div>
+              </div>
+              <div class="site-list" data-role="site-list" data-storage="storage1"></div>
+            </section>
+            <section class="panel site-panel">
+              <div class="section-head">
+                <div>
+                  <h3>사이트 관리</h3>
+                  <p>스토리지1에서 사용할 사이트를 추가, 수정, 삭제합니다.</p>
+                </div>
+              </div>
+              <form class="upload-form compact" data-role="site-form" data-storage="storage1">
+                <input type="hidden" data-role="site-edit-id" data-storage="storage1">
+                <label>
+                  사이트 이름
+                  <input type="text" data-role="site-name-input" data-storage="storage1" placeholder="예: 하나클라우디아" required>
+                </label>
+                <div class="form-actions">
+                  <button type="submit">사이트 저장</button>
+                  <button class="secondary" data-action="site-cancel-edit" data-storage="storage1" type="button" hidden>취소</button>
+                </div>
+              </form>
+              <p class="status" data-role="site-status" data-storage="storage1"></p>
+            </section>
+          </div>
         </div>
       </section>
 
@@ -221,7 +281,23 @@
           <h2>스토리지2 로그 센터</h2>
           <p>스토리지2에 지정된 원본 로그와 요약 로그를 함께 확인합니다.</p>
         </div>
-        <div class="storage-grid">
+        <div data-role="storage-logs-view" data-storage="storage2" hidden>
+        <div class="storage-site-grid">
+          <section class="panel site-switch-panel">
+            <div class="section-head">
+              <div>
+                <h3>선택한 사이트 로그</h3>
+                <p data-role="site-current" data-storage="storage2"></p>
+              </div>
+              <button class="secondary" data-action="storage-back" data-storage="storage2" type="button">사이트 목록으로</button>
+            </div>
+            <div class="storage-log-tabs">
+              <button class="log-tab-button active" data-action="storage-log-view" data-storage="storage2" data-log-view="raw" type="button">원본 로그</button>
+              <button class="log-tab-button" data-action="storage-log-view" data-storage="storage2" data-log-view="summary" type="button">요약 로그</button>
+            </div>
+          </section>
+        </div>
+        <div class="storage-grid" data-role="storage-raw-view" data-storage="storage2">
           <section class="panel list-panel">
             <div class="section-head">
               <div>
@@ -247,6 +323,8 @@
               <pre data-role="raw-content" data-storage="storage2"></pre>
             </div>
           </section>
+        </div>
+        <div class="storage-grid" data-role="storage-summary-view" data-storage="storage2" hidden>
           <section class="panel list-panel">
             <div class="section-head">
               <div>
@@ -274,6 +352,40 @@
             </div>
           </section>
         </div>
+        </div>
+        <div data-role="storage-sites-view" data-storage="storage2">
+          <div class="storage-site-grid storage-site-grid-manage">
+            <section class="panel site-panel">
+              <div class="section-head">
+                <div>
+                  <h3>사이트 목록</h3>
+                  <p>사이트를 선택하면 해당 사이트 로그 화면으로 이동합니다.</p>
+                </div>
+              </div>
+              <div class="site-list" data-role="site-list" data-storage="storage2"></div>
+            </section>
+            <section class="panel site-panel">
+              <div class="section-head">
+                <div>
+                  <h3>사이트 관리</h3>
+                  <p>스토리지2에서 사용할 사이트를 추가, 수정, 삭제합니다.</p>
+                </div>
+              </div>
+              <form class="upload-form compact" data-role="site-form" data-storage="storage2">
+                <input type="hidden" data-role="site-edit-id" data-storage="storage2">
+                <label>
+                  사이트 이름
+                  <input type="text" data-role="site-name-input" data-storage="storage2" placeholder="예: 하나클라우디아" required>
+                </label>
+                <div class="form-actions">
+                  <button type="submit">사이트 저장</button>
+                  <button class="secondary" data-action="site-cancel-edit" data-storage="storage2" type="button" hidden>취소</button>
+                </div>
+              </form>
+              <p class="status" data-role="site-status" data-storage="storage2"></p>
+            </section>
+          </div>
+        </div>
       </section>
 
       <section id="page-storage3" class="page-section storage-page" data-storage-page="storage3">
@@ -282,7 +394,23 @@
           <h2>스토리지3 로그 센터</h2>
           <p>스토리지3에 지정된 원본 로그와 요약 로그를 함께 확인합니다.</p>
         </div>
-        <div class="storage-grid">
+        <div data-role="storage-logs-view" data-storage="storage3" hidden>
+        <div class="storage-site-grid">
+          <section class="panel site-switch-panel">
+            <div class="section-head">
+              <div>
+                <h3>선택한 사이트 로그</h3>
+                <p data-role="site-current" data-storage="storage3"></p>
+              </div>
+              <button class="secondary" data-action="storage-back" data-storage="storage3" type="button">사이트 목록으로</button>
+            </div>
+            <div class="storage-log-tabs">
+              <button class="log-tab-button active" data-action="storage-log-view" data-storage="storage3" data-log-view="raw" type="button">원본 로그</button>
+              <button class="log-tab-button" data-action="storage-log-view" data-storage="storage3" data-log-view="summary" type="button">요약 로그</button>
+            </div>
+          </section>
+        </div>
+        <div class="storage-grid" data-role="storage-raw-view" data-storage="storage3">
           <section class="panel list-panel">
             <div class="section-head">
               <div>
@@ -308,6 +436,8 @@
               <pre data-role="raw-content" data-storage="storage3"></pre>
             </div>
           </section>
+        </div>
+        <div class="storage-grid" data-role="storage-summary-view" data-storage="storage3" hidden>
           <section class="panel list-panel">
             <div class="section-head">
               <div>
@@ -334,6 +464,40 @@
               <pre data-role="summary-raw" data-storage="storage3"></pre>
             </div>
           </section>
+        </div>
+        </div>
+        <div data-role="storage-sites-view" data-storage="storage3">
+          <div class="storage-site-grid storage-site-grid-manage">
+            <section class="panel site-panel">
+              <div class="section-head">
+                <div>
+                  <h3>사이트 목록</h3>
+                  <p>사이트를 선택하면 해당 사이트 로그 화면으로 이동합니다.</p>
+                </div>
+              </div>
+              <div class="site-list" data-role="site-list" data-storage="storage3"></div>
+            </section>
+            <section class="panel site-panel">
+              <div class="section-head">
+                <div>
+                  <h3>사이트 관리</h3>
+                  <p>스토리지3에서 사용할 사이트를 추가, 수정, 삭제합니다.</p>
+                </div>
+              </div>
+              <form class="upload-form compact" data-role="site-form" data-storage="storage3">
+                <input type="hidden" data-role="site-edit-id" data-storage="storage3">
+                <label>
+                  사이트 이름
+                  <input type="text" data-role="site-name-input" data-storage="storage3" placeholder="예: 하나클라우디아" required>
+                </label>
+                <div class="form-actions">
+                  <button type="submit">사이트 저장</button>
+                  <button class="secondary" data-action="site-cancel-edit" data-storage="storage3" type="button" hidden>취소</button>
+                </div>
+              </form>
+              <p class="status" data-role="site-status" data-storage="storage3"></p>
+            </section>
+          </div>
         </div>
       </section>
 
@@ -378,6 +542,15 @@
                 <p>등록된 요청을 확인하고 수정하거나 삭제할 수 있습니다.</p>
               </div>
             </div>
+            <div class="request-filter-bar">
+              <div id="request-filter-tabs" class="request-filter-tabs">
+                <button class="filter-chip active" data-request-filter="all" type="button">전체</button>
+                <button class="filter-chip" data-request-filter="대기" type="button">대기</button>
+                <button class="filter-chip" data-request-filter="진행중" type="button">진행중</button>
+                <button class="filter-chip" data-request-filter="완료" type="button">완료</button>
+              </div>
+              <input id="request-search" type="text" placeholder="제목, 내용, 작성자로 검색">
+            </div>
             <div id="request-list" class="request-list"></div>
           </section>
         </div>
@@ -385,6 +558,6 @@
     </main>
   </div>
 
-  <script src="/static/app.js?v=20260327d"></script>
+  <script src="/static/app.js?v=20260329-sites"></script>
 </body>
 </html>

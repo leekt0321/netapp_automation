@@ -1,0 +1,6 @@
+vendor: NetApp
+cluster_name: ONAS01
+model_name: AFF-A700
+ontap_version: 9.15.1P8
+disk_count: 311
+controller_serial: 792130000057,792128000311

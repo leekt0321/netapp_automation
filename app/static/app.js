@@ -29,6 +29,7 @@ const pageDescriptionEl = document.getElementById("page-description");
 const uploadFormEl = document.getElementById("upload-form");
 const fileInputEl = document.getElementById("file");
 const storageNameEl = document.getElementById("storage-name");
+const siteIdEl = document.getElementById("site-id");
 const uploadFileListEl = document.getElementById("upload-file-list");
 const statusEl = document.getElementById("status");
 const totalLogCountEl = document.getElementById("total-log-count");
@@ -43,6 +44,8 @@ const requestStatusMessageEl = document.getElementById("request-status-message")
 const requestListEl = document.getElementById("request-list");
 const requestSubmitButtonEl = document.getElementById("request-submit-button");
 const requestCancelButtonEl = document.getElementById("request-cancel-button");
+const requestSearchEl = document.getElementById("request-search");
+const requestFilterButtons = Array.from(document.querySelectorAll("[data-request-filter]"));
 
 const pageMeta = {
   dashboard: {
@@ -51,15 +54,15 @@ const pageMeta = {
   },
   storage1: {
     title: "스토리지1",
-    description: "스토리지1에 배치한 원본 로그와 요약 로그를 확인합니다.",
+    description: "스토리지1 내부 사이트별 원본 로그와 요약 로그를 확인합니다.",
   },
   storage2: {
     title: "스토리지2",
-    description: "스토리지2에 배치한 원본 로그와 요약 로그를 확인합니다.",
+    description: "스토리지2 내부 사이트별 원본 로그와 요약 로그를 확인합니다.",
   },
   storage3: {
     title: "스토리지3",
-    description: "스토리지3에 배치한 원본 로그와 요약 로그를 확인합니다.",
+    description: "스토리지3 내부 사이트별 원본 로그와 요약 로그를 확인합니다.",
   },
   requests: {
     title: "수정 요청 게시판",
@@ -88,12 +91,30 @@ for (const storageKey of STORAGE_KEYS) {
     summaryMetaEl: getStorageElement(storageKey, "summary-meta"),
     summaryGridEl: getStorageElement(storageKey, "summary-grid"),
     summaryRawEl: getStorageElement(storageKey, "summary-raw"),
+    siteFormEl: getStorageElement(storageKey, "site-form"),
+    siteEditIdEl: getStorageElement(storageKey, "site-edit-id"),
+    siteNameInputEl: getStorageElement(storageKey, "site-name-input"),
+    siteStatusEl: getStorageElement(storageKey, "site-status"),
+    siteListEl: getStorageElement(storageKey, "site-list"),
+    siteCurrentEl: getStorageElement(storageKey, "site-current"),
+    logsViewEl: getStorageElement(storageKey, "storage-logs-view"),
+    sitesViewEl: getStorageElement(storageKey, "storage-sites-view"),
+    rawSectionEl: getStorageElement(storageKey, "storage-raw-view"),
+    summarySectionEl: getStorageElement(storageKey, "storage-summary-view"),
   };
   storageState[storageKey] = {
     rawId: null,
     summaryId: null,
+    activeSiteId: null,
+    activeView: "sites",
+    activeLogView: "raw",
   };
 }
+
+let allLogs = [];
+let allSites = [];
+let allRequestPosts = [];
+let activeRequestFilter = "all";
 
 loginFormEl.addEventListener("submit", async (event) => {
   event.preventDefault();
@@ -195,17 +216,50 @@ for (const button of navButtons) {
   });
 }
 
+for (const storageKey of STORAGE_KEYS) {
+  const view = storageViews[storageKey];
+  if (view.siteFormEl !== null) {
+    view.siteFormEl.addEventListener("submit", (event) => {
+      event.preventDefault();
+      saveStorageSite(storageKey);
+    });
+  }
+}
+
 fileInputEl.addEventListener("change", () => {
   renderSelectedFiles();
+});
+
+if (requestSearchEl !== null) {
+  requestSearchEl.addEventListener("input", () => {
+    renderFilteredRequestPosts();
+  });
+}
+
+for (const button of requestFilterButtons) {
+  button.addEventListener("click", () => {
+    activeRequestFilter = button.dataset.requestFilter || "all";
+    updateRequestFilterButtons();
+    renderFilteredRequestPosts();
+  });
+}
+
+storageNameEl.addEventListener("change", () => {
+  syncUploadSiteOptions();
 });
 
 uploadFormEl.addEventListener("submit", async (event) => {
   event.preventDefault();
   const selectedFiles = Array.from(fileInputEl.files || []);
   const storageName = typeof storageNameEl.value === "string" ? storageNameEl.value.trim() : "";
+  const siteId = typeof siteIdEl.value === "string" ? siteIdEl.value.trim() : "";
 
   if (storageName === "") {
     statusEl.textContent = "표시할 스토리지를 선택하세요.";
+    return;
+  }
+  if (siteId === "") {
+    statusEl.textContent = "업로드할 사이트를 선택하세요.";
     return;
   }
   if (selectedFiles.length === 0) {
@@ -234,6 +288,7 @@ uploadFormEl.addEventListener("submit", async (event) => {
   statusEl.textContent = selectedFiles.length > 1 ? "여러 파일 업로드 중..." : "업로드 중...";
   const formData = new FormData();
   formData.append("storage_name", storageName);
+  formData.append("site_id", siteId);
   for (const file of selectedFiles) {
     formData.append("files", file);
   }
@@ -255,8 +310,12 @@ uploadFormEl.addEventListener("submit", async (event) => {
     statusEl.textContent = payload.count + "개 파일 업로드 완료";
     uploadFormEl.reset();
     renderSelectedFiles();
+    storageNameEl.value = payload.storage_name;
+    syncUploadSiteOptions(payload.site_id);
+    storageState[payload.storage_name].activeSiteId = payload.site_id;
+    storageState[payload.storage_name].activeView = "logs";
     await loadLogs();
-    showPage(storageName);
+    showPage(payload.storage_name);
   } catch (error) {
     console.error("upload failed", error);
     statusEl.textContent = "서버에 연결하지 못했습니다. 서버 재시작 후 새로고침해서 다시 시도해 주세요.";
@@ -324,6 +383,41 @@ document.addEventListener("click", async (event) => {
     return;
   }
 
+  if (action === "open-site-logs") {
+    storageState[storageKey].activeSiteId = Number(actionButton.dataset.id);
+    storageState[storageKey].activeView = "logs";
+    renderSiteSections();
+    renderAllStoragePages();
+    return;
+  }
+
+  if (action === "storage-back") {
+    storageState[storageKey].activeView = "sites";
+    renderStorageSubViews(storageKey);
+    return;
+  }
+
+  if (action === "storage-log-view") {
+    storageState[storageKey].activeLogView = actionButton.dataset.logView === "summary" ? "summary" : "raw";
+    renderStorageLogView(storageKey);
+    return;
+  }
+
+  if (action === "site-edit") {
+    populateSiteForm(storageKey, Number(actionButton.dataset.id));
+    return;
+  }
+
+  if (action === "site-delete") {
+    await deleteStorageSite(storageKey, Number(actionButton.dataset.id));
+    return;
+  }
+
+  if (action === "site-cancel-edit") {
+    resetSiteForm(storageKey);
+    return;
+  }
+
   if (action === "request-edit") {
     populateRequestForm(Number(actionButton.dataset.id));
     return;
@@ -385,37 +479,157 @@ function showPage(page) {
 }
 
 async function loadInitialData() {
+  await loadSites();
   await Promise.all([loadLogs(), loadRequestPosts()]);
+}
+
+async function loadSites() {
+  const response = await fetch("/sites");
+  const payload = await response.json();
+  allSites = Array.isArray(payload) ? payload : [];
+  renderSiteSections();
+  syncUploadSiteOptions();
 }
 
 async function loadLogs() {
   const response = await fetch("/logs");
   const logs = await response.json();
-  const allLogs = Array.isArray(logs) ? logs : [];
+  allLogs = Array.isArray(logs) ? logs : [];
   updateDashboard(allLogs);
+  renderAllStoragePages();
+}
+
+function renderAllStoragePages() {
   for (const storageKey of STORAGE_KEYS) {
-    renderStoragePage(storageKey, allLogs.filter((log) => log.storage_name === storageKey));
+    renderStorageSubViews(storageKey);
+    renderStorageLogView(storageKey);
+    renderStoragePage(storageKey);
+  }
+}
+
+function renderStorageSubViews(storageKey) {
+  const view = storageViews[storageKey];
+  const activeView = storageState[storageKey].activeView;
+  if (view.logsViewEl !== null) {
+    view.logsViewEl.hidden = activeView !== "logs";
+  }
+  if (view.sitesViewEl !== null) {
+    view.sitesViewEl.hidden = activeView !== "sites";
+  }
+}
+
+function renderStorageLogView(storageKey) {
+  const view = storageViews[storageKey];
+  const activeLogView = storageState[storageKey].activeLogView;
+
+  if (view.rawSectionEl !== null) {
+    view.rawSectionEl.hidden = activeLogView !== "raw";
+  }
+  if (view.summarySectionEl !== null) {
+    view.summarySectionEl.hidden = activeLogView !== "summary";
+  }
+
+  const buttons = document.querySelectorAll('[data-action="storage-log-view"][data-storage="' + storageKey + '"]');
+  for (const button of buttons) {
+    button.classList.toggle("active", button.dataset.logView === activeLogView);
   }
 }
 
 function updateDashboard(logs) {
   totalLogCountEl.textContent = String(logs.length);
-  latestLogNameEl.textContent = logs.length > 0 ? logs[0].filename + " / " + toStorageLabel(logs[0].storage_name) : "-";
+  if (logs.length === 0) {
+    latestLogNameEl.textContent = "-";
+    return;
+  }
+
+  const latest = logs[0];
+  const siteLabel = latest.site_name ? " > " + latest.site_name : "";
+  latestLogNameEl.textContent = latest.filename + " / " + toStorageLabel(latest.storage_name) + siteLabel;
 }
 
-function renderStoragePage(storageKey, logs) {
+function renderSiteSections() {
+  for (const storageKey of STORAGE_KEYS) {
+    const view = storageViews[storageKey];
+    const sites = getSitesByStorage(storageKey);
+    const state = storageState[storageKey];
+
+    if (sites.some((site) => site.id === state.activeSiteId) === false) {
+      state.activeSiteId = sites.length > 0 ? sites[0].id : null;
+    }
+
+    renderSiteList(storageKey, sites);
+    renderSiteCurrent(storageKey, sites);
+  }
+}
+
+function renderSiteList(storageKey, sites) {
+  const view = storageViews[storageKey];
+  if (view.siteListEl === null) {
+    return;
+  }
+
+  if (sites.length === 0) {
+    view.siteListEl.innerHTML = "<div class='empty'>등록된 사이트가 없습니다.</div>";
+    return;
+  }
+
+  view.siteListEl.innerHTML = sites.map((site) => {
+    const activeClass = storageState[storageKey].activeSiteId === site.id ? " active" : "";
+    return "<article class='site-item" + activeClass + "'>" +
+      "<div><strong>" + escapeHtml(site.name) + "</strong><p>" + escapeHtml(toStorageLabel(site.storage_name)) + "</p></div>" +
+      "<div class='request-actions'>" +
+        "<button data-action='open-site-logs' data-storage='" + storageKey + "' data-id='" + site.id + "' type='button'>로그 보기</button>" +
+        "<button class='secondary' data-action='site-edit' data-storage='" + storageKey + "' data-id='" + site.id + "' type='button'>수정</button>" +
+        "<button class='danger' data-action='site-delete' data-storage='" + storageKey + "' data-id='" + site.id + "' type='button'>삭제</button>" +
+      "</div>" +
+    "</article>";
+  }).join("");
+}
+
+function renderSiteCurrent(storageKey, sites) {
+  const view = storageViews[storageKey];
+  if (view.siteCurrentEl === null) {
+    return;
+  }
+
+  if (sites.length === 0 || storageState[storageKey].activeSiteId === null) {
+    view.siteCurrentEl.textContent = "먼저 사이트를 등록하면 이 페이지에서 해당 사이트 로그를 확인할 수 있습니다.";
+    return;
+  }
+
+  const site = sites.find((item) => item.id === storageState[storageKey].activeSiteId);
+  view.siteCurrentEl.textContent = site ? toStorageLabel(storageKey) + " > " + site.name : "";
+}
+
+function renderStoragePage(storageKey) {
   const view = storageViews[storageKey];
   const state = storageState[storageKey];
+  const sites = getSitesByStorage(storageKey);
 
   if (view.rawListEl === null || view.summaryListEl === null) {
     return;
   }
 
+  if (sites.length === 0 || state.activeSiteId === null) {
+    state.rawId = null;
+    state.summaryId = null;
+    view.rawListEl.innerHTML = "<div class='empty'>먼저 사이트를 등록하세요.</div>";
+    view.summaryListEl.innerHTML = "<div class='empty'>먼저 사이트를 등록하세요.</div>";
+    view.rawEmptyEl.hidden = false;
+    view.rawEmptyEl.textContent = "선택할 사이트가 없습니다.";
+    view.rawPreviewEl.hidden = true;
+    view.summaryEmptyEl.hidden = false;
+    view.summaryEmptyEl.textContent = "선택할 사이트가 없습니다.";
+    view.summaryPreviewEl.hidden = true;
+    return;
+  }
+
+  const logs = allLogs.filter((log) => log.storage_name === storageKey && log.site_id === state.activeSiteId);
   if (logs.length === 0) {
     state.rawId = null;
     state.summaryId = null;
-    view.rawListEl.innerHTML = "<div class='empty'>표시할 로그가 없습니다.</div>";
-    view.summaryListEl.innerHTML = "<div class='empty'>표시할 summary가 없습니다.</div>";
+    view.rawListEl.innerHTML = "<div class='empty'>선택한 사이트에 업로드된 로그가 없습니다.</div>";
+    view.summaryListEl.innerHTML = "<div class='empty'>선택한 사이트에 업로드된 summary가 없습니다.</div>";
     view.rawEmptyEl.hidden = false;
     view.rawEmptyEl.textContent = "업로드된 원본 로그가 없습니다.";
     view.rawPreviewEl.hidden = true;
@@ -435,12 +649,12 @@ function renderStoragePage(storageKey, logs) {
 
   renderLogList(view.rawListEl, logs, state.rawId, (logId) => {
     state.rawId = logId;
-    renderStoragePage(storageKey, logs);
+    renderStoragePage(storageKey);
     loadRawLog(storageKey, logId);
   });
   renderLogList(view.summaryListEl, logs, state.summaryId, (logId) => {
     state.summaryId = logId;
-    renderStoragePage(storageKey, logs);
+    renderStoragePage(storageKey);
     loadSummary(storageKey, logId);
   });
 
@@ -461,7 +675,7 @@ function renderListButton(log, activeId) {
   const activeClass = log.id === activeId ? "active" : "";
   return "<button class='log-item " + activeClass + "' data-id='" + log.id + "' type='button'>" +
     "<strong>" + escapeHtml(log.filename) + "</strong>" +
-    "<div class='meta'><span>" + escapeHtml(toStorageLabel(log.storage_name)) + "</span><span>" + formatBytes(log.size) + "</span></div>" +
+    "<div class='meta'><span>" + escapeHtml(log.site_name || "사이트 미지정") + "</span><span>" + formatBytes(log.size) + "</span></div>" +
   "</button>";
 }
 
@@ -480,7 +694,7 @@ async function loadRawLog(storageKey, logId) {
   view.rawEmptyEl.hidden = true;
   view.rawPreviewEl.hidden = false;
   view.rawNameEl.textContent = payload.filename;
-  view.rawMetaEl.textContent = "상태: " + payload.status + " / 저장 위치: " + toStorageLabel(payload.storage_name) + " / 크기: " + formatBytes(payload.size);
+  view.rawMetaEl.textContent = "상태: " + payload.status + " / 저장 위치: " + toStorageLabel(payload.storage_name) + " > " + (payload.site_name || "사이트 미지정") + " / 크기: " + formatBytes(payload.size);
   view.rawContentEl.textContent = payload.raw_text || "";
 }
 
@@ -499,7 +713,7 @@ async function loadSummary(storageKey, logId) {
   view.summaryEmptyEl.hidden = true;
   view.summaryPreviewEl.hidden = false;
   view.summaryNameEl.textContent = payload.summary_filename;
-  view.summaryMetaEl.textContent = payload.filename + " / " + toStorageLabel(payload.storage_name);
+  view.summaryMetaEl.textContent = payload.filename + " / " + toStorageLabel(payload.storage_name) + " > " + (payload.site_name || "사이트 미지정");
   renderSummaryFields(view.summaryGridEl, payload.summary || {});
   view.summaryRawEl.textContent = payload.raw_text || "";
 }
@@ -515,6 +729,97 @@ function renderSummaryFields(container, summary) {
     const safeValue = value === null || value === undefined || value === "" ? "-" : String(value);
     return "<div class='summary-field'><strong>" + escapeHtml(key) + "</strong><span>" + escapeHtml(safeValue) + "</span></div>";
   }).join("");
+}
+
+async function saveStorageSite(storageKey) {
+  const view = storageViews[storageKey];
+  const siteName = view.siteNameInputEl.value.trim();
+  const editId = view.siteEditIdEl.value.trim();
+  const isEdit = editId !== "";
+
+  if (siteName === "") {
+    view.siteStatusEl.textContent = "사이트 이름을 입력하세요.";
+    return;
+  }
+
+  view.siteStatusEl.textContent = isEdit ? "사이트 수정 중..." : "사이트 등록 중...";
+  const response = await fetch(isEdit ? "/sites/" + editId : "/sites", {
+    method: isEdit ? "PUT" : "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ storage_name: storageKey, name: siteName }),
+  });
+  const payload = await response.json();
+
+  if (response.ok === false) {
+    view.siteStatusEl.textContent = payload.detail || "사이트 저장에 실패했습니다.";
+    return;
+  }
+
+  resetSiteForm(storageKey);
+  view.siteStatusEl.textContent = isEdit ? "사이트가 수정되었습니다." : "사이트가 등록되었습니다.";
+  storageState[storageKey].activeSiteId = payload.id;
+  syncUploadSiteOptions(payload.id, storageKey);
+  await loadSites();
+  await loadLogs();
+}
+
+function populateSiteForm(storageKey, siteId) {
+  const target = getSitesByStorage(storageKey).find((site) => site.id === siteId);
+  if (!target) {
+    return;
+  }
+
+  const view = storageViews[storageKey];
+  view.siteEditIdEl.value = String(target.id);
+  view.siteNameInputEl.value = target.name;
+  view.siteStatusEl.textContent = "사이트 이름을 수정한 뒤 저장하세요.";
+  const cancelButton = document.querySelector('[data-action="site-cancel-edit"][data-storage="' + storageKey + '"]');
+  if (cancelButton !== null) {
+    cancelButton.hidden = false;
+  }
+}
+
+function resetSiteForm(storageKey) {
+  const view = storageViews[storageKey];
+  view.siteFormEl.reset();
+  view.siteEditIdEl.value = "";
+  const cancelButton = document.querySelector('[data-action="site-cancel-edit"][data-storage="' + storageKey + '"]');
+  if (cancelButton !== null) {
+    cancelButton.hidden = true;
+  }
+}
+
+async function deleteStorageSite(storageKey, siteId) {
+  const target = getSitesByStorage(storageKey).find((site) => site.id === siteId);
+  if (!target) {
+    return;
+  }
+
+  const confirmed = window.confirm(target.name + " 사이트를 삭제하시겠습니까?");
+  if (confirmed === false) {
+    return;
+  }
+
+  const response = await fetch("/sites/" + siteId, {
+    method: "DELETE",
+  });
+  const payload = await response.json();
+
+  if (response.ok === false) {
+    storageViews[storageKey].siteStatusEl.textContent = payload.detail || "사이트 삭제에 실패했습니다.";
+    return;
+  }
+
+  if (storageViews[storageKey].siteEditIdEl.value === String(siteId)) {
+    resetSiteForm(storageKey);
+  }
+  storageViews[storageKey].siteStatusEl.textContent = payload.name + " 사이트가 삭제되었습니다.";
+  if (storageState[storageKey].activeSiteId === siteId) {
+    storageState[storageKey].activeSiteId = null;
+  }
+  syncUploadSiteOptions();
+  await loadSites();
+  await loadLogs();
 }
 
 async function deleteSelectedLog(logId, storageKey) {
@@ -547,7 +852,36 @@ async function deleteSelectedLog(logId, storageKey) {
 async function loadRequestPosts() {
   const response = await fetch("/requests");
   const payload = await response.json();
-  renderRequestPosts(Array.isArray(payload) ? payload : []);
+  allRequestPosts = Array.isArray(payload) ? payload : [];
+  renderFilteredRequestPosts();
+}
+
+function renderFilteredRequestPosts() {
+  const keyword = requestSearchEl && typeof requestSearchEl.value === "string" ? requestSearchEl.value.trim().toLowerCase() : "";
+  const filteredPosts = allRequestPosts.filter((post) => {
+    const matchesStatus = activeRequestFilter === "all" || post.status === activeRequestFilter;
+    if (!matchesStatus) {
+      return false;
+    }
+
+    if (keyword === "") {
+      return true;
+    }
+
+    const haystack = [post.title, post.content, post.author]
+      .filter((value) => value !== null && value !== undefined)
+      .join(" ")
+      .toLowerCase();
+    return haystack.includes(keyword);
+  });
+
+  renderRequestPosts(filteredPosts);
+}
+
+function updateRequestFilterButtons() {
+  for (const button of requestFilterButtons) {
+    button.classList.toggle("active", (button.dataset.requestFilter || "all") === activeRequestFilter);
+  }
 }
 
 function renderRequestPosts(posts) {
@@ -619,6 +953,32 @@ function resetRequestForm() {
   requestEditIdEl.value = "";
   requestSubmitButtonEl.textContent = "등록";
   requestCancelButtonEl.hidden = true;
+}
+
+function syncUploadSiteOptions(preferredSiteId, preferredStorageKey) {
+  const storageKey = preferredStorageKey || storageNameEl.value;
+  const sites = getSitesByStorage(storageKey);
+
+  if (sites.length === 0) {
+    siteIdEl.innerHTML = "<option value=''>먼저 사이트를 등록하세요</option>";
+    siteIdEl.value = "";
+    return;
+  }
+
+  siteIdEl.innerHTML = "<option value=''>사이트를 선택하세요</option>" + sites.map((site) => {
+    return "<option value='" + site.id + "'>" + escapeHtml(site.name) + "</option>";
+  }).join("");
+
+  const nextSiteId = preferredSiteId || siteIdEl.value || String(sites[0].id);
+  if (sites.some((site) => String(site.id) === String(nextSiteId))) {
+    siteIdEl.value = String(nextSiteId);
+  } else {
+    siteIdEl.value = String(sites[0].id);
+  }
+}
+
+function getSitesByStorage(storageKey) {
+  return allSites.filter((site) => site.storage_name === storageKey);
 }
 
 function getStatusBadgeClass(status) {

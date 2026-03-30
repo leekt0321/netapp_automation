@@ -4,7 +4,7 @@ from typing import Any, Dict, List
 
 SUMMARY_FIELDS = (
     "vendor",
-    "cluster_name",
+    "hostname",
     "model_name",
     "ontap_version",
     "disk_count",
@@ -144,7 +144,7 @@ def extract_disk_count(text: str) -> int:
 def parse_netapp_log(text: str) -> Dict[str, Any]:
     return {
         "vendor": "NetApp",
-        "cluster_name": extract_cluster_name(text),
+        "hostname": extract_cluster_name(text),
         "model_name": extract_model_name(text),
         "ontap_version": extract_ontap_version(text),
         "disk_count": extract_disk_count(text),
