@@ -3,7 +3,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Baobab Technology</title>
-  <link rel="stylesheet" href="/static/app.css?v=20260327c">
+  <link rel="stylesheet" href="/static/app.css?v=20260327d">
 </head>
 <body>
   <div id="login-screen" class="login-screen">
@@ -53,18 +53,25 @@
   <div id="app-shell" class="app-shell" hidden>
     <aside class="sidebar">
       <div>
-        <p class="eyebrow">Baobab Technology</p>
-        <h2 class="brand-title">Storage Status Management</h2>
-        <p class="sidebar-copy">NetApp 로그를 업로드하면 원본 로그와 summary 정보 확인 할 수 있습니다.</p>
+        <div class="brand-lockup">
+          <div class="brand-mark">B</div>
+          <div>
+            <p class="eyebrow light">Baobab Technology</p>
+            <h2 class="brand-title">Storage Control Center</h2>
+          </div>
+        </div>
+        <p class="sidebar-copy">스토리지별 로그 현황과 수정 요청을 한 화면 구조 안에서 관리할 수 있습니다.</p>
       </div>
       <nav class="nav-list">
         <button class="nav-button active" data-page="dashboard" type="button">Dashboard</button>
-        <button class="nav-button" data-page="logs" type="button">Original Logs</button>
-        <button class="nav-button" data-page="summary" type="button">Summary Info</button>
+        <button class="nav-button" data-page="storage1" type="button">스토리지1</button>
+        <button class="nav-button" data-page="storage2" type="button">스토리지2</button>
+        <button class="nav-button" data-page="storage3" type="button">스토리지3</button>
+        <button class="nav-button" data-page="requests" type="button">수정 요청 게시판</button>
       </nav>
       <div class="sidebar-footer">
         <p id="login-user" class="sidebar-user"></p>
-        <button id="logout-button" class="secondary" type="button">로그아웃</button>
+        <button id="logout-button" class="secondary sidebar-button" type="button">로그아웃</button>
       </div>
     </aside>
 
@@ -82,7 +89,7 @@
           <div>
             <p class="eyebrow">Baobab Technology</p>
             <h2>안녕하세요. 바오밥테크놀로지 입니다.</h2>
-            <p>대시보드에서 파일을 하나 또는 여러 개 업로드해 주세요. 여러 파일 업로드 시 원본 파일명이 그대로 사용됩니다.</p>
+            <p>대시보드는 전체 현황을 보여주고, 각 스토리지 페이지에서는 원본 로그와 요약 로그를 분리해서 확인할 수 있습니다.</p>
           </div>
           <div class="hero-stats">
             <div class="stat-card">
@@ -101,10 +108,18 @@
             <div class="section-head">
               <div>
                 <h3>파일 업로드</h3>
-                <p>업로드 후 Original Logs 와 Summary Info 화면에서 각각 확인합니다. 여러 파일을 선택하면 파일별 저장 이름을 따로 지정할 수 있습니다.</p>
+                <p>업로드할 스토리지를 선택하고, 파일별 저장 이름을 지정한 뒤 업로드하세요.</p>
               </div>
             </div>
             <form id="upload-form" class="upload-form">
+              <label>
+                표시할 스토리지
+                <select id="storage-name" name="storage_name" required>
+                  <option value="storage1">스토리지1</option>
+                  <option value="storage2">스토리지2</option>
+                  <option value="storage3">스토리지3</option>
+                </select>
+              </label>
               <label>
                 파일 선택
                 <input id="file" name="files" type="file" multiple required>
@@ -139,81 +154,237 @@
         </div>
       </section>
 
-      <section id="page-logs" class="page-section">
-        <div class="page-actions">
-          <button class="page-link secondary" data-target-page="dashboard" type="button">Dashboard</button>
-          <button class="page-link secondary" data-target-page="logs" type="button">Original Logs</button>
-          <button class="page-link secondary" data-target-page="summary" type="button">Summary Info</button>
-          <button id="logs-back-button" class="page-back secondary" type="button">뒤로가기</button>
+      <section id="page-storage1" class="page-section storage-page" data-storage-page="storage1">
+        <div class="storage-hero panel">
+          <p class="eyebrow">Storage 1</p>
+          <h2>스토리지1 로그 센터</h2>
+          <p>스토리지1에 지정된 원본 로그와 요약 로그를 함께 확인합니다.</p>
         </div>
-        <div class="page-grid">
+        <div class="storage-grid">
           <section class="panel list-panel">
             <div class="section-head">
               <div>
-                <h3>Original Logs</h3>
-                <p>업로드된 로그 원본 목록입니다.</p>
+                <h3>원본 로그</h3>
+                <p>스토리지1 원본 로그 목록입니다.</p>
               </div>
             </div>
-            <div id="raw-log-list" class="log-list"></div>
+            <div class="log-list" data-role="raw-log-list" data-storage="storage1"></div>
           </section>
           <section class="panel detail-panel">
-            <div id="raw-empty" class="empty">왼쪽에서 로그를 선택하세요.</div>
-            <div id="raw-preview" hidden>
+            <div class="empty" data-role="raw-empty" data-storage="storage1">왼쪽에서 원본 로그를 선택하세요.</div>
+            <div data-role="raw-preview" data-storage="storage1" hidden>
               <div class="preview-head">
                 <div>
-                  <h3 id="raw-name"></h3>
-                  <p id="raw-meta"></p>
+                  <h3 data-role="raw-name" data-storage="storage1"></h3>
+                  <p data-role="raw-meta" data-storage="storage1"></p>
                 </div>
                 <div class="detail-actions">
-                  <button id="raw-download-button" class="secondary" type="button">다운로드</button>
-                  <button id="raw-delete-button" class="danger" type="button">삭제</button>
+                  <button class="secondary" data-action="download-raw" data-storage="storage1" type="button">다운로드</button>
+                  <button class="danger" data-action="delete-raw" data-storage="storage1" type="button">삭제</button>
                 </div>
               </div>
-              <pre id="raw-content"></pre>
+              <pre data-role="raw-content" data-storage="storage1"></pre>
+            </div>
+          </section>
+          <section class="panel list-panel">
+            <div class="section-head">
+              <div>
+                <h3>요약 로그</h3>
+                <p>스토리지1 summary 목록입니다.</p>
+              </div>
+            </div>
+            <div class="log-list" data-role="summary-log-list" data-storage="storage1"></div>
+          </section>
+          <section class="panel detail-panel">
+            <div class="empty" data-role="summary-empty" data-storage="storage1">왼쪽에서 summary를 선택하세요.</div>
+            <div data-role="summary-preview" data-storage="storage1" hidden>
+              <div class="preview-head">
+                <div>
+                  <h3 data-role="summary-name" data-storage="storage1"></h3>
+                  <p data-role="summary-meta" data-storage="storage1"></p>
+                </div>
+                <div class="detail-actions">
+                  <button class="secondary" data-action="download-summary" data-storage="storage1" type="button">원본 다운로드</button>
+                  <button class="danger" data-action="delete-summary" data-storage="storage1" type="button">삭제</button>
+                </div>
+              </div>
+              <div class="summary-grid" data-role="summary-grid" data-storage="storage1"></div>
+              <pre data-role="summary-raw" data-storage="storage1"></pre>
             </div>
           </section>
         </div>
       </section>
 
-      <section id="page-summary" class="page-section">
-        <div class="page-actions">
-          <button class="page-link secondary" data-target-page="dashboard" type="button">Dashboard</button>
-          <button class="page-link secondary" data-target-page="logs" type="button">Original Logs</button>
-          <button class="page-link secondary" data-target-page="summary" type="button">Summary Info</button>
-          <button id="summary-back-button" class="page-back secondary" type="button">뒤로가기</button>
+      <section id="page-storage2" class="page-section storage-page" data-storage-page="storage2">
+        <div class="storage-hero panel accent-two">
+          <p class="eyebrow">Storage 2</p>
+          <h2>스토리지2 로그 센터</h2>
+          <p>스토리지2에 지정된 원본 로그와 요약 로그를 함께 확인합니다.</p>
         </div>
-        <div class="page-grid">
+        <div class="storage-grid">
           <section class="panel list-panel">
             <div class="section-head">
               <div>
-                <h3>Summary Info</h3>
-                <p>업로드된 로그의 summary 목록입니다.</p>
+                <h3>원본 로그</h3>
+                <p>스토리지2 원본 로그 목록입니다.</p>
               </div>
             </div>
-            <div id="summary-log-list" class="log-list"></div>
+            <div class="log-list" data-role="raw-log-list" data-storage="storage2"></div>
           </section>
           <section class="panel detail-panel">
-            <div id="summary-empty" class="empty">왼쪽에서 summary를 선택하세요.</div>
-            <div id="summary-preview" hidden>
+            <div class="empty" data-role="raw-empty" data-storage="storage2">왼쪽에서 원본 로그를 선택하세요.</div>
+            <div data-role="raw-preview" data-storage="storage2" hidden>
               <div class="preview-head">
                 <div>
-                  <h3 id="summary-name"></h3>
-                  <p id="summary-meta"></p>
+                  <h3 data-role="raw-name" data-storage="storage2"></h3>
+                  <p data-role="raw-meta" data-storage="storage2"></p>
                 </div>
                 <div class="detail-actions">
-                  <button id="summary-download-button" class="secondary" type="button">원본 다운로드</button>
-                  <button id="summary-delete-button" class="danger" type="button">삭제</button>
+                  <button class="secondary" data-action="download-raw" data-storage="storage2" type="button">다운로드</button>
+                  <button class="danger" data-action="delete-raw" data-storage="storage2" type="button">삭제</button>
                 </div>
               </div>
-              <div id="summary-grid" class="summary-grid"></div>
-              <pre id="summary-raw"></pre>
+              <pre data-role="raw-content" data-storage="storage2"></pre>
             </div>
+          </section>
+          <section class="panel list-panel">
+            <div class="section-head">
+              <div>
+                <h3>요약 로그</h3>
+                <p>스토리지2 summary 목록입니다.</p>
+              </div>
+            </div>
+            <div class="log-list" data-role="summary-log-list" data-storage="storage2"></div>
+          </section>
+          <section class="panel detail-panel">
+            <div class="empty" data-role="summary-empty" data-storage="storage2">왼쪽에서 summary를 선택하세요.</div>
+            <div data-role="summary-preview" data-storage="storage2" hidden>
+              <div class="preview-head">
+                <div>
+                  <h3 data-role="summary-name" data-storage="storage2"></h3>
+                  <p data-role="summary-meta" data-storage="storage2"></p>
+                </div>
+                <div class="detail-actions">
+                  <button class="secondary" data-action="download-summary" data-storage="storage2" type="button">원본 다운로드</button>
+                  <button class="danger" data-action="delete-summary" data-storage="storage2" type="button">삭제</button>
+                </div>
+              </div>
+              <div class="summary-grid" data-role="summary-grid" data-storage="storage2"></div>
+              <pre data-role="summary-raw" data-storage="storage2"></pre>
+            </div>
+          </section>
+        </div>
+      </section>
+
+      <section id="page-storage3" class="page-section storage-page" data-storage-page="storage3">
+        <div class="storage-hero panel accent-three">
+          <p class="eyebrow">Storage 3</p>
+          <h2>스토리지3 로그 센터</h2>
+          <p>스토리지3에 지정된 원본 로그와 요약 로그를 함께 확인합니다.</p>
+        </div>
+        <div class="storage-grid">
+          <section class="panel list-panel">
+            <div class="section-head">
+              <div>
+                <h3>원본 로그</h3>
+                <p>스토리지3 원본 로그 목록입니다.</p>
+              </div>
+            </div>
+            <div class="log-list" data-role="raw-log-list" data-storage="storage3"></div>
+          </section>
+          <section class="panel detail-panel">
+            <div class="empty" data-role="raw-empty" data-storage="storage3">왼쪽에서 원본 로그를 선택하세요.</div>
+            <div data-role="raw-preview" data-storage="storage3" hidden>
+              <div class="preview-head">
+                <div>
+                  <h3 data-role="raw-name" data-storage="storage3"></h3>
+                  <p data-role="raw-meta" data-storage="storage3"></p>
+                </div>
+                <div class="detail-actions">
+                  <button class="secondary" data-action="download-raw" data-storage="storage3" type="button">다운로드</button>
+                  <button class="danger" data-action="delete-raw" data-storage="storage3" type="button">삭제</button>
+                </div>
+              </div>
+              <pre data-role="raw-content" data-storage="storage3"></pre>
+            </div>
+          </section>
+          <section class="panel list-panel">
+            <div class="section-head">
+              <div>
+                <h3>요약 로그</h3>
+                <p>스토리지3 summary 목록입니다.</p>
+              </div>
+            </div>
+            <div class="log-list" data-role="summary-log-list" data-storage="storage3"></div>
+          </section>
+          <section class="panel detail-panel">
+            <div class="empty" data-role="summary-empty" data-storage="storage3">왼쪽에서 summary를 선택하세요.</div>
+            <div data-role="summary-preview" data-storage="storage3" hidden>
+              <div class="preview-head">
+                <div>
+                  <h3 data-role="summary-name" data-storage="storage3"></h3>
+                  <p data-role="summary-meta" data-storage="storage3"></p>
+                </div>
+                <div class="detail-actions">
+                  <button class="secondary" data-action="download-summary" data-storage="storage3" type="button">원본 다운로드</button>
+                  <button class="danger" data-action="delete-summary" data-storage="storage3" type="button">삭제</button>
+                </div>
+              </div>
+              <div class="summary-grid" data-role="summary-grid" data-storage="storage3"></div>
+              <pre data-role="summary-raw" data-storage="storage3"></pre>
+            </div>
+          </section>
+        </div>
+      </section>
+
+      <section id="page-requests" class="page-section">
+        <div class="board-grid">
+          <section class="panel request-form-panel">
+            <div class="section-head">
+              <div>
+                <h3>수정 요청 작성</h3>
+                <p>대기, 진행중, 완료 상태를 지정하고 요청 내용을 남길 수 있습니다.</p>
+              </div>
+            </div>
+            <form id="request-form" class="upload-form">
+              <input id="request-edit-id" type="hidden">
+              <label>
+                말머리
+                <select id="request-status" required>
+                  <option value="대기">대기</option>
+                  <option value="진행중">진행중</option>
+                  <option value="완료">완료</option>
+                </select>
+              </label>
+              <label>
+                제목
+                <input id="request-title" type="text" placeholder="요청 제목을 입력하세요" required>
+              </label>
+              <label>
+                내용
+                <textarea id="request-content" rows="8" placeholder="수정 요청 내용을 입력하세요" required></textarea>
+              </label>
+              <div class="form-actions">
+                <button id="request-submit-button" type="submit">등록</button>
+                <button id="request-cancel-button" class="secondary" type="button" hidden>취소</button>
+              </div>
+            </form>
+            <p id="request-status-message" class="status"></p>
+          </section>
+          <section class="panel request-list-panel">
+            <div class="section-head">
+              <div>
+                <h3>수정 요청 게시판</h3>
+                <p>등록된 요청을 확인하고 수정하거나 삭제할 수 있습니다.</p>
+              </div>
+            </div>
+            <div id="request-list" class="request-list"></div>
           </section>
         </div>
       </section>
     </main>
   </div>
 
-  <script src="/static/app.js?v=20260327c"></script>
+  <script src="/static/app.js?v=20260327d"></script>
 </body>
 </html>

@@ -63,14 +63,20 @@ def load_app(monkeypatch, tmp_path: Path):
     return importlib.import_module("app.main")
 
 
-def create_uploaded_log(main_module, filename: str = "fas2750.log", content: str = SAMPLE_LOG, save_name: str = "fas2750.log"):
+def create_uploaded_log(
+    main_module,
+    filename: str = "fas2750.log",
+    content: str = SAMPLE_LOG,
+    save_name: str = "fas2750.log",
+    storage_name: str = "storage1",
+):
     db_generator = main_module.get_db()
     db = next(db_generator)
     upload_file = DummyUploadFile(filename, content.encode("utf-8"))
 
     try:
         payload = asyncio.run(
-            main_module.upload_log(file=upload_file, save_name=save_name, db=db)
+            main_module.upload_log(file=upload_file, save_name=save_name, storage_name=storage_name, db=db)
         )
     finally:
         db_generator.close()
@@ -78,7 +84,7 @@ def create_uploaded_log(main_module, filename: str = "fas2750.log", content: str
     return payload
 
 
-def create_uploaded_logs(main_module, save_names=None):
+def create_uploaded_logs(main_module, save_names=None, storage_name: str = "storage2"):
     db_generator = main_module.get_db()
     db = next(db_generator)
     upload_files = [
@@ -88,7 +94,7 @@ def create_uploaded_logs(main_module, save_names=None):
 
     try:
         payload = asyncio.run(
-            main_module.upload_logs(files=upload_files, save_name="", save_names=save_names, db=db)
+            main_module.upload_logs(files=upload_files, save_name="", save_names=save_names, storage_name=storage_name, db=db)
         )
     finally:
         db_generator.close()
@@ -103,12 +109,13 @@ def test_root_serves_html_ui(monkeypatch, tmp_path):
     body = response.body.decode("utf-8")
 
     assert isinstance(response, HTMLResponse)
-    assert "다운로드" in body
-    assert "삭제" in body
-    assert "multiple" in body
-    assert "upload-file-list" in body
-    assert "app.js?v=20260327c" in body
-
+    assert "스토리지1" in body
+    assert "스토리지2" in body
+    assert "스토리지3" in body
+    assert "수정 요청 게시판" in body
+    assert "storage-name" in body
+    assert "request-form" in body
+    assert "app.js?v=20260327d" in body
 
 
 def test_api_root_includes_server_session_id(monkeypatch, tmp_path):
@@ -120,6 +127,8 @@ def test_api_root_includes_server_session_id(monkeypatch, tmp_path):
     assert payload["message"] == "Storage AI Web API"
     assert isinstance(payload["server_session_id"], str)
     assert payload["server_session_id"] != ""
+    assert payload["storage_choices"] == ["storage1", "storage2", "storage3"]
+
 
 def test_startup_creates_admin_user(monkeypatch, tmp_path):
     main_module = load_app(monkeypatch, tmp_path)
@@ -171,7 +180,7 @@ def test_upload_creates_original_and_summary_files(monkeypatch, tmp_path):
     main_module = load_app(monkeypatch, tmp_path)
     main_module.on_startup()
 
-    payload = create_uploaded_log(main_module)
+    payload = create_uploaded_log(main_module, storage_name="storage3")
 
     original_path = Path(payload["stored_path"])
     summary_path = Path(payload["summary_stored_path"])
@@ -180,18 +189,67 @@ def test_upload_creates_original_and_summary_files(monkeypatch, tmp_path):
     assert original_path.read_bytes() == SAMPLE_LOG.encode("utf-8")
     assert summary_path.exists()
     assert payload["summary_filename"] == "fas2750_summary.txt"
+    assert payload["storage_name"] == "storage3"
 
 
 def test_upload_multiple_files(monkeypatch, tmp_path):
     main_module = load_app(monkeypatch, tmp_path)
     main_module.on_startup()
 
-    payload = create_uploaded_logs(main_module, save_names=["fas2750_custom.log", "cloudv4_custom.log"])
+    payload = create_uploaded_logs(main_module, save_names=["fas2750_custom.log", "cloudv4_custom.log"], storage_name="storage2")
 
     assert payload["count"] == 2
+    assert payload["storage_name"] == "storage2"
     assert [item["filename"] for item in payload["items"]] == ["fas2750_custom.log", "cloudv4_custom.log"]
     assert payload["items"][1]["summary"]["model_name"] == "FAS8300,AFF-A400"
+    assert payload["items"][0]["storage_name"] == "storage2"
     assert payload["latest"]["filename"] == "cloudv4_custom.log"
+
+
+def test_list_logs_can_filter_by_storage(monkeypatch, tmp_path):
+    main_module = load_app(monkeypatch, tmp_path)
+    main_module.on_startup()
+
+    create_uploaded_log(main_module, save_name="storage1.log", storage_name="storage1")
+    create_uploaded_log(main_module, save_name="storage2.log", storage_name="storage2")
+
+    db_generator = main_module.get_db()
+    db = next(db_generator)
+    try:
+        storage1_logs = main_module.list_logs(storage_name="storage1", db=db)
+        storage2_logs = main_module.list_logs(storage_name="storage2", db=db)
+    finally:
+        db_generator.close()
+
+    assert [item["filename"] for item in storage1_logs] == ["storage1.log"]
+    assert [item["filename"] for item in storage2_logs] == ["storage2.log"]
+
+
+def test_request_board_crud(monkeypatch, tmp_path):
+    main_module = load_app(monkeypatch, tmp_path)
+    main_module.on_startup()
+
+    db_generator = main_module.get_db()
+    db = next(db_generator)
+    try:
+        created = main_module.create_request_post(
+            main_module.RequestPostPayload(title="로그 수정 요청", content="스토리지2 레이아웃 수정 필요", status="대기", author="User One"),
+            db=db,
+        )
+        updated = main_module.update_request_post(
+            created["id"],
+            main_module.RequestPostPayload(title="로그 수정 요청", content="스토리지2 레이아웃 수정 진행", status="진행중", author="User One"),
+            db=db,
+        )
+        rows = main_module.list_request_posts(db=db)
+        deleted = main_module.delete_request_post(created["id"], db=db)
+    finally:
+        db_generator.close()
+
+    assert created["status"] == "대기"
+    assert updated["status"] == "진행중"
+    assert rows[0]["content"] == "스토리지2 레이아웃 수정 진행"
+    assert deleted["deleted"] is True
 
 
 def test_parse_12_node_cluster_model_and_serials(monkeypatch, tmp_path):
@@ -239,6 +297,7 @@ def test_download_and_delete_log(monkeypatch, tmp_path):
     assert isinstance(download_response, FileResponse)
     assert str(download_response.path) == str(original_path)
     assert delete_response["deleted"] is True
+    assert delete_response["storage_name"] == "storage1"
     assert deleted_log is None
     assert not original_path.exists()
     assert not summary_path.exists()
@@ -248,7 +307,7 @@ def test_get_raw_and_summary_payload(monkeypatch, tmp_path):
     main_module = load_app(monkeypatch, tmp_path)
     main_module.on_startup()
 
-    upload_payload = create_uploaded_log(main_module)
+    upload_payload = create_uploaded_log(main_module, storage_name="storage2")
 
     db_generator = main_module.get_db()
     db = next(db_generator)
@@ -259,6 +318,8 @@ def test_get_raw_and_summary_payload(monkeypatch, tmp_path):
         db_generator.close()
 
     assert raw_payload["filename"] == "fas2750.log"
+    assert raw_payload["storage_name"] == "storage2"
     assert "NetApp Release 9.17.1P2" in raw_payload["raw_text"]
     assert summary_payload["summary_filename"] == "fas2750_summary.txt"
+    assert summary_payload["storage_name"] == "storage2"
     assert summary_payload["summary"]["cluster_name"] == "FAS2750"

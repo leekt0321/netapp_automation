@@ -7,18 +7,20 @@ from fastapi import Depends, FastAPI, File, Form, HTTPException, UploadFile
 from fastapi.responses import FileResponse, HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
-from sqlalchemy import text
+from sqlalchemy import inspect, text
 from sqlalchemy.orm import Session
 
 from app.auth import hash_password, verify_password
 from app.config import settings
 from app.db import Base, engine, get_db
-from app.models import UploadedLog, User
+from app.models import RequestPost, UploadedLog, User
 from app.parser_netapp import decode_text_content, format_summary_text, parse_netapp_log
 
 
 app = FastAPI(title=settings.app_name)
 SERVER_SESSION_ID = str(uuid4())
+STORAGE_CHOICES = {"storage1", "storage2", "storage3"}
+REQUEST_STATUS_CHOICES = {"대기", "진행중", "완료"}
 
 BASE_DIR = Path(__file__).resolve().parent
 TEMPLATE_DIR = BASE_DIR / "templates"
@@ -46,6 +48,13 @@ class RegisterPayload(BaseModel):
 class DeleteUserPayload(BaseModel):
     username: str
     password: str
+
+
+class RequestPostPayload(BaseModel):
+    title: str
+    content: str
+    status: str
+    author: Optional[str] = None
 
 
 def normalize_filename(requested_name: str, original_filename: str) -> str:
@@ -87,6 +96,10 @@ def get_summary_filename(filename: str) -> str:
 def ensure_admin_user(db: Session) -> None:
     existing_user = db.query(User).filter(User.username == settings.admin_username).first()
     if existing_user:
+        existing_user.password_hash = hash_password(settings.admin_password)
+        existing_user.full_name = settings.admin_full_name
+        existing_user.is_active = True
+        db.commit()
         return
 
     admin_user = User(
@@ -97,6 +110,37 @@ def ensure_admin_user(db: Session) -> None:
     )
     db.add(admin_user)
     db.commit()
+
+
+def ensure_schema_updates() -> None:
+    inspector = inspect(engine)
+    if inspector.has_table("uploaded_logs"):
+        columns = {column["name"] for column in inspector.get_columns("uploaded_logs")}
+        if "storage_name" not in columns:
+            with engine.begin() as connection:
+                connection.execute(text("ALTER TABLE uploaded_logs ADD COLUMN storage_name VARCHAR(50)"))
+                connection.execute(text("UPDATE uploaded_logs SET storage_name = 'storage1' WHERE storage_name IS NULL"))
+
+
+def validate_storage_name(storage_name: str) -> str:
+    normalized = storage_name.strip().lower()
+    if normalized not in STORAGE_CHOICES:
+        raise HTTPException(status_code=400, detail="유효한 스토리지 구분을 선택해주세요.")
+    return normalized
+
+
+def validate_request_post_payload(payload: RequestPostPayload) -> tuple[str, str, str, Optional[str]]:
+    title = payload.title.strip()
+    content = payload.content.strip()
+    status = payload.status.strip()
+    author = payload.author.strip() if payload.author else None
+
+    if not title or not content:
+        raise HTTPException(status_code=400, detail="제목과 내용을 모두 입력해주세요.")
+    if status not in REQUEST_STATUS_CHOICES:
+        raise HTTPException(status_code=400, detail="유효한 진행 상태를 선택해주세요.")
+
+    return title, content, status, author
 
 
 def resolve_save_name(file: UploadFile, requested_name: str = "") -> str:
@@ -121,7 +165,7 @@ def resolve_save_names(upload_files: List[UploadFile], save_name: str, save_name
     return [resolve_save_name(file) for file in upload_files]
 
 
-async def upload_log(file: UploadFile, save_name: str, db: Session) -> dict:
+async def upload_log(file: UploadFile, save_name: str, storage_name: str, db: Session) -> dict:
     requested_name = resolve_save_name(file, save_name)
     saved_name = get_unique_filename(requested_name)
     saved_path = upload_dir / saved_name
@@ -144,6 +188,7 @@ async def upload_log(file: UploadFile, save_name: str, db: Session) -> dict:
         content_type=file.content_type,
         size=len(content),
         status="uploaded",
+        storage_name=validate_storage_name(storage_name),
     )
 
     db.add(log)
@@ -156,6 +201,7 @@ async def upload_log(file: UploadFile, save_name: str, db: Session) -> dict:
         "stored_path": log.stored_path,
         "size": log.size,
         "status": log.status,
+        "storage_name": log.storage_name,
         "summary_filename": summary_name,
         "summary_stored_path": str(summary_path),
         "summary": summary,
@@ -166,6 +212,7 @@ async def upload_log(file: UploadFile, save_name: str, db: Session) -> dict:
 def on_startup():
     app.state.server_session_id = SERVER_SESSION_ID
     Base.metadata.create_all(bind=engine)
+    ensure_schema_updates()
     db = next(get_db())
     try:
         ensure_admin_user(db)
@@ -184,6 +231,8 @@ def api_root():
         "message": "Storage AI Web API",
         "env": settings.app_env,
         "server_session_id": getattr(app.state, "server_session_id", SERVER_SESSION_ID),
+        "storage_choices": sorted(STORAGE_CHOICES),
+        "request_status_choices": ["대기", "진행중", "완료"],
     }
 
 
@@ -280,6 +329,7 @@ async def upload_logs(
     file: Optional[UploadFile] = File(None),
     save_name: str = Form(""),
     save_names: Optional[List[str]] = Form(None),
+    storage_name: str = Form("storage1"),
     db: Session = Depends(get_db),
 ):
     upload_files = [current for current in (files or []) if hasattr(current, "filename")]
@@ -289,23 +339,29 @@ async def upload_logs(
     if not upload_files:
         raise HTTPException(status_code=400, detail="업로드할 파일을 선택하세요.")
 
+    validated_storage_name = validate_storage_name(storage_name)
     resolved_names = resolve_save_names(upload_files, save_name, save_names)
 
     items = []
     for current_file, resolved_name in zip(upload_files, resolved_names):
-        items.append(await upload_log(file=current_file, save_name=resolved_name, db=db))
+        items.append(await upload_log(file=current_file, save_name=resolved_name, storage_name=validated_storage_name, db=db))
 
     latest_item = items[-1]
     return {
         "count": len(items),
         "items": items,
         "latest": latest_item,
+        "storage_name": validated_storage_name,
     }
 
 
 @app.get("/logs")
-def list_logs(db: Session = Depends(get_db)):
-    rows = db.query(UploadedLog).order_by(UploadedLog.id.desc()).all()
+def list_logs(storage_name: Optional[str] = None, db: Session = Depends(get_db)):
+    query = db.query(UploadedLog)
+    if storage_name:
+        query = query.filter(UploadedLog.storage_name == validate_storage_name(storage_name))
+
+    rows = query.order_by(UploadedLog.id.desc()).all()
 
     return [
         {
@@ -315,6 +371,7 @@ def list_logs(db: Session = Depends(get_db)):
             "content_type": row.content_type,
             "size": row.size,
             "status": row.status,
+            "storage_name": row.storage_name,
             "created_at": row.created_at,
         }
         for row in rows
@@ -337,6 +394,7 @@ def get_raw_log(log_id: int, db: Session = Depends(get_db)):
         "stored_path": log.stored_path,
         "size": log.size,
         "status": log.status,
+        "storage_name": log.storage_name,
         "raw_text": raw_path.read_text(encoding="utf-8", errors="replace"),
     }
 
@@ -369,6 +427,7 @@ def delete_log(log_id: int, db: Session = Depends(get_db)):
         summary_path.unlink()
 
     filename = log.filename
+    storage_name = log.storage_name
     db.delete(log)
     db.commit()
 
@@ -376,6 +435,7 @@ def delete_log(log_id: int, db: Session = Depends(get_db)):
         "deleted": True,
         "id": log_id,
         "filename": filename,
+        "storage_name": storage_name,
     }
 
 
@@ -401,8 +461,93 @@ def get_log_summary(log_id: int, db: Session = Depends(get_db)):
     return {
         "id": log.id,
         "filename": log.filename,
+        "storage_name": log.storage_name,
         "summary_filename": summary_filename,
         "summary_stored_path": str(summary_path),
         "summary": summary,
         "raw_text": raw_text,
+    }
+
+
+@app.get("/requests")
+def list_request_posts(db: Session = Depends(get_db)):
+    rows = db.query(RequestPost).order_by(RequestPost.id.desc()).all()
+    return [
+        {
+            "id": row.id,
+            "title": row.title,
+            "content": row.content,
+            "status": row.status,
+            "author": row.author,
+            "created_at": row.created_at,
+            "updated_at": row.updated_at,
+        }
+        for row in rows
+    ]
+
+
+@app.post("/requests")
+def create_request_post(payload: RequestPostPayload, db: Session = Depends(get_db)):
+    title, content, status, author = validate_request_post_payload(payload)
+
+    row = RequestPost(
+        title=title,
+        content=content,
+        status=status,
+        author=author,
+    )
+    db.add(row)
+    db.commit()
+    db.refresh(row)
+
+    return {
+        "id": row.id,
+        "title": row.title,
+        "content": row.content,
+        "status": row.status,
+        "author": row.author,
+        "created_at": row.created_at,
+        "updated_at": row.updated_at,
+    }
+
+
+@app.put("/requests/{post_id}")
+def update_request_post(post_id: int, payload: RequestPostPayload, db: Session = Depends(get_db)):
+    row = db.query(RequestPost).filter(RequestPost.id == post_id).first()
+    if not row:
+        raise HTTPException(status_code=404, detail="수정 요청 글을 찾을 수 없습니다.")
+
+    title, content, status, author = validate_request_post_payload(payload)
+    row.title = title
+    row.content = content
+    row.status = status
+    row.author = author
+    db.commit()
+    db.refresh(row)
+
+    return {
+        "id": row.id,
+        "title": row.title,
+        "content": row.content,
+        "status": row.status,
+        "author": row.author,
+        "created_at": row.created_at,
+        "updated_at": row.updated_at,
+    }
+
+
+@app.delete("/requests/{post_id}")
+def delete_request_post(post_id: int, db: Session = Depends(get_db)):
+    row = db.query(RequestPost).filter(RequestPost.id == post_id).first()
+    if not row:
+        raise HTTPException(status_code=404, detail="수정 요청 글을 찾을 수 없습니다.")
+
+    title = row.title
+    db.delete(row)
+    db.commit()
+
+    return {
+        "deleted": True,
+        "id": post_id,
+        "title": title,
     }

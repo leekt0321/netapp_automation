@@ -1,6 +1,0 @@
-vendor: NetApp
-cluster_name: acihdd01
-model_name: FAS8300
-ontap_version: 9.15.1P3
-disk_count: 156
-controller_serial: 952116000397,952116000147
