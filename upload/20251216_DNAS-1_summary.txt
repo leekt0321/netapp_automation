@@ -1,6 +1,0 @@
-vendor: NetApp
-cluster_name: DNAS01
-model_name: FAS9000
-ontap_version: 9.15.1P8
-disk_count: 220
-controller_serial: 792128000309,792130000073

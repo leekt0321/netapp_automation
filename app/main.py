@@ -1,7 +1,9 @@
+import json
 from pathlib import Path
 import re
 from typing import List, Optional
 from uuid import uuid4
+from datetime import datetime
 
 from fastapi import Depends, FastAPI, File, Form, HTTPException, UploadFile
 from fastapi.responses import FileResponse, HTMLResponse
@@ -13,14 +15,56 @@ from sqlalchemy.orm import Session
 from app.auth import hash_password, verify_password
 from app.config import settings
 from app.db import Base, engine, get_db
-from app.models import RequestPost, StorageSite, UploadedLog, User
-from app.parser_netapp import decode_text_content, format_summary_text, parse_netapp_log
+from app.models import BugPost, RequestPost, StorageSite, UploadedLog, User
+from app.parser_netapp import (
+    decode_text_content,
+    extract_disk_section_text,
+    extract_event_log_section_contents,
+    extract_event_log_section_text,
+    extract_fcp_section_text,
+    extract_lun_section_text,
+    extract_network_interface_section_text,
+    extract_network_port_section_text,
+    extract_shelf_section_text,
+    extract_snapmirror_section_text,
+    extract_volume_section_text,
+    format_summary_text,
+    parse_netapp_log,
+)
 
 
 app = FastAPI(title=settings.app_name)
 SERVER_SESSION_ID = str(uuid4())
 STORAGE_CHOICES = {"storage1", "storage2", "storage3"}
 REQUEST_STATUS_CHOICES = {"대기", "진행중", "완료"}
+MANUAL_FIELD_DEFINITIONS = (
+    ("install_date", "설치 날짜"),
+    ("warranty", "워런티"),
+    ("maintenance", "유지보수"),
+    ("office_name", "국사명"),
+    ("install_rack", "설치 상면"),
+    ("service", "서비스"),
+    ("manager_contact", "담당자(연락처)"),
+    ("id_password", "ID/PW"),
+    ("asup", "ASUP"),
+    ("aggr_diskcount_override", "maxraidsize, diskcount"),
+)
+SUMMARY_DISPLAY_LABELS = {
+    "vendor": "vendor",
+    "hostname": "hostname",
+    "model_name": "model",
+    "controller_serial": "Serial number",
+    "ontap_version": "OS Version",
+    "sp_ip_version": "SP IP/SP Version",
+    "mgmt": "mgmt",
+    "shelf_count": "Shelf 개수",
+    "used_protocols": "사용 프로토콜",
+    "snapmirror_in_use": "snapmirror 사용 유무",
+    "expansion_slots": "현재 장착 중인 확장 슬롯",
+    "aggr_diskcount_maxraidsize": "maxraidsize, diskcount",
+    "volume_count": "볼륨 개수",
+    "lun_count": "lun 개수",
+}
 
 BASE_DIR = Path(__file__).resolve().parent
 TEMPLATE_DIR = BASE_DIR / "templates"
@@ -57,9 +101,25 @@ class RequestPostPayload(BaseModel):
     author: Optional[str] = None
 
 
+class BugPostPayload(BaseModel):
+    title: str
+    content: str
+    author: Optional[str] = None
+
+
 class StorageSitePayload(BaseModel):
     storage_name: str
     name: str
+
+
+class ManualFieldsPayload(BaseModel):
+    manual_fields: dict[str, Optional[str]]
+
+
+class SpecialNotePayload(BaseModel):
+    content: str
+    author: Optional[str] = None
+    source_note_id: Optional[str] = None
 
 
 def normalize_filename(requested_name: str, original_filename: str) -> str:
@@ -130,6 +190,12 @@ def ensure_schema_updates() -> None:
         if "site_id" not in columns:
             with engine.begin() as connection:
                 connection.execute(text("ALTER TABLE uploaded_logs ADD COLUMN site_id INTEGER"))
+        if "manual_fields_json" not in columns:
+            with engine.begin() as connection:
+                connection.execute(text("ALTER TABLE uploaded_logs ADD COLUMN manual_fields_json TEXT"))
+        if "note" not in columns:
+            with engine.begin() as connection:
+                connection.execute(text("ALTER TABLE uploaded_logs ADD COLUMN note TEXT"))
 
 
 def validate_storage_name(storage_name: str) -> str:
@@ -151,6 +217,17 @@ def validate_request_post_payload(payload: RequestPostPayload) -> tuple[str, str
         raise HTTPException(status_code=400, detail="유효한 진행 상태를 선택해주세요.")
 
     return title, content, status, author
+
+
+def validate_bug_post_payload(payload: BugPostPayload) -> tuple[str, str, Optional[str]]:
+    title = payload.title.strip()
+    content = payload.content.strip()
+    author = payload.author.strip() if payload.author else None
+
+    if not title or not content:
+        raise HTTPException(status_code=400, detail="제목과 내용을 모두 입력해주세요.")
+
+    return title, content, author
 
 
 def serialize_site(site: StorageSite) -> dict:
@@ -185,6 +262,103 @@ def get_validated_site(db: Session, storage_name: str, site_id: int) -> StorageS
     return site
 
 
+def normalize_manual_fields(raw_fields: Optional[dict]) -> dict[str, str]:
+    source = raw_fields or {}
+    normalized = {}
+    for field_key, _ in MANUAL_FIELD_DEFINITIONS:
+        value = source.get(field_key, "")
+        normalized[field_key] = value.strip() if isinstance(value, str) else ""
+    return normalized
+
+
+def parse_manual_fields_json(raw_value: Optional[str]) -> dict[str, str]:
+    if not raw_value:
+        return normalize_manual_fields({})
+    try:
+        parsed = json.loads(raw_value)
+    except json.JSONDecodeError:
+        return normalize_manual_fields({})
+    return normalize_manual_fields(parsed if isinstance(parsed, dict) else {})
+
+
+def encode_manual_fields_json(manual_fields: dict[str, str]) -> str:
+    return json.dumps(normalize_manual_fields(manual_fields), ensure_ascii=False)
+
+
+def parse_special_notes_json(raw_value: Optional[str]) -> list[dict]:
+    if not raw_value:
+        return []
+    try:
+        parsed = json.loads(raw_value)
+    except json.JSONDecodeError:
+        return []
+    if not isinstance(parsed, list):
+        return []
+
+    notes = []
+    for item in parsed:
+        if not isinstance(item, dict):
+            continue
+        content = str(item.get("content", "")).strip()
+        if content == "":
+            continue
+        notes.append(
+            {
+                "id": str(item.get("id", "")).strip() or str(uuid4()),
+                "content": content,
+                "author": str(item.get("author", "") or "").strip(),
+                "created_at": str(item.get("created_at", "") or "").strip(),
+                "source_note_id": str(item.get("source_note_id", "") or "").strip(),
+            }
+        )
+    return notes
+
+
+def encode_special_notes_json(notes: list[dict]) -> str:
+    return json.dumps(notes, ensure_ascii=False)
+
+
+def format_summary_value(key: str, value):
+    if value in ("", None):
+        return "-"
+    text_value = str(value)
+    if key in {"sp_ip_version", "expansion_slots", "aggr_diskcount_maxraidsize"}:
+        return text_value.replace(",", ",\n")
+    return text_value
+
+
+def build_summary_display(summary: dict, manual_fields: dict[str, str]) -> dict:
+    combined = {}
+    for field_key, label in MANUAL_FIELD_DEFINITIONS:
+        if field_key == "aggr_diskcount_override":
+            continue
+        combined[label] = manual_fields.get(field_key, "") or "-"
+    for key in (
+        "vendor",
+        "hostname",
+        "model_name",
+        "controller_serial",
+        "ontap_version",
+        "sp_ip_version",
+        "mgmt",
+        "shelf_count",
+        "used_protocols",
+        "snapmirror_in_use",
+        "expansion_slots",
+        "aggr_diskcount_maxraidsize",
+        "volume_count",
+        "lun_count",
+    ):
+        value = summary.get(key)
+        if key == "aggr_diskcount_maxraidsize" and manual_fields.get("aggr_diskcount_override", ""):
+            value = manual_fields["aggr_diskcount_override"]
+        combined[SUMMARY_DISPLAY_LABELS[key]] = format_summary_value(key, value)
+    disk_count = summary.get("disk_count")
+    spare_count = summary.get("spare_count")
+    combined["disk 개수/spare 개수"] = f"{disk_count if disk_count not in ('', None) else '-'} / {spare_count if spare_count not in ('', None) else '-'}"
+    return combined
+
+
 def resolve_save_name(file: UploadFile, requested_name: str = "") -> str:
     original_filename = (file.filename or "").strip()
     if not original_filename:
@@ -207,7 +381,7 @@ def resolve_save_names(upload_files: List[UploadFile], save_name: str, save_name
     return [resolve_save_name(file) for file in upload_files]
 
 
-async def upload_log(file: UploadFile, save_name: str, storage_name: str, site: StorageSite, db: Session) -> dict:
+async def upload_log(file: UploadFile, save_name: str, storage_name: str, site: StorageSite, manual_fields: dict[str, str], db: Session) -> dict:
     requested_name = resolve_save_name(file, save_name)
     saved_name = get_unique_filename(requested_name)
     saved_path = upload_dir / saved_name
@@ -232,6 +406,7 @@ async def upload_log(file: UploadFile, save_name: str, storage_name: str, site: 
         status="uploaded",
         storage_name=validate_storage_name(storage_name),
         site_id=site.id,
+        manual_fields_json=encode_manual_fields_json(manual_fields),
     )
 
     db.add(log)
@@ -247,6 +422,7 @@ async def upload_log(file: UploadFile, save_name: str, storage_name: str, site: 
         "storage_name": log.storage_name,
         "site_id": site.id,
         "site_name": site.name,
+        "manual_fields": manual_fields,
         "summary_filename": summary_name,
         "summary_stored_path": str(summary_path),
         "summary": summary,
@@ -376,6 +552,7 @@ async def upload_logs(
     save_names: Optional[List[str]] = Form(None),
     storage_name: str = Form("storage1"),
     site_id: int = Form(...),
+    manual_fields_json: str = Form(""),
     db: Session = Depends(get_db),
 ):
     upload_files = [current for current in (files or []) if hasattr(current, "filename")]
@@ -387,11 +564,12 @@ async def upload_logs(
 
     validated_storage_name = validate_storage_name(storage_name)
     validated_site = get_validated_site(db, validated_storage_name, site_id)
+    manual_fields = parse_manual_fields_json(manual_fields_json)
     resolved_names = resolve_save_names(upload_files, save_name, save_names)
 
     items = []
     for current_file, resolved_name in zip(upload_files, resolved_names):
-        items.append(await upload_log(file=current_file, save_name=resolved_name, storage_name=validated_storage_name, site=validated_site, db=db))
+        items.append(await upload_log(file=current_file, save_name=resolved_name, storage_name=validated_storage_name, site=validated_site, manual_fields=manual_fields, db=db))
 
     latest_item = items[-1]
     return {
@@ -515,6 +693,7 @@ def get_log_summary(log_id: int, db: Session = Depends(get_db)):
 
     raw_text = summary_path.read_text(encoding="utf-8")
     display_raw_text = raw_text.replace("cluster_name:", "hostname:")
+    original_raw_text = Path(log.stored_path).read_text(encoding="utf-8", errors="replace")
     summary = {}
     for line in raw_text.splitlines():
         if ":" not in line:
@@ -524,6 +703,19 @@ def get_log_summary(log_id: int, db: Session = Depends(get_db)):
         if normalized_key == "cluster_name":
             normalized_key = "hostname"
         summary[normalized_key] = value.strip()
+    manual_fields = parse_manual_fields_json(log.manual_fields_json)
+    section_contents = {
+        "Shelf": extract_shelf_section_text(original_raw_text),
+        "Disk": extract_disk_section_text(original_raw_text),
+        "FCP": extract_fcp_section_text(original_raw_text),
+        "Network Interface": extract_network_interface_section_text(original_raw_text),
+        "Network Port": extract_network_port_section_text(original_raw_text),
+        "Volume": extract_volume_section_text(original_raw_text),
+        "LUN": extract_lun_section_text(original_raw_text),
+        "Snapmirror": extract_snapmirror_section_text(original_raw_text),
+        "Event log": extract_event_log_section_contents(original_raw_text),
+        "특이사항": parse_special_notes_json(log.note),
+    }
 
     return {
         "id": log.id,
@@ -533,8 +725,57 @@ def get_log_summary(log_id: int, db: Session = Depends(get_db)):
         "site_name": row[1],
         "summary_filename": summary_filename,
         "summary_stored_path": str(summary_path),
-        "summary": summary,
+        "summary": build_summary_display(summary, manual_fields),
+        "parsed_summary": summary,
+        "manual_fields": manual_fields,
         "raw_text": display_raw_text,
+        "section_contents": section_contents,
+    }
+
+
+@app.post("/logs/{log_id}/special-notes")
+def add_log_special_note(log_id: int, payload: SpecialNotePayload, db: Session = Depends(get_db)):
+    log = db.query(UploadedLog).filter(UploadedLog.id == log_id).first()
+    if not log:
+        raise HTTPException(status_code=404, detail="업로드 파일을 찾을 수 없습니다.")
+
+    content = payload.content.strip()
+    if content == "":
+        raise HTTPException(status_code=400, detail="특이사항 내용을 입력해주세요.")
+
+    notes = parse_special_notes_json(log.note)
+    entry = {
+        "id": str(uuid4()),
+        "content": content,
+        "author": (payload.author or "").strip(),
+        "created_at": datetime.utcnow().isoformat(timespec="seconds"),
+        "source_note_id": (payload.source_note_id or "").strip(),
+    }
+    notes.insert(0, entry)
+    log.note = encode_special_notes_json(notes)
+    db.commit()
+    db.refresh(log)
+
+    return {
+        "id": log.id,
+        "special_notes": notes,
+    }
+
+
+@app.put("/logs/{log_id}/manual-fields")
+def update_log_manual_fields(log_id: int, payload: ManualFieldsPayload, db: Session = Depends(get_db)):
+    log = db.query(UploadedLog).filter(UploadedLog.id == log_id).first()
+    if not log:
+        raise HTTPException(status_code=404, detail="업로드 파일을 찾을 수 없습니다.")
+
+    manual_fields = normalize_manual_fields(payload.manual_fields)
+    log.manual_fields_json = encode_manual_fields_json(manual_fields)
+    db.commit()
+    db.refresh(log)
+
+    return {
+        "id": log.id,
+        "manual_fields": manual_fields,
     }
 
 
@@ -674,6 +915,85 @@ def delete_request_post(post_id: int, db: Session = Depends(get_db)):
     row = db.query(RequestPost).filter(RequestPost.id == post_id).first()
     if not row:
         raise HTTPException(status_code=404, detail="수정 요청 글을 찾을 수 없습니다.")
+
+    title = row.title
+    db.delete(row)
+    db.commit()
+
+    return {
+        "deleted": True,
+        "id": post_id,
+        "title": title,
+    }
+
+
+@app.get("/bugs")
+def list_bug_posts(db: Session = Depends(get_db)):
+    rows = db.query(BugPost).order_by(BugPost.id.desc()).all()
+    return [
+        {
+            "id": row.id,
+            "title": row.title,
+            "content": row.content,
+            "author": row.author,
+            "created_at": row.created_at,
+            "updated_at": row.updated_at,
+        }
+        for row in rows
+    ]
+
+
+@app.post("/bugs")
+def create_bug_post(payload: BugPostPayload, db: Session = Depends(get_db)):
+    title, content, author = validate_bug_post_payload(payload)
+
+    row = BugPost(
+        title=title,
+        content=content,
+        author=author,
+    )
+    db.add(row)
+    db.commit()
+    db.refresh(row)
+
+    return {
+        "id": row.id,
+        "title": row.title,
+        "content": row.content,
+        "author": row.author,
+        "created_at": row.created_at,
+        "updated_at": row.updated_at,
+    }
+
+
+@app.put("/bugs/{post_id}")
+def update_bug_post(post_id: int, payload: BugPostPayload, db: Session = Depends(get_db)):
+    row = db.query(BugPost).filter(BugPost.id == post_id).first()
+    if not row:
+        raise HTTPException(status_code=404, detail="버그 글을 찾을 수 없습니다.")
+
+    title, content, author = validate_bug_post_payload(payload)
+    row.title = title
+    row.content = content
+    row.author = author
+    db.commit()
+    db.refresh(row)
+
+    return {
+        "id": row.id,
+        "title": row.title,
+        "content": row.content,
+        "author": row.author,
+        "created_at": row.created_at,
+        "updated_at": row.updated_at,
+    }
+
+
+@app.delete("/bugs/{post_id}")
+def delete_bug_post(post_id: int, db: Session = Depends(get_db)):
+    row = db.query(BugPost).filter(BugPost.id == post_id).first()
+    if not row:
+        raise HTTPException(status_code=404, detail="버그 글을 찾을 수 없습니다.")
 
     title = row.title
     db.delete(row)
