@@ -3,6 +3,7 @@ set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 VENV_DIR="$ROOT_DIR/.venv"
+VENDOR_DIR="$ROOT_DIR/vendor"
 ENV_FILE="$ROOT_DIR/.env"
 ENV_TEMPLATE="$ROOT_DIR/deploy/.env.example"
 
@@ -15,16 +16,22 @@ if [[ ! -f "$ENV_FILE" ]]; then
   echo "Created default .env from deploy/.env.example"
 fi
 
-if [[ ! -d "$VENV_DIR" ]]; then
-  python3 -m venv "$VENV_DIR"
-fi
+if [[ -d "$VENDOR_DIR" ]]; then
+  export PYTHONPATH="$VENDOR_DIR${PYTHONPATH:+:$PYTHONPATH}"
+  PYTHON_BIN="${PYTHON_BIN:-python3}"
+else
+  if [[ ! -d "$VENV_DIR" ]]; then
+    python3 -m venv "$VENV_DIR"
+  fi
 
-source "$VENV_DIR/bin/activate"
-python -m pip install --upgrade pip >/dev/null
-python -m pip install -r "$ROOT_DIR/requirements.txt"
+  source "$VENV_DIR/bin/activate"
+  python -m pip install --upgrade pip >/dev/null
+  python -m pip install -r "$ROOT_DIR/requirements.txt"
+  PYTHON_BIN="python"
+fi
 
 set -a
 source "$ENV_FILE"
 set +a
 
-exec python -m uvicorn app.main:app --host "${HOST:-0.0.0.0}" --port "${PORT:-8000}"
+exec "$PYTHON_BIN" -m uvicorn app.main:app --host "${HOST:-0.0.0.0}" --port "${PORT:-8000}"
