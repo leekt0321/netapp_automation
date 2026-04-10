@@ -20,6 +20,11 @@ const logoutButtonEl = document.getElementById("logout-button");
 const deleteFormEl = document.getElementById("delete-form");
 const deletePasswordEl = document.getElementById("delete-password");
 const deleteStatusEl = document.getElementById("delete-status");
+const deleteFormMembersEl = document.getElementById("delete-form-members");
+const deletePasswordMembersEl = document.getElementById("delete-password-members");
+const deleteStatusMembersEl = document.getElementById("delete-status-members");
+const memberCountEl = document.getElementById("member-count");
+const memberListEl = document.getElementById("member-list");
 
 const navButtons = Array.from(document.querySelectorAll(".nav-button"));
 const pageSections = Array.from(document.querySelectorAll(".page-section"));
@@ -79,6 +84,10 @@ const pageMeta = {
   storage3: {
     title: "스토리지3",
     description: "스토리지3 내부 사이트별 원본 로그와 요약 로그를 확인합니다.",
+  },
+  members: {
+    title: "회원 관리 목록",
+    description: "회원가입된 계정 정보를 확인하고 내 계정을 관리합니다.",
   },
   bugs: {
     title: "버그 모음",
@@ -147,6 +156,7 @@ let allLogs = [];
 let allSites = [];
 let allRequestPosts = [];
 let allBugPosts = [];
+let allUsers = [];
 let activeRequestFilter = "all";
 let uploadManualFields = createEmptyManualFields();
 let manualFieldsModalMode = "upload";
@@ -210,6 +220,9 @@ registerFormEl.addEventListener("submit", async (event) => {
 
   registerStatusEl.textContent = payload.username + " 계정이 생성되었습니다. 로그인하세요.";
   registerFormEl.reset();
+  if (appShellEl.hidden === false) {
+    await loadUsers();
+  }
 });
 
 logoutButtonEl.addEventListener("click", () => {
@@ -219,32 +232,15 @@ logoutButtonEl.addEventListener("click", () => {
 
 deleteFormEl.addEventListener("submit", async (event) => {
   event.preventDefault();
-  const username = localStorage.getItem(SESSION_KEY);
-  const password = deletePasswordEl.value.trim();
-
-  if (username === null || password === "") {
-    deleteStatusEl.textContent = "비밀번호를 입력하세요.";
-    return;
-  }
-
-  deleteStatusEl.textContent = "회원탈퇴 처리 중...";
-  const response = await fetch("/auth/delete", {
-    method: "DELETE",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ username, password }),
-  });
-  const payload = await response.json();
-
-  if (response.ok === false) {
-    deleteStatusEl.textContent = payload.detail || "회원탈퇴에 실패했습니다.";
-    return;
-  }
-
-  deleteFormEl.reset();
-  deleteStatusEl.textContent = "회원탈퇴가 완료되었습니다.";
-  clearSession();
-  loginStatusEl.textContent = payload.username + " 계정이 삭제되었습니다.";
+  await submitDeleteAccount(deletePasswordEl, deleteStatusEl, deleteFormEl);
 });
+
+if (deleteFormMembersEl !== null) {
+  deleteFormMembersEl.addEventListener("submit", async (event) => {
+    event.preventDefault();
+    await submitDeleteAccount(deletePasswordMembersEl, deleteStatusMembersEl, deleteFormMembersEl);
+  });
+}
 
 for (const button of navButtons) {
   button.addEventListener("click", () => {
@@ -740,6 +736,49 @@ function clearSession() {
   loginScreenEl.hidden = false;
 }
 
+async function submitDeleteAccount(passwordInputEl, statusTargetEl, formTargetEl) {
+  const username = localStorage.getItem(SESSION_KEY);
+  const password = passwordInputEl ? passwordInputEl.value.trim() : "";
+
+  if (username === null || password === "") {
+    if (statusTargetEl !== null) {
+      statusTargetEl.textContent = "비밀번호를 입력하세요.";
+    }
+    return;
+  }
+
+  if (statusTargetEl !== null) {
+    statusTargetEl.textContent = "회원탈퇴 처리 중...";
+  }
+
+  const response = await fetch("/auth/delete", {
+    method: "DELETE",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ username, password }),
+  });
+  const payload = await response.json();
+
+  if (response.ok === false) {
+    if (statusTargetEl !== null) {
+      statusTargetEl.textContent = payload.detail || "회원탈퇴에 실패했습니다.";
+    }
+    return;
+  }
+
+  if (formTargetEl !== null) {
+    formTargetEl.reset();
+  }
+  if (deleteStatusEl !== null) {
+    deleteStatusEl.textContent = "회원탈퇴가 완료되었습니다.";
+  }
+  if (deleteStatusMembersEl !== null) {
+    deleteStatusMembersEl.textContent = "회원탈퇴가 완료되었습니다.";
+  }
+  await loadUsers();
+  clearSession();
+  loginStatusEl.textContent = payload.username + " 계정이 삭제되었습니다.";
+}
+
 function openApp(displayName) {
   loginUserEl.textContent = displayName + " 님";
   loginScreenEl.hidden = true;
@@ -764,7 +803,39 @@ function showPage(page) {
 
 async function loadInitialData() {
   await loadSites();
-  await Promise.all([loadLogs(), loadRequestPosts(), loadBugPosts()]);
+  await Promise.all([loadLogs(), loadRequestPosts(), loadBugPosts(), loadUsers()]);
+}
+
+async function loadUsers() {
+  const response = await fetch("/users");
+  const users = await response.json();
+  allUsers = Array.isArray(users) ? users : [];
+  renderUserList();
+}
+
+function renderUserList() {
+  if (memberListEl === null || memberCountEl === null) {
+    return;
+  }
+
+  memberCountEl.textContent = allUsers.length + "명";
+
+  if (allUsers.length === 0) {
+    memberListEl.innerHTML = "<div class='empty'>등록된 회원이 없습니다.</div>";
+    return;
+  }
+
+  memberListEl.innerHTML = allUsers.map((user) => {
+    const displayName = user.full_name && user.full_name.trim() !== "" ? user.full_name : user.username;
+    const stateLabel = user.is_active ? "사용중" : "비활성";
+    return "<article class='member-card'>" +
+      "<div>" +
+        "<strong>" + escapeHtml(displayName) + "</strong>" +
+        "<p>" + escapeHtml(user.username) + "</p>" +
+      "</div>" +
+      "<span class='member-badge'>" + escapeHtml(stateLabel) + "</span>" +
+    "</article>";
+  }).join("");
 }
 
 async function loadSites() {

@@ -177,6 +177,16 @@ def ensure_admin_user(db: Session) -> None:
     db.commit()
 
 
+def serialize_user(user: User) -> dict:
+    return {
+        "id": user.id,
+        "username": user.username,
+        "full_name": user.full_name,
+        "is_active": user.is_active,
+        "created_at": user.created_at,
+    }
+
+
 def ensure_schema_updates() -> None:
     inspector = inspect(engine)
     if not inspector.has_table("storage_sites"):
@@ -542,6 +552,12 @@ def delete_user(payload: DeleteUserPayload, db: Session = Depends(get_db)):
         "deleted": True,
         "username": username,
     }
+
+
+@app.get("/users")
+def list_users(db: Session = Depends(get_db)):
+    users = db.query(User).order_by(User.created_at.desc(), User.id.desc()).all()
+    return [serialize_user(user) for user in users]
 
 
 @app.post("/upload")

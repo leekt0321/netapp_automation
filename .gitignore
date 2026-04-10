@@ -4,5 +4,6 @@ __pycache__/
 .env
 uploads/*
 !uploads/.gitkeep
+upload/*
 var/db/*
 !.gitkeep
