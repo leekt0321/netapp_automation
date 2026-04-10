@@ -1,3 +1,5 @@
+from typing import Optional
+
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 
@@ -10,7 +12,7 @@ router = APIRouter()
 
 
 @router.get("/sites")
-def list_storage_sites_route(storage_name: str | None = None, db: Session = Depends(get_db)):
+def list_storage_sites_route(storage_name: Optional[str] = None, db: Session = Depends(get_db)):
     return list_storage_sites(storage_name, db)
 
 
@@ -27,4 +29,3 @@ def update_storage_site_route(site_id: int, payload: StorageSitePayload, db: Ses
 @router.delete("/sites/{site_id}")
 def delete_storage_site_route(site_id: int, db: Session = Depends(get_db)):
     return delete_storage_site(site_id, db)
-

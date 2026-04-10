@@ -1,3 +1,5 @@
+from typing import Optional
+
 from fastapi import HTTPException
 from sqlalchemy.orm import Session
 
@@ -45,7 +47,7 @@ def get_validated_site(db: Session, storage_name: str, site_id: int) -> StorageS
     return site
 
 
-def list_storage_sites(storage_name: str | None, db: Session) -> list[dict]:
+def list_storage_sites(storage_name: Optional[str], db: Session) -> list[dict]:
     query = db.query(StorageSite)
     if storage_name:
         query = query.filter(StorageSite.storage_name == validate_storage_name(storage_name))
@@ -95,4 +97,3 @@ def delete_storage_site(site_id: int, db: Session) -> dict:
     db.delete(row)
     db.commit()
     return {"deleted": True, "id": site_id, "name": site_name, "storage_name": storage_name}
-

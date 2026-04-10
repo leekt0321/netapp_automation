@@ -1,3 +1,5 @@
+from typing import Optional, Tuple
+
 from fastapi import HTTPException
 from sqlalchemy.orm import Session
 
@@ -6,7 +8,7 @@ from app.models import BugPost, RequestPost
 from app.schemas.payloads import BugPostPayload, RequestPostPayload
 
 
-def validate_request_post_payload(payload: RequestPostPayload) -> tuple[str, str, str, str | None]:
+def validate_request_post_payload(payload: RequestPostPayload) -> Tuple[str, str, str, Optional[str]]:
     title = payload.title.strip()
     content = payload.content.strip()
     status = payload.status.strip()
@@ -18,7 +20,7 @@ def validate_request_post_payload(payload: RequestPostPayload) -> tuple[str, str
     return title, content, status, author
 
 
-def validate_bug_post_payload(payload: BugPostPayload) -> tuple[str, str, str | None]:
+def validate_bug_post_payload(payload: BugPostPayload) -> Tuple[str, str, Optional[str]]:
     title = payload.title.strip()
     content = payload.content.strip()
     author = payload.author.strip() if payload.author else None
@@ -151,4 +153,3 @@ def delete_bug_post(post_id: int, db: Session) -> dict:
     db.delete(row)
     db.commit()
     return {"deleted": True, "id": post_id, "title": title}
-

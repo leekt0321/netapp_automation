@@ -35,7 +35,7 @@ async def upload_logs_route(
 
 
 @router.get("/logs")
-def list_logs_route(storage_name: str | None = None, site_id: int | None = None, db: Session = Depends(get_db)):
+def list_logs_route(storage_name: Optional[str] = None, site_id: Optional[int] = None, db: Session = Depends(get_db)):
     return list_logs(storage_name, site_id, db)
 
 
@@ -67,4 +67,3 @@ def add_log_special_note_route(log_id: int, payload: SpecialNotePayload, db: Ses
 @router.put("/logs/{log_id}/manual-fields")
 def update_log_manual_fields_route(log_id: int, payload: ManualFieldsPayload, db: Session = Depends(get_db)):
     return update_log_manual_fields(log_id, payload, db)
-

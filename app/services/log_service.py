@@ -246,7 +246,7 @@ async def upload_logs(files, file, save_name, save_names, storage_name, site_id,
     }
 
 
-def list_logs(storage_name: str | None, site_id: int | None, db: Session) -> list[dict]:
+def list_logs(storage_name: Optional[str], site_id: Optional[int], db: Session) -> list[dict]:
     query = db.query(UploadedLog, StorageSite.name.label("site_name")).outerjoin(StorageSite, UploadedLog.site_id == StorageSite.id)
     if storage_name:
         query = query.filter(UploadedLog.storage_name == validate_storage_name(storage_name))
@@ -398,4 +398,3 @@ def update_log_manual_fields(log_id: int, payload: ManualFieldsPayload, db: Sess
     db.commit()
     db.refresh(log)
     return {"id": log.id, "manual_fields": manual_fields}
-
