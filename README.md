@@ -15,19 +15,19 @@ If a release package contains `vendor/`, the app will use bundled dependencies f
 Create a versioned deployable archive like this:
 
 ```bash
-bash deploy/build_release.sh 0.2v 0.2v
+bash deploy/build_release.sh 0.4v 0.4v
 ```
 
 It generates:
 
-- `dist/netapp_automation-0.2v/`
-- `dist/netapp_automation-0.2v.tar.gz`
+- `dist/netapp_automation-0.4v/`
+- `dist/netapp_automation-0.4v.tar.gz`
 
 On another server:
 
 ```bash
-tar -xzf netapp_automation-0.2v.tar.gz
-cd netapp_automation-0.2v
+tar -xzf netapp_automation-0.4v.tar.gz
+cd netapp_automation-0.4v
 bash deploy/run.sh
 ```
 
@@ -48,5 +48,5 @@ Release packages now include:
 ## Version usage
 
 - `0.1v`: previous stable snapshot
-- `0.2v`: current LMS-style backend structure
+- `0.4v`: current PostgreSQL-based working snapshot
 - future versions can be packaged with the same release script

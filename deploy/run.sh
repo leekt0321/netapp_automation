@@ -9,12 +9,16 @@ ENV_TEMPLATE="$ROOT_DIR/deploy/.env.example"
 
 cd "$ROOT_DIR"
 
-mkdir -p "$ROOT_DIR/uploads" "$ROOT_DIR/var/db"
-
 if [[ ! -f "$ENV_FILE" ]]; then
   cp "$ENV_TEMPLATE" "$ENV_FILE"
   echo "Created default .env from deploy/.env.example"
 fi
+
+set -a
+source "$ENV_FILE"
+set +a
+
+mkdir -p "$ROOT_DIR/${UPLOAD_DIR:-upload}"
 
 if [[ -d "$VENDOR_DIR" ]]; then
   export PYTHONPATH="$VENDOR_DIR${PYTHONPATH:+:$PYTHONPATH}"
@@ -29,9 +33,5 @@ else
   python -m pip install -r "$ROOT_DIR/requirements.txt"
   PYTHON_BIN="python"
 fi
-
-set -a
-source "$ENV_FILE"
-set +a
 
 exec "$PYTHON_BIN" -m uvicorn app.main:app --host "${HOST:-0.0.0.0}" --port "${PORT:-8000}"

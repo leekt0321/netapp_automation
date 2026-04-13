@@ -27,11 +27,12 @@ rm -rf \
   "$PACKAGE_DIR/dist" \
   "$PACKAGE_DIR/tests" \
   "$PACKAGE_DIR/upload" \
-  "$PACKAGE_DIR/uploads"
+  "$PACKAGE_DIR/uploads" \
+  "$PACKAGE_DIR/var/db"
 
 cp "$ROOT_DIR/requirements.txt" "$PACKAGE_DIR/requirements.txt"
 cp "$ROOT_DIR/requirements-dev.txt" "$PACKAGE_DIR/requirements-dev.txt"
-mkdir -p "$PACKAGE_DIR/deploy" "$PACKAGE_DIR/uploads" "$PACKAGE_DIR/var/db"
+mkdir -p "$PACKAGE_DIR/deploy" "$PACKAGE_DIR/upload"
 cp "$ROOT_DIR/deploy/.env.example" "$PACKAGE_DIR/deploy/.env.example"
 cp "$ROOT_DIR/deploy/run.sh" "$PACKAGE_DIR/deploy/run.sh"
 

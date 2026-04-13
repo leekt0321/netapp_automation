@@ -67,6 +67,7 @@ const bugListEl = document.getElementById("bug-list");
 const bugSubmitButtonEl = document.getElementById("bug-submit-button");
 const bugCancelButtonEl = document.getElementById("bug-cancel-button");
 const MANUAL_FIELD_KEYS = ["install_date", "warranty", "maintenance", "office_name", "install_rack", "service", "manager_contact", "id_password", "asup", "aggr_diskcount_override"];
+const DESKTOP_LOG_MEDIA_QUERY = "(min-width: 1181px)";
 
 const pageMeta = {
   dashboard: {
@@ -161,6 +162,10 @@ let activeRequestFilter = "all";
 let uploadManualFields = createEmptyManualFields();
 let manualFieldsModalMode = "upload";
 let manualFieldsModalTarget = { storageKey: null, logId: null };
+let currentPage = "dashboard";
+let isApplyingHistoryState = false;
+let lastHistorySnapshot = "";
+let lastLogLayoutMode = isDesktopLogSplitView();
 
 loginFormEl.addEventListener("submit", async (event) => {
   event.preventDefault();
@@ -539,6 +544,7 @@ document.addEventListener("click", async (event) => {
   if (action === "open-raw-log") {
     storageState[storageKey].rawId = Number(actionButton.dataset.id);
     renderStoragePage(storageKey);
+    syncHistoryState("push");
     return;
   }
 
@@ -546,12 +552,14 @@ document.addEventListener("click", async (event) => {
     storageState[storageKey].summaryId = Number(actionButton.dataset.id);
     storageState[storageKey].activeSummarySection = "overview";
     renderStoragePage(storageKey);
+    syncHistoryState("push");
     return;
   }
 
   if (action === "raw-log-list-back") {
     storageState[storageKey].rawId = null;
     renderStoragePage(storageKey);
+    syncHistoryState("push");
     return;
   }
 
@@ -559,6 +567,7 @@ document.addEventListener("click", async (event) => {
     storageState[storageKey].summaryId = null;
     storageState[storageKey].activeSummarySection = "overview";
     renderStoragePage(storageKey);
+    syncHistoryState("push");
     return;
   }
 
@@ -576,12 +585,14 @@ document.addEventListener("click", async (event) => {
       storageState[storageKey].activeEventLogFilter = "all";
     }
     renderSummarySectionView(storageKey);
+    syncHistoryState("push");
     return;
   }
 
   if (action === "event-log-filter") {
     storageState[storageKey].activeEventLogFilter = actionButton.dataset.eventLogFilter || "all";
     renderSummarySectionView(storageKey);
+    syncHistoryState("push");
     return;
   }
 
@@ -658,18 +669,21 @@ document.addEventListener("click", async (event) => {
     storageState[storageKey].activeView = "logs";
     renderSiteSections();
     renderAllStoragePages();
+    syncHistoryState("push");
     return;
   }
 
   if (action === "storage-back") {
     storageState[storageKey].activeView = "sites";
     renderStorageSubViews(storageKey);
+    syncHistoryState("push");
     return;
   }
 
   if (action === "storage-log-view") {
     storageState[storageKey].activeLogView = actionButton.dataset.logView === "summary" ? "summary" : "raw";
     renderStorageLogView(storageKey);
+    syncHistoryState("push");
     return;
   }
 
@@ -784,11 +798,14 @@ function openApp(displayName) {
   loginScreenEl.hidden = true;
   appShellEl.hidden = false;
   deleteStatusEl.textContent = "";
-  showPage("dashboard");
+  showPage("dashboard", { history: "replace" });
   loadInitialData();
 }
 
-function showPage(page) {
+function showPage(page, options) {
+  const historyMode = options && options.history ? options.history : "push";
+  currentPage = page;
+
   for (const button of navButtons) {
     button.classList.toggle("active", button.dataset.page === page);
   }
@@ -799,11 +816,20 @@ function showPage(page) {
 
   pageTitleEl.textContent = pageMeta[page].title;
   pageDescriptionEl.textContent = pageMeta[page].description;
+
+  if (STORAGE_KEYS.includes(page)) {
+    renderStorageSubViews(page);
+    renderStorageLogView(page);
+    renderStoragePage(page);
+  }
+
+  syncHistoryState(historyMode);
 }
 
 async function loadInitialData() {
   await loadSites();
   await Promise.all([loadLogs(), loadRequestPosts(), loadBugPosts(), loadUsers()]);
+  syncHistoryState("replace");
 }
 
 async function loadUsers() {
@@ -844,6 +870,7 @@ async function loadSites() {
   allSites = Array.isArray(payload) ? payload : [];
   renderSiteSections();
   syncUploadSiteOptions();
+  syncHistoryState("replace");
 }
 
 async function loadLogs() {
@@ -852,6 +879,7 @@ async function loadLogs() {
   allLogs = Array.isArray(logs) ? logs : [];
   updateDashboard(allLogs);
   renderAllStoragePages();
+  syncHistoryState("replace");
 }
 
 function renderAllStoragePages() {
@@ -970,6 +998,8 @@ function renderStoragePage(storageKey) {
     state.summaryId = null;
     view.rawListEl.innerHTML = "<div class='empty'>먼저 사이트를 등록하세요.</div>";
     view.summaryListEl.innerHTML = "<div class='empty'>먼저 사이트를 등록하세요.</div>";
+    renderRawEmptyState(storageKey, "로그를 선택하면 원본 내용이 여기에 표시됩니다.");
+    renderSummaryEmptyState(storageKey, "summary를 선택하면 요약 내용이 여기에 표시됩니다.");
     toggleLogDetailPage(storageKey, "raw", false);
     toggleLogDetailPage(storageKey, "summary", false);
     return;
@@ -981,6 +1011,8 @@ function renderStoragePage(storageKey) {
     state.summaryId = null;
     view.rawListEl.innerHTML = "<div class='empty'>선택한 사이트에 업로드된 로그가 없습니다.</div>";
     view.summaryListEl.innerHTML = "<div class='empty'>선택한 사이트에 업로드된 summary가 없습니다.</div>";
+    renderRawEmptyState(storageKey, "업로드된 원본 로그가 없습니다.");
+    renderSummaryEmptyState(storageKey, "업로드된 summary가 없습니다.");
     toggleLogDetailPage(storageKey, "raw", false);
     toggleLogDetailPage(storageKey, "summary", false);
     return;
@@ -1000,12 +1032,14 @@ function renderStoragePage(storageKey) {
   if (state.rawId !== null) {
     loadRawLog(storageKey, state.rawId);
   } else {
+    renderRawEmptyState(storageKey, "왼쪽 목록에서 원본 로그를 선택하세요.");
     toggleLogDetailPage(storageKey, "raw", false);
   }
 
   if (state.summaryId !== null) {
     loadSummary(storageKey, state.summaryId);
   } else {
+    renderSummaryEmptyState(storageKey, "왼쪽 목록에서 summary를 선택하세요.");
     toggleLogDetailPage(storageKey, "summary", false);
   }
 }
@@ -1027,12 +1061,41 @@ function toggleLogDetailPage(storageKey, type, showDetail) {
   const view = storageViews[storageKey];
   const listPageEl = type === "raw" ? view.rawListPageEl : view.summaryListPageEl;
   const detailPageEl = type === "raw" ? view.rawDetailPageEl : view.summaryDetailPageEl;
+  const isDesktop = isDesktopLogSplitView();
   if (listPageEl !== null) {
-    listPageEl.hidden = showDetail;
+    listPageEl.hidden = showDetail && isDesktop === false;
   }
   if (detailPageEl !== null) {
-    detailPageEl.hidden = !showDetail;
+    detailPageEl.hidden = !showDetail && isDesktop === false;
   }
+}
+
+function setDetailEmptyState(detailPageEl, empty) {
+  if (detailPageEl !== null) {
+    detailPageEl.classList.toggle("is-empty", empty);
+  }
+}
+
+function renderRawEmptyState(storageKey, message) {
+  const view = storageViews[storageKey];
+  setDetailEmptyState(view.rawDetailPageEl, true);
+  view.rawNameEl.textContent = "원본 로그 미리보기";
+  view.rawMetaEl.textContent = message;
+  view.rawContentEl.textContent = "";
+}
+
+function renderSummaryEmptyState(storageKey, message) {
+  const view = storageViews[storageKey];
+  const state = storageState[storageKey];
+  setDetailEmptyState(view.summaryDetailPageEl, true);
+  view.summaryNameEl.textContent = "요약 로그 미리보기";
+  view.summaryMetaEl.textContent = message;
+  view.summaryGridEl.innerHTML = "<div class='summary-field summary-field-empty'><strong>summary</strong><span>" + escapeHtml(message) + "</span></div>";
+  view.summaryRawEl.textContent = "";
+  state.currentSummarySections = {};
+  state.currentSpecialNotes = [];
+  state.activeSummarySection = "overview";
+  renderSummarySectionView(storageKey);
 }
 
 async function loadRawLog(storageKey, logId) {
@@ -1041,11 +1104,13 @@ async function loadRawLog(storageKey, logId) {
   const payload = await response.json();
 
   if (response.ok === false) {
+    renderRawEmptyState(storageKey, payload.detail || "원본 로그를 불러오지 못했습니다.");
     toggleLogDetailPage(storageKey, "raw", false);
     view.rawListEl.innerHTML = "<div class='empty'>" + escapeHtml(payload.detail || "원본 로그를 불러오지 못했습니다.") + "</div>";
     return;
   }
 
+  setDetailEmptyState(view.rawDetailPageEl, false);
   toggleLogDetailPage(storageKey, "raw", true);
   view.rawNameEl.textContent = payload.filename;
   view.rawMetaEl.textContent = "상태: " + payload.status + " / 저장 위치: " + toStorageLabel(payload.storage_name) + " > " + (payload.site_name || "사이트 미지정") + " / 크기: " + formatBytes(payload.size);
@@ -1058,11 +1123,13 @@ async function loadSummary(storageKey, logId) {
   const payload = await response.json();
 
   if (response.ok === false) {
+    renderSummaryEmptyState(storageKey, payload.detail || "summary를 불러오지 못했습니다.");
     toggleLogDetailPage(storageKey, "summary", false);
     view.summaryListEl.innerHTML = "<div class='empty'>" + escapeHtml(payload.detail || "summary를 불러오지 못했습니다.") + "</div>";
     return;
   }
 
+  setDetailEmptyState(view.summaryDetailPageEl, false);
   toggleLogDetailPage(storageKey, "summary", true);
   view.summaryNameEl.textContent = payload.summary_filename;
   view.summaryMetaEl.textContent = payload.filename + " / " + toStorageLabel(payload.storage_name) + " > " + (payload.site_name || "사이트 미지정");
@@ -1670,6 +1737,89 @@ function closeManualFieldsModal() {
   manualFieldsModalEl.hidden = true;
   manualFieldsStatusEl.textContent = "";
 }
+
+function isDesktopLogSplitView() {
+  return window.matchMedia(DESKTOP_LOG_MEDIA_QUERY).matches;
+}
+
+function getHistoryStateSnapshot() {
+  const state = { view: "app", page: currentPage };
+  if (STORAGE_KEYS.includes(currentPage)) {
+    const storage = storageState[currentPage];
+    state.storage = {
+      activeSiteId: storage.activeSiteId,
+      activeView: storage.activeView,
+      activeLogView: storage.activeLogView,
+      rawId: storage.rawId,
+      summaryId: storage.summaryId,
+      activeSummarySection: storage.activeSummarySection,
+      activeEventLogFilter: storage.activeEventLogFilter,
+    };
+  }
+  return state;
+}
+
+function syncHistoryState(mode) {
+  if (appShellEl.hidden || isApplyingHistoryState) {
+    return;
+  }
+
+  const historyMode = mode || "push";
+  if (historyMode === "skip") {
+    return;
+  }
+
+  const state = getHistoryStateSnapshot();
+  const snapshot = JSON.stringify(state);
+  if (historyMode === "push" && snapshot === lastHistorySnapshot) {
+    return;
+  }
+
+  if (historyMode === "replace") {
+    window.history.replaceState(state, "", window.location.pathname);
+  } else {
+    window.history.pushState(state, "", window.location.pathname);
+  }
+  lastHistorySnapshot = snapshot;
+}
+
+function applyHistoryState(state) {
+  if (!state || state.view !== "app") {
+    return;
+  }
+
+  isApplyingHistoryState = true;
+  currentPage = pageMeta[state.page] ? state.page : "dashboard";
+
+  if (STORAGE_KEYS.includes(currentPage) && state.storage) {
+    const storage = storageState[currentPage];
+    storage.activeSiteId = state.storage.activeSiteId === null ? null : Number(state.storage.activeSiteId);
+    storage.activeView = state.storage.activeView === "logs" ? "logs" : "sites";
+    storage.activeLogView = state.storage.activeLogView === "summary" ? "summary" : "raw";
+    storage.rawId = state.storage.rawId === null ? null : Number(state.storage.rawId);
+    storage.summaryId = state.storage.summaryId === null ? null : Number(state.storage.summaryId);
+    storage.activeSummarySection = state.storage.activeSummarySection || "overview";
+    storage.activeEventLogFilter = state.storage.activeEventLogFilter || "all";
+  }
+
+  showPage(currentPage, { history: "skip" });
+  renderAllStoragePages();
+  isApplyingHistoryState = false;
+  lastHistorySnapshot = JSON.stringify(getHistoryStateSnapshot());
+}
+
+window.addEventListener("popstate", (event) => {
+  applyHistoryState(event.state);
+});
+
+window.addEventListener("resize", () => {
+  const isDesktop = isDesktopLogSplitView();
+  if (isDesktop === lastLogLayoutMode) {
+    return;
+  }
+  lastLogLayoutMode = isDesktop;
+  renderAllStoragePages();
+});
 
 function getTodayKey() {
   return new Date().toISOString().slice(0, 10);
