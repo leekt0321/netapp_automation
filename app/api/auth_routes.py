@@ -1,3 +1,5 @@
+from typing import Optional
+
 from fastapi import APIRouter, Depends, Request, Response
 from sqlalchemy.orm import Session
 
@@ -44,7 +46,7 @@ def login_route(payload: LoginPayload, request: Request, response: Response, db:
 @router.post("/auth/logout")
 def logout_route(
     response: Response,
-    session_token: str | None = Depends(get_session_cookie),
+    session_token: Optional[str] = Depends(get_session_cookie),
     db: Session = Depends(get_db),
 ):
     logout_user(session_token, db)

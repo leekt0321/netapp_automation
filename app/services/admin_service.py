@@ -1,4 +1,5 @@
 from datetime import datetime, timezone
+from typing import Optional
 
 from fastapi import HTTPException
 from sqlalchemy.orm import Session
@@ -87,7 +88,7 @@ def serialize_deletion_request(row: DeletionRequest) -> dict:
     }
 
 
-def list_deletion_requests(db: Session, status: str | None = None) -> list[dict]:
+def list_deletion_requests(db: Session, status: Optional[str] = None) -> list[dict]:
     query = db.query(DeletionRequest)
     if status:
         query = query.filter(DeletionRequest.status == status)
@@ -95,7 +96,7 @@ def list_deletion_requests(db: Session, status: str | None = None) -> list[dict]
     return [serialize_deletion_request(row) for row in rows]
 
 
-def create_log_deletion_request(log_id: int, reason: str | None, requester: User, db: Session) -> dict:
+def create_log_deletion_request(log_id: int, reason: Optional[str], requester: User, db: Session) -> dict:
     log = db.query(UploadedLog).filter(UploadedLog.id == log_id).first()
     if not log:
         raise HTTPException(status_code=404, detail="업로드 파일을 찾을 수 없습니다.")
