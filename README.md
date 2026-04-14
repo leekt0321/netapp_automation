@@ -299,30 +299,45 @@ uvicorn app.main:app --host 0.0.0.0 --port 8000
 
 ## 릴리스 패키지 생성
 
-버전별 배포 패키지는 아래처럼 생성합니다.
+현재 릴리스는 `내장 Python + site-packages + 실행 스크립트`를 포함하는 실용 포터블 패키지로 생성합니다.
 
 ```bash
-bash deploy/build_release.sh 0.4v HEAD
+bash deploy/build_release.sh 0.5 HEAD
 ```
 
 생성 결과:
 
-- `dist/netapp_automation-0.4v/`
-- `dist/netapp_automation-0.4v.tar.gz`
+- `dist/netapp_automation-0.5/`
+- `dist/netapp_automation-0.5.tar.gz`
+
+포함되는 것:
+
+- 프로젝트 소스코드
+- `runtime/`
+  - 내장 Python 실행 파일
+  - Python 표준 라이브러리
+  - 프로젝트 의존 패키지
+- `deploy/run.sh`
+- `deploy/.env.example`
 
 다른 서버에서 실행 예시:
 
 ```bash
-tar -xzf netapp_automation-0.4v.tar.gz
-cd netapp_automation-0.4v
+tar -xzf netapp_automation-0.5.tar.gz
+cd netapp_automation-0.5
 bash deploy/run.sh
 ```
+
+주의:
+
+- 이 패키지는 `완전 범용 바이너리`가 아니라 `같은 계열 Linux 서버용 실용 포터블`입니다.
+- 즉 Python 설치 없이 실행할 수 있도록 묶지만, 운영체제 계열과 아키텍처는 크게 다르지 않은 환경을 전제로 합니다.
 
 ## GitHub 릴리스
 
 현재 릴리스 예시:
 
-- `0.4v`: PostgreSQL 기준 정리, release/deploy 정리, research 문서 포함 버전
+- `0.5`: P0 인증/권한 흐름과 내장 Python 기반 포터블 패키지 적용 버전
 
 이후에도 같은 방식으로 버전을 올려 릴리스 패키지와 GitHub release를 만들 수 있습니다.
 
