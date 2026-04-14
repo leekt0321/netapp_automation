@@ -15,9 +15,19 @@ if [[ ! -f "$ENV_FILE" ]]; then
   echo "Created default .env from deploy/.env.example"
 fi
 
-set -a
-source "$ENV_FILE"
-set +a
+while IFS= read -r line || [[ -n "$line" ]]; do
+  line="${line%$'\r'}"
+  if [[ -z "$line" || "$line" =~ ^[[:space:]]*# ]]; then
+    continue
+  fi
+  if [[ "$line" != *"="* ]]; then
+    continue
+  fi
+  key="${line%%=*}"
+  value="${line#*=}"
+  key="${key//[[:space:]]/}"
+  export "$key=$value"
+done < "$ENV_FILE"
 
 mkdir -p "$ROOT_DIR/${UPLOAD_DIR:-upload}"
 

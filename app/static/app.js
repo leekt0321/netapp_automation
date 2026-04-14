@@ -233,7 +233,7 @@ registerFormEl.addEventListener("submit", async (event) => {
     return;
   }
 
-  registerStatusEl.textContent = payload.username + " 계정이 생성되었습니다. 로그인하세요.";
+  registerStatusEl.textContent = payload.username + " 계정이 생성되었습니다. 관리자 승인 후 로그인할 수 있습니다.";
   registerFormEl.reset();
   if (appShellEl.hidden === false) {
     await loadUsers();
@@ -1052,7 +1052,9 @@ function renderUserList() {
 
   memberListEl.innerHTML = allUsers.map((user) => {
     const displayName = user.display_name || user.full_name || user.username;
-    const stateLabel = user.is_active ? "사용중" : "비활성";
+    const approvalPending = user.approval_pending === true;
+    const stateLabel = approvalPending ? "승인 대기" : (user.is_active ? "사용중" : "비활성");
+    const actionLabel = approvalPending ? "승인" : (user.is_active ? "비활성화" : "활성화");
     return "<article class='member-card'>" +
       "<div>" +
         "<strong>" + escapeHtml(displayName) + "</strong>" +
@@ -1060,7 +1062,7 @@ function renderUserList() {
       "</div>" +
       "<div class='request-actions'>" +
         "<span class='member-badge'>" + escapeHtml(stateLabel) + "</span>" +
-        "<button class='secondary' data-action='toggle-user-status' data-user-id='" + user.id + "' data-next-active='" + String(user.is_active === false) + "' type='button'>" + (user.is_active ? "비활성화" : "활성화") + "</button>" +
+        "<button class='secondary' data-action='toggle-user-status' data-user-id='" + user.id + "' data-next-active='" + String(user.is_active === false) + "' type='button'>" + escapeHtml(actionLabel) + "</button>" +
       "</div>" +
     "</article>";
   }).join("");

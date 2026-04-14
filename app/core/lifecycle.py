@@ -14,6 +14,8 @@ def ensure_admin_user(db: Session) -> None:
         existing_user.full_name = settings.admin_full_name
         existing_user.role = USER_ROLE_ADMIN
         existing_user.is_active = True
+        if existing_user.approved_at is None:
+            existing_user.approved_at = existing_user.created_at
         db.commit()
         return
 
@@ -23,8 +25,12 @@ def ensure_admin_user(db: Session) -> None:
         full_name=settings.admin_full_name,
         role=USER_ROLE_ADMIN,
         is_active=True,
+        approved_at=None,
     )
     db.add(admin_user)
+    db.commit()
+    db.refresh(admin_user)
+    admin_user.approved_at = admin_user.created_at
     db.commit()
 
 
@@ -36,6 +42,10 @@ def ensure_schema_updates() -> None:
             with engine.begin() as connection:
                 connection.execute(text("ALTER TABLE users ADD COLUMN role VARCHAR(20)"))
                 connection.execute(text("UPDATE users SET role = :role WHERE role IS NULL"), {"role": USER_ROLE_USER})
+        if "approved_at" not in columns:
+            with engine.begin() as connection:
+                connection.execute(text("ALTER TABLE users ADD COLUMN approved_at TIMESTAMP"))
+                connection.execute(text("UPDATE users SET approved_at = created_at WHERE is_active = TRUE AND approved_at IS NULL"))
     if not inspector.has_table("storage_sites"):
         return
     if inspector.has_table("uploaded_logs"):

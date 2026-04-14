@@ -13,7 +13,7 @@ from app.models import User, UserSession
 from app.schemas.payloads import ChangePasswordPayload, DeleteUserPayload, LoginPayload, RegisterPayload
 
 
-SESSION_DURATION_HOURS = 12
+SESSION_DURATION_HOURS = 24
 
 
 def utc_now() -> datetime:
@@ -32,6 +32,8 @@ def serialize_user(user: User) -> dict:
         "display_name": display_name_for_user(user),
         "role": user.role or USER_ROLE_USER,
         "is_active": user.is_active,
+        "approved_at": user.approved_at,
+        "approval_pending": user.approved_at is None,
         "created_at": user.created_at,
     }
 
@@ -119,7 +121,8 @@ def register_user(payload: RegisterPayload, db: Session) -> dict:
         password_hash=hash_password(password),
         full_name=full_name,
         role=USER_ROLE_USER,
-        is_active=True,
+        is_active=False,
+        approved_at=None,
     )
     db.add(user)
     db.commit()
@@ -137,6 +140,8 @@ def login_user(payload: LoginPayload, db: Session, request: Request) -> dict:
     if not user or not verify_password(password, user.password_hash):
         raise HTTPException(status_code=401, detail="로그인 정보가 올바르지 않습니다.")
     if not user.is_active:
+        if user.approved_at is None:
+            raise HTTPException(status_code=403, detail="관리자 승인 대기 중인 계정입니다.")
         raise HTTPException(status_code=403, detail="비활성화된 사용자입니다.")
 
     token = create_user_session(user, request, db)

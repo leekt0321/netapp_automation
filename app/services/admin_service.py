@@ -62,6 +62,8 @@ def update_user_status(user_id: int, payload: UserStatusPayload, admin_user: Use
         raise HTTPException(status_code=400, detail="현재 로그인한 관리자 계정은 비활성화할 수 없습니다.")
 
     user.is_active = payload.is_active
+    if payload.is_active and user.approved_at is None:
+        user.approved_at = utc_now()
     if payload.is_active is False:
         db.query(UserSession).filter(UserSession.user_id == user.id).delete()
     db.commit()

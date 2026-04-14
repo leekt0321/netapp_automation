@@ -38,6 +38,7 @@ class User(Base):
     full_name = Column(String(255), nullable=True)
     role = Column(String(20), nullable=False, default="user")
     is_active = Column(Boolean, nullable=False, default=True)
+    approved_at = Column(DateTime(timezone=True), nullable=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
 
 
