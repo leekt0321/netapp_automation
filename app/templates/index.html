@@ -171,6 +171,27 @@
             <p id="delete-status" class="status"></p>
           </section>
 
+          <section class="panel account-panel">
+            <div class="section-head">
+              <div>
+                <h3>비밀번호 변경</h3>
+                <p>현재 비밀번호를 확인한 뒤 새 비밀번호로 변경합니다.</p>
+              </div>
+            </div>
+            <form id="change-password-form" class="upload-form compact">
+              <label>
+                현재 비밀번호
+                <input id="current-password" type="password" placeholder="현재 비밀번호" required>
+              </label>
+              <label>
+                새 비밀번호
+                <input id="new-password" type="password" placeholder="새 비밀번호" required>
+              </label>
+              <button type="submit">비밀번호 변경</button>
+            </form>
+            <p id="change-password-status" class="status"></p>
+          </section>
+
         </div>
       </section>
 
@@ -241,6 +262,18 @@
               <button class="danger" type="submit">회원탈퇴</button>
             </form>
             <p id="delete-status-members" class="status"></p>
+            <form id="change-password-form-members" class="upload-form compact">
+              <label>
+                현재 비밀번호
+                <input id="current-password-members" type="password" placeholder="현재 비밀번호" required>
+              </label>
+              <label>
+                새 비밀번호
+                <input id="new-password-members" type="password" placeholder="새 비밀번호" required>
+              </label>
+              <button type="submit">비밀번호 변경</button>
+            </form>
+            <p id="change-password-status-members" class="status"></p>
           </section>
         </div>
       </section>
@@ -499,7 +532,7 @@
               </div>
               <div class="site-list" data-role="site-list" data-storage="storage2"></div>
             </section>
-            <section class="panel site-panel">
+            <section class="panel site-panel" data-admin-only="true">
               <div class="section-head">
                 <div>
                   <h3>사이트 관리</h3>
@@ -629,7 +662,7 @@
         </div>
         <div data-role="storage-sites-view" data-storage="storage3">
           <div class="storage-site-grid storage-site-grid-manage">
-            <section class="panel site-panel">
+            <section class="panel site-panel" data-admin-only="true">
               <div class="section-head">
                 <div>
                   <h3>사이트 목록</h3>
@@ -638,7 +671,7 @@
               </div>
               <div class="site-list" data-role="site-list" data-storage="storage3"></div>
             </section>
-            <section class="panel site-panel">
+            <section class="panel site-panel" data-admin-only="true">
               <div class="section-head">
                 <div>
                   <h3>사이트 관리</h3>

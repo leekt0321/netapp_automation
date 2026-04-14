@@ -19,6 +19,14 @@ const deleteStatusEl = document.getElementById("delete-status");
 const deleteFormMembersEl = document.getElementById("delete-form-members");
 const deletePasswordMembersEl = document.getElementById("delete-password-members");
 const deleteStatusMembersEl = document.getElementById("delete-status-members");
+const changePasswordFormEl = document.getElementById("change-password-form");
+const currentPasswordEl = document.getElementById("current-password");
+const newPasswordEl = document.getElementById("new-password");
+const changePasswordStatusEl = document.getElementById("change-password-status");
+const changePasswordFormMembersEl = document.getElementById("change-password-form-members");
+const currentPasswordMembersEl = document.getElementById("current-password-members");
+const newPasswordMembersEl = document.getElementById("new-password-members");
+const changePasswordStatusMembersEl = document.getElementById("change-password-status-members");
 const memberCountEl = document.getElementById("member-count");
 const memberListEl = document.getElementById("member-list");
 const activeSessionListEl = document.getElementById("active-session-list");
@@ -66,6 +74,8 @@ const bugSubmitButtonEl = document.getElementById("bug-submit-button");
 const bugCancelButtonEl = document.getElementById("bug-cancel-button");
 const MANUAL_FIELD_KEYS = ["install_date", "warranty", "maintenance", "office_name", "install_rack", "service", "manager_contact", "id_password", "asup", "aggr_diskcount_override"];
 const DESKTOP_LOG_MEDIA_QUERY = "(min-width: 1181px)";
+const SESSION_USER_STORAGE_KEY = "baobab.currentUser";
+const ADMIN_REFRESH_INTERVAL_MS = 10000;
 
 const pageMeta = {
   dashboard: {
@@ -167,6 +177,7 @@ let isApplyingHistoryState = false;
 let lastHistorySnapshot = "";
 let lastLogLayoutMode = isDesktopLogSplitView();
 let currentUser = null;
+let adminRefreshTimerId = null;
 
 loginFormEl.addEventListener("submit", async (event) => {
   event.preventDefault();
@@ -182,6 +193,7 @@ loginFormEl.addEventListener("submit", async (event) => {
   const response = await fetch("/auth/login", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
+    credentials: "same-origin",
     body: JSON.stringify({ username, password }),
   });
   const payload = await response.json();
@@ -211,6 +223,7 @@ registerFormEl.addEventListener("submit", async (event) => {
   const response = await fetch("/auth/register", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
+    credentials: "same-origin",
     body: JSON.stringify({ username, password, full_name: fullName || null }),
   });
   const payload = await response.json();
@@ -240,6 +253,20 @@ if (deleteFormMembersEl !== null) {
   deleteFormMembersEl.addEventListener("submit", async (event) => {
     event.preventDefault();
     await submitDeleteAccount(deletePasswordMembersEl, deleteStatusMembersEl, deleteFormMembersEl);
+  });
+}
+
+if (changePasswordFormEl !== null) {
+  changePasswordFormEl.addEventListener("submit", async (event) => {
+    event.preventDefault();
+    await submitChangePassword(changePasswordFormEl, currentPasswordEl, newPasswordEl, changePasswordStatusEl);
+  });
+}
+
+if (changePasswordFormMembersEl !== null) {
+  changePasswordFormMembersEl.addEventListener("submit", async (event) => {
+    event.preventDefault();
+    await submitChangePassword(changePasswordFormMembersEl, currentPasswordMembersEl, newPasswordMembersEl, changePasswordStatusMembersEl);
   });
 }
 
@@ -771,10 +798,12 @@ function renderSelectedFiles() {
 }
 
 function clearSession() {
+  stopAdminRefresh();
   currentUser = null;
   allUsers = [];
   allActiveSessions = [];
   allDeletionRequests = [];
+  window.localStorage.removeItem(SESSION_USER_STORAGE_KEY);
   appShellEl.hidden = true;
   loginScreenEl.hidden = false;
   applyRolePermissions();
@@ -809,6 +838,7 @@ async function logoutCurrentUser() {
   try {
     await fetch("/auth/logout", {
       method: "POST",
+      credentials: "same-origin",
     });
   } catch (error) {
     console.error("logout failed", error);
@@ -834,6 +864,7 @@ async function submitDeleteAccount(passwordInputEl, statusTargetEl, formTargetEl
   const response = await fetch("/auth/delete", {
     method: "DELETE",
     headers: { "Content-Type": "application/json" },
+    credentials: "same-origin",
     body: JSON.stringify({ password }),
   });
   const payload = await response.json();
@@ -860,13 +891,62 @@ async function submitDeleteAccount(passwordInputEl, statusTargetEl, formTargetEl
 
 function openApp(user) {
   currentUser = user;
+  window.localStorage.setItem(SESSION_USER_STORAGE_KEY, JSON.stringify(user));
   loginUserEl.textContent = (user.display_name || user.username) + " 님";
   loginScreenEl.hidden = true;
   appShellEl.hidden = false;
   deleteStatusEl.textContent = "";
+  if (deleteStatusMembersEl !== null) {
+    deleteStatusMembersEl.textContent = "";
+  }
+  if (changePasswordStatusEl !== null) {
+    changePasswordStatusEl.textContent = "";
+  }
+  if (changePasswordStatusMembersEl !== null) {
+    changePasswordStatusMembersEl.textContent = "";
+  }
   applyRolePermissions();
+  startAdminRefresh();
   showPage("dashboard", { history: "replace" });
   loadInitialData();
+}
+
+async function submitChangePassword(formTargetEl, currentPasswordInputEl, newPasswordInputEl, statusTargetEl) {
+  const currentPassword = currentPasswordInputEl ? currentPasswordInputEl.value.trim() : "";
+  const newPassword = newPasswordInputEl ? newPasswordInputEl.value.trim() : "";
+
+  if (currentPassword === "" || newPassword === "") {
+    if (statusTargetEl !== null) {
+      statusTargetEl.textContent = "현재 비밀번호와 새 비밀번호를 모두 입력하세요.";
+    }
+    return;
+  }
+
+  if (statusTargetEl !== null) {
+    statusTargetEl.textContent = "비밀번호 변경 중...";
+  }
+
+  const response = await fetch("/auth/password", {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    credentials: "same-origin",
+    body: JSON.stringify({ current_password: currentPassword, new_password: newPassword }),
+  });
+  const payload = await response.json();
+
+  if (response.ok === false) {
+    if (statusTargetEl !== null) {
+      statusTargetEl.textContent = payload.detail || "비밀번호 변경에 실패했습니다.";
+    }
+    return;
+  }
+
+  if (formTargetEl !== null) {
+    formTargetEl.reset();
+  }
+  if (statusTargetEl !== null) {
+    statusTargetEl.textContent = "비밀번호가 변경되었습니다.";
+  }
 }
 
 function showPage(page, options) {
@@ -918,7 +998,7 @@ async function loadUsers() {
     renderUserList();
     return;
   }
-  const response = await fetch("/users");
+  const response = await fetch("/users", { credentials: "same-origin" });
   const users = await response.json();
   allUsers = Array.isArray(users) ? users : [];
   renderUserList();
@@ -931,6 +1011,7 @@ async function updateUserStatus(userId, isActive) {
   const response = await fetch("/admin/users/" + userId + "/status", {
     method: "PUT",
     headers: { "Content-Type": "application/json" },
+    credentials: "same-origin",
     body: JSON.stringify({ is_active: isActive }),
   });
   const payload = await response.json();
@@ -985,7 +1066,7 @@ async function loadActiveSessions() {
     renderActiveSessions();
     return;
   }
-  const response = await fetch("/admin/sessions");
+  const response = await fetch("/admin/sessions", { credentials: "same-origin" });
   const payload = await response.json();
   allActiveSessions = Array.isArray(payload) ? payload : [];
   renderActiveSessions();
@@ -1021,7 +1102,7 @@ async function loadDeletionRequests() {
     renderDeletionRequests();
     return;
   }
-  const response = await fetch("/admin/deletion-requests");
+  const response = await fetch("/admin/deletion-requests", { credentials: "same-origin" });
   const payload = await response.json();
   allDeletionRequests = Array.isArray(payload) ? payload : [];
   renderDeletionRequests();
@@ -1035,6 +1116,7 @@ async function reviewDeletionRequest(requestId, action) {
   const response = await fetch("/admin/deletion-requests/" + requestId + "/review", {
     method: "PUT",
     headers: { "Content-Type": "application/json" },
+    credentials: "same-origin",
     body: JSON.stringify({ action }),
   });
   const payload = await response.json();
@@ -1065,6 +1147,9 @@ function renderDeletionRequests() {
           "<button class='secondary' data-action='reject-deletion-request' data-request-id='" + item.id + "' type='button'>거부</button>" +
         "</div>"
       : "";
+    const reviewMeta = item.reviewed_by_name
+      ? "<div class='request-meta'><span>처리자: " + escapeHtml(item.reviewed_by_name) + "</span><span>처리일: " + escapeHtml(formatDate(item.reviewed_at || item.executed_at)) + "</span></div>"
+      : "";
     return "<article class='request-card'>" +
       "<div class='request-top'>" +
         "<div class='request-header'><span class='badge " + (item.status === "pending" ? "wait" : item.status === "executed" ? "done" : "doing") + "'>" + escapeHtml(item.status) + "</span></div>" +
@@ -1073,12 +1158,35 @@ function renderDeletionRequests() {
       "<h3 class='request-title'>" + escapeHtml(item.target_label || ("log #" + item.target_id)) + "</h3>" +
       "<p class='request-content'>" + escapeHtml(item.reason || "요청 사유 없음") + "</p>" +
       "<div class='request-meta'><span>요청자: " + escapeHtml(item.requester_name || "-") + "</span><span>요청일: " + escapeHtml(formatDate(item.created_at)) + "</span></div>" +
+      reviewMeta +
     "</article>";
   }).join("");
 }
 
+function stopAdminRefresh() {
+  if (adminRefreshTimerId !== null) {
+    window.clearInterval(adminRefreshTimerId);
+    adminRefreshTimerId = null;
+  }
+}
+
+function startAdminRefresh() {
+  stopAdminRefresh();
+  if (isAdmin() === false) {
+    return;
+  }
+  adminRefreshTimerId = window.setInterval(() => {
+    if (appShellEl.hidden || isAdmin() === false) {
+      return;
+    }
+    Promise.all([loadActiveSessions(), loadDeletionRequests()]).catch((error) => {
+      console.error("admin refresh failed", error);
+    });
+  }, ADMIN_REFRESH_INTERVAL_MS);
+}
+
 async function loadSites() {
-  const response = await fetch("/sites");
+  const response = await fetch("/sites", { credentials: "same-origin" });
   const payload = await response.json();
   allSites = Array.isArray(payload) ? payload : [];
   renderSiteSections();
@@ -1087,7 +1195,7 @@ async function loadSites() {
 }
 
 async function loadLogs() {
-  const response = await fetch("/logs");
+  const response = await fetch("/logs", { credentials: "same-origin" });
   const logs = await response.json();
   allLogs = Array.isArray(logs) ? logs : [];
   updateDashboard(allLogs);
@@ -1616,6 +1724,7 @@ async function requestSelectedLogDeletion(logId) {
   const response = await fetch("/logs/" + logId + "/deletion-requests", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
+    credentials: "same-origin",
     body: JSON.stringify({ reason }),
   });
   const payload = await response.json();
@@ -1632,14 +1741,14 @@ async function requestSelectedLogDeletion(logId) {
 }
 
 async function loadRequestPosts() {
-  const response = await fetch("/requests");
+  const response = await fetch("/requests", { credentials: "same-origin" });
   const payload = await response.json();
   allRequestPosts = Array.isArray(payload) ? payload : [];
   renderFilteredRequestPosts();
 }
 
 async function loadBugPosts() {
-  const response = await fetch("/bugs");
+  const response = await fetch("/bugs", { credentials: "same-origin" });
   const payload = await response.json();
   allBugPosts = Array.isArray(payload) ? payload : [];
   renderBugPosts(allBugPosts);
@@ -2044,8 +2153,23 @@ window.addEventListener("resize", () => {
 });
 
 async function restoreSession() {
+  const savedUserJson = window.localStorage.getItem(SESSION_USER_STORAGE_KEY);
+  if (savedUserJson) {
+    try {
+      const savedUser = JSON.parse(savedUserJson);
+      if (savedUser && typeof savedUser === "object") {
+        currentUser = savedUser;
+        loginUserEl.textContent = getCurrentDisplayName() + " 님";
+        loginScreenEl.hidden = true;
+        appShellEl.hidden = false;
+        applyRolePermissions();
+      }
+    } catch (error) {
+      window.localStorage.removeItem(SESSION_USER_STORAGE_KEY);
+    }
+  }
   try {
-    const response = await fetch("/auth/me", { cache: "no-store" });
+    const response = await fetch("/auth/me", { cache: "no-store", credentials: "same-origin" });
     const payload = await response.json();
     if (response.ok === false || payload.authenticated !== true || payload.user === null) {
       clearSession();
@@ -2053,6 +2177,10 @@ async function restoreSession() {
     }
     openApp(payload.user);
   } catch (error) {
+    if (savedUserJson) {
+      loginStatusEl.textContent = "세션 확인이 지연되고 있습니다. 잠시 후 다시 시도해 주세요.";
+      return;
+    }
     clearSession();
     loginStatusEl.textContent = "서버에 연결할 수 없어 다시 로그인해 주세요.";
   }

@@ -19,6 +19,11 @@ class DeleteUserPayload(BaseModel):
     password: str
 
 
+class ChangePasswordPayload(BaseModel):
+    current_password: str
+    new_password: str
+
+
 class RequestPostPayload(BaseModel):
     title: str
     content: str

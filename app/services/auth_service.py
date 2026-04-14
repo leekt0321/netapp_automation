@@ -10,7 +10,7 @@ from app.auth import hash_password, verify_password
 from app.core.constants import AUTH_COOKIE_NAME, USER_ROLE_ADMIN, USER_ROLE_USER
 from app.db import get_db
 from app.models import User, UserSession
-from app.schemas.payloads import DeleteUserPayload, LoginPayload, RegisterPayload
+from app.schemas.payloads import ChangePasswordPayload, DeleteUserPayload, LoginPayload, RegisterPayload
 
 
 SESSION_DURATION_HOURS = 12
@@ -154,6 +154,26 @@ def logout_user(session_token: Optional[str], db: Session) -> None:
     if session:
         db.delete(session)
         db.commit()
+
+
+def change_password(payload: ChangePasswordPayload, current_user: User, session_token: Optional[str], db: Session) -> dict:
+    current_password = payload.current_password.strip()
+    new_password = payload.new_password.strip()
+
+    if current_password == "" or new_password == "":
+        raise HTTPException(status_code=400, detail="현재 비밀번호와 새 비밀번호를 모두 입력해주세요.")
+    if not verify_password(current_password, current_user.password_hash):
+        raise HTTPException(status_code=401, detail="현재 비밀번호가 올바르지 않습니다.")
+    if verify_password(new_password, current_user.password_hash):
+        raise HTTPException(status_code=400, detail="새 비밀번호는 현재 비밀번호와 달라야 합니다.")
+
+    current_user.password_hash = hash_password(new_password)
+    query = db.query(UserSession).filter(UserSession.user_id == current_user.id)
+    if session_token:
+        query = query.filter(UserSession.session_token_hash != hash_session_token(session_token))
+    query.delete()
+    db.commit()
+    return {"changed": True}
 
 
 def delete_user(payload: DeleteUserPayload, current_user: User, db: Session) -> dict:
