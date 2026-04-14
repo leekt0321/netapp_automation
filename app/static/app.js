@@ -455,6 +455,7 @@ requestFormEl.addEventListener("submit", async (event) => {
 
   const response = await fetch(isEdit ? "/requests/" + editId : "/requests", {
     method: isEdit ? "PUT" : "POST",
+    credentials: "same-origin",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ title, content, status, author }),
   });
@@ -493,6 +494,7 @@ if (bugFormEl !== null) {
 
     const response = await fetch(isEdit ? "/bugs/" + editId : "/bugs", {
       method: isEdit ? "PUT" : "POST",
+      credentials: "same-origin",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ title, content, author }),
     });
@@ -727,7 +729,7 @@ document.addEventListener("click", async (event) => {
   }
 
   if (action === "bug-edit") {
-    if (isAdmin() === false) {
+    if (isAuthenticated() === false) {
       return;
     }
     populateBugForm(Number(actionButton.dataset.id));
@@ -735,7 +737,7 @@ document.addEventListener("click", async (event) => {
   }
 
   if (action === "bug-delete") {
-    if (isAdmin() === false) {
+    if (isAuthenticated() === false) {
       return;
     }
     await deleteBugPost(Number(actionButton.dataset.id));
@@ -748,7 +750,7 @@ document.addEventListener("click", async (event) => {
   }
 
   if (action === "request-edit") {
-    if (isAdmin() === false) {
+    if (isAuthenticated() === false) {
       return;
     }
     populateRequestForm(Number(actionButton.dataset.id));
@@ -756,7 +758,7 @@ document.addEventListener("click", async (event) => {
   }
 
   if (action === "request-delete") {
-    if (isAdmin() === false) {
+    if (isAuthenticated() === false) {
       return;
     }
     await deleteRequestPost(Number(actionButton.dataset.id));
@@ -811,6 +813,10 @@ function clearSession() {
 
 function isAdmin() {
   return currentUser !== null && currentUser.role === "admin";
+}
+
+function isAuthenticated() {
+  return currentUser !== null;
 }
 
 function getCurrentDisplayName() {
@@ -1788,7 +1794,7 @@ function renderRequestPosts(posts) {
     return;
   }
 
-  const canManage = isAdmin();
+  const canManage = isAuthenticated();
   requestListEl.innerHTML = posts.map((post) => {
     const actions = canManage
       ? "<div class='request-actions'>" +
@@ -1818,7 +1824,7 @@ function renderBugPosts(posts) {
     return;
   }
 
-  const canManage = isAdmin();
+  const canManage = isAuthenticated();
   bugListEl.innerHTML = posts.map((post) => {
     const actions = canManage
       ? "<div class='request-actions'>" +
@@ -1839,7 +1845,7 @@ function renderBugPosts(posts) {
 }
 
 function populateRequestForm(postId) {
-  fetch("/requests")
+  fetch("/requests", { credentials: "same-origin" })
     .then((response) => response.json())
     .then((posts) => {
       const target = Array.isArray(posts) ? posts.find((post) => post.id === postId) : null;
@@ -1879,6 +1885,7 @@ async function deleteRequestPost(postId) {
 
   const response = await fetch("/requests/" + postId, {
     method: "DELETE",
+    credentials: "same-origin",
   });
   const payload = await response.json();
 
@@ -1902,6 +1909,7 @@ async function deleteBugPost(postId) {
 
   const response = await fetch("/bugs/" + postId, {
     method: "DELETE",
+    credentials: "same-origin",
   });
   const payload = await response.json();
 

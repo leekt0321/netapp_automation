@@ -3,7 +3,7 @@ from sqlalchemy.orm import Session
 
 from app.db import get_db
 from app.schemas.payloads import BugPostPayload, RequestPostPayload
-from app.services.auth_service import display_name_for_user, require_admin_user, require_current_user
+from app.services.auth_service import display_name_for_user, require_current_user
 from app.services.board_service import (
     create_bug_post,
     create_request_post,
@@ -43,14 +43,14 @@ def create_request_post_route(
 def update_request_post_route(
     post_id: int,
     payload: RequestPostPayload,
-    _: object = Depends(require_admin_user),
+    _: object = Depends(require_current_user),
     db: Session = Depends(get_db),
 ):
     return update_request_post(post_id, payload, db)
 
 
 @router.delete("/requests/{post_id}")
-def delete_request_post_route(post_id: int, _: object = Depends(require_admin_user), db: Session = Depends(get_db)):
+def delete_request_post_route(post_id: int, _: object = Depends(require_current_user), db: Session = Depends(get_db)):
     return delete_request_post(post_id, db)
 
 
@@ -77,12 +77,12 @@ def create_bug_post_route(
 def update_bug_post_route(
     post_id: int,
     payload: BugPostPayload,
-    _: object = Depends(require_admin_user),
+    _: object = Depends(require_current_user),
     db: Session = Depends(get_db),
 ):
     return update_bug_post(post_id, payload, db)
 
 
 @router.delete("/bugs/{post_id}")
-def delete_bug_post_route(post_id: int, _: object = Depends(require_admin_user), db: Session = Depends(get_db)):
+def delete_bug_post_route(post_id: int, _: object = Depends(require_current_user), db: Session = Depends(get_db)):
     return delete_bug_post(post_id, db)
