@@ -3,9 +3,9 @@ from sqlalchemy.orm import Session
 
 from app.auth import hash_password
 from app.config import settings
-from app.core.constants import SERVER_SESSION_ID
+from app.core.constants import SERVER_SESSION_ID, USER_ROLE_ADMIN, USER_ROLE_USER
 from app.db import Base, engine, get_db
-from app.models import User
+from app.models import DeletionRequest, User, UserSession
 
 
 def ensure_admin_user(db: Session) -> None:
@@ -13,6 +13,7 @@ def ensure_admin_user(db: Session) -> None:
     if existing_user:
         existing_user.password_hash = hash_password(settings.admin_password)
         existing_user.full_name = settings.admin_full_name
+        existing_user.role = USER_ROLE_ADMIN
         existing_user.is_active = True
         db.commit()
         return
@@ -21,6 +22,7 @@ def ensure_admin_user(db: Session) -> None:
         username=settings.admin_username,
         password_hash=hash_password(settings.admin_password),
         full_name=settings.admin_full_name,
+        role=USER_ROLE_ADMIN,
         is_active=True,
     )
     db.add(admin_user)
@@ -29,6 +31,12 @@ def ensure_admin_user(db: Session) -> None:
 
 def ensure_schema_updates() -> None:
     inspector = inspect(engine)
+    if inspector.has_table("users"):
+        columns = {column["name"] for column in inspector.get_columns("users")}
+        if "role" not in columns:
+            with engine.begin() as connection:
+                connection.execute(text("ALTER TABLE users ADD COLUMN role VARCHAR(20)"))
+                connection.execute(text("UPDATE users SET role = :role WHERE role IS NULL"), {"role": USER_ROLE_USER})
     if not inspector.has_table("storage_sites"):
         return
     if inspector.has_table("uploaded_logs"):
@@ -50,6 +58,7 @@ def ensure_schema_updates() -> None:
 
 def on_startup(app) -> None:
     app.state.server_session_id = SERVER_SESSION_ID
+    _ = (UserSession, DeletionRequest)
     Base.metadata.create_all(bind=engine)
     ensure_schema_updates()
     db = next(get_db())
@@ -57,4 +66,3 @@ def on_startup(app) -> None:
         ensure_admin_user(db)
     finally:
         db.close()
-

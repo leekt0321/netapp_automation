@@ -15,7 +15,7 @@ class RegisterPayload(BaseModel):
 
 
 class DeleteUserPayload(BaseModel):
-    username: str
+    username: Optional[str] = None
     password: str
 
 
@@ -46,3 +46,15 @@ class SpecialNotePayload(BaseModel):
     author: Optional[str] = None
     source_note_id: Optional[str] = None
 
+
+class UserStatusPayload(BaseModel):
+    is_active: bool
+
+
+class DeletionRequestPayload(BaseModel):
+    reason: Optional[str] = None
+
+
+class DeletionReviewPayload(BaseModel):
+    action: str
+    comment: Optional[str] = None

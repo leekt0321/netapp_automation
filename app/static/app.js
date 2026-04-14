@@ -1,7 +1,3 @@
-const SESSION_KEY = "baobab-user";
-const SESSION_NAME_KEY = "baobab-display-name";
-const SESSION_DATE_KEY = "baobab-login-date";
-const SESSION_SERVER_KEY = "baobab-server-session";
 const STORAGE_KEYS = ["storage1", "storage2", "storage3"];
 
 const loginScreenEl = document.getElementById("login-screen");
@@ -25,6 +21,8 @@ const deletePasswordMembersEl = document.getElementById("delete-password-members
 const deleteStatusMembersEl = document.getElementById("delete-status-members");
 const memberCountEl = document.getElementById("member-count");
 const memberListEl = document.getElementById("member-list");
+const activeSessionListEl = document.getElementById("active-session-list");
+const deletionRequestListEl = document.getElementById("deletion-request-list");
 
 const navButtons = Array.from(document.querySelectorAll(".nav-button"));
 const pageSections = Array.from(document.querySelectorAll(".page-section"));
@@ -158,6 +156,8 @@ let allSites = [];
 let allRequestPosts = [];
 let allBugPosts = [];
 let allUsers = [];
+let allActiveSessions = [];
+let allDeletionRequests = [];
 let activeRequestFilter = "all";
 let uploadManualFields = createEmptyManualFields();
 let manualFieldsModalMode = "upload";
@@ -166,6 +166,7 @@ let currentPage = "dashboard";
 let isApplyingHistoryState = false;
 let lastHistorySnapshot = "";
 let lastLogLayoutMode = isDesktopLogSplitView();
+let currentUser = null;
 
 loginFormEl.addEventListener("submit", async (event) => {
   event.preventDefault();
@@ -190,13 +191,9 @@ loginFormEl.addEventListener("submit", async (event) => {
     return;
   }
 
-  localStorage.setItem(SESSION_KEY, payload.username);
-  localStorage.setItem(SESSION_NAME_KEY, payload.full_name || payload.username);
-  localStorage.setItem(SESSION_DATE_KEY, getTodayKey());
-  localStorage.setItem(SESSION_SERVER_KEY, payload.server_session_id || "");
   loginStatusEl.textContent = "";
   loginFormEl.reset();
-  openApp(payload.full_name || payload.username);
+  openApp(payload);
 });
 
 registerFormEl.addEventListener("submit", async (event) => {
@@ -231,8 +228,7 @@ registerFormEl.addEventListener("submit", async (event) => {
 });
 
 logoutButtonEl.addEventListener("click", () => {
-  clearSession();
-  loginStatusEl.textContent = "로그아웃되었습니다.";
+  logoutCurrentUser();
 });
 
 deleteFormEl.addEventListener("submit", async (event) => {
@@ -420,7 +416,7 @@ requestFormEl.addEventListener("submit", async (event) => {
   const content = requestContentEl.value.trim();
   const status = requestStatusEl.value.trim();
   const editId = requestEditIdEl.value.trim();
-  const author = localStorage.getItem(SESSION_NAME_KEY) || localStorage.getItem(SESSION_KEY);
+  const author = getCurrentDisplayName();
 
   if (title === "" || content === "") {
     requestStatusMessageEl.textContent = "제목과 내용을 모두 입력하세요.";
@@ -458,7 +454,7 @@ if (bugFormEl !== null) {
     const title = bugTitleEl.value.trim();
     const content = bugContentEl.value.trim();
     const editId = bugEditIdEl.value.trim();
-    const author = localStorage.getItem(SESSION_NAME_KEY) || localStorage.getItem(SESSION_KEY);
+  const author = getCurrentDisplayName();
 
     if (title === "" || content === "") {
       bugStatusMessageEl.textContent = "제목과 내용을 모두 입력하세요.";
@@ -511,7 +507,7 @@ document.addEventListener("click", async (event) => {
   }
 
   if (action === "delete-log-item") {
-    await deleteSelectedLog(Number(actionButton.dataset.id), storageKey);
+    await requestSelectedLogDeletion(Number(actionButton.dataset.id));
     return;
   }
 
@@ -532,12 +528,12 @@ document.addEventListener("click", async (event) => {
   }
 
   if (action === "delete-raw") {
-    await deleteSelectedLog(storageState[storageKey].rawId, storageKey);
+    await requestSelectedLogDeletion(storageState[storageKey].rawId);
     return;
   }
 
   if (action === "delete-summary") {
-    await deleteSelectedLog(storageState[storageKey].summaryId, storageKey);
+    await requestSelectedLogDeletion(storageState[storageKey].summaryId);
     return;
   }
 
@@ -640,7 +636,7 @@ document.addEventListener("click", async (event) => {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         content,
-        author: localStorage.getItem(SESSION_NAME_KEY) || localStorage.getItem(SESSION_KEY) || "",
+        author: getCurrentDisplayName(),
         source_note_id: storageState[storageKey].specialNoteSourceId || null,
       }),
     });
@@ -688,21 +684,33 @@ document.addEventListener("click", async (event) => {
   }
 
   if (action === "site-edit") {
+    if (isAdmin() === false) {
+      return;
+    }
     populateSiteForm(storageKey, Number(actionButton.dataset.id));
     return;
   }
 
   if (action === "site-delete") {
+    if (isAdmin() === false) {
+      return;
+    }
     await deleteStorageSite(storageKey, Number(actionButton.dataset.id));
     return;
   }
 
   if (action === "bug-edit") {
+    if (isAdmin() === false) {
+      return;
+    }
     populateBugForm(Number(actionButton.dataset.id));
     return;
   }
 
   if (action === "bug-delete") {
+    if (isAdmin() === false) {
+      return;
+    }
     await deleteBugPost(Number(actionButton.dataset.id));
     return;
   }
@@ -713,12 +721,33 @@ document.addEventListener("click", async (event) => {
   }
 
   if (action === "request-edit") {
+    if (isAdmin() === false) {
+      return;
+    }
     populateRequestForm(Number(actionButton.dataset.id));
     return;
   }
 
   if (action === "request-delete") {
+    if (isAdmin() === false) {
+      return;
+    }
     await deleteRequestPost(Number(actionButton.dataset.id));
+    return;
+  }
+
+  if (action === "toggle-user-status") {
+    await updateUserStatus(Number(actionButton.dataset.userId), actionButton.dataset.nextActive === "true");
+    return;
+  }
+
+  if (action === "approve-deletion-request") {
+    await reviewDeletionRequest(Number(actionButton.dataset.requestId), "approve");
+    return;
+  }
+
+  if (action === "reject-deletion-request") {
+    await reviewDeletionRequest(Number(actionButton.dataset.requestId), "reject");
   }
 });
 
@@ -742,19 +771,56 @@ function renderSelectedFiles() {
 }
 
 function clearSession() {
-  localStorage.removeItem(SESSION_KEY);
-  localStorage.removeItem(SESSION_NAME_KEY);
-  localStorage.removeItem(SESSION_DATE_KEY);
-  localStorage.removeItem(SESSION_SERVER_KEY);
+  currentUser = null;
+  allUsers = [];
+  allActiveSessions = [];
+  allDeletionRequests = [];
   appShellEl.hidden = true;
   loginScreenEl.hidden = false;
+  applyRolePermissions();
+}
+
+function isAdmin() {
+  return currentUser !== null && currentUser.role === "admin";
+}
+
+function getCurrentDisplayName() {
+  if (currentUser === null) {
+    return "";
+  }
+  return currentUser.display_name || currentUser.full_name || currentUser.username || "";
+}
+
+function applyRolePermissions() {
+  const adminOnlyElements = Array.from(document.querySelectorAll('[data-admin-only="true"]'));
+  const admin = isAdmin();
+  for (const element of adminOnlyElements) {
+    element.hidden = !admin;
+  }
+  if (memberCountEl !== null) {
+    memberCountEl.textContent = admin ? memberCountEl.textContent : "-";
+  }
+  if (currentPage === "members" && admin === false) {
+    currentPage = "dashboard";
+  }
+}
+
+async function logoutCurrentUser() {
+  try {
+    await fetch("/auth/logout", {
+      method: "POST",
+    });
+  } catch (error) {
+    console.error("logout failed", error);
+  }
+  clearSession();
+  loginStatusEl.textContent = "로그아웃되었습니다.";
 }
 
 async function submitDeleteAccount(passwordInputEl, statusTargetEl, formTargetEl) {
-  const username = localStorage.getItem(SESSION_KEY);
   const password = passwordInputEl ? passwordInputEl.value.trim() : "";
 
-  if (username === null || password === "") {
+  if (currentUser === null || password === "") {
     if (statusTargetEl !== null) {
       statusTargetEl.textContent = "비밀번호를 입력하세요.";
     }
@@ -768,7 +834,7 @@ async function submitDeleteAccount(passwordInputEl, statusTargetEl, formTargetEl
   const response = await fetch("/auth/delete", {
     method: "DELETE",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ username, password }),
+    body: JSON.stringify({ password }),
   });
   const payload = await response.json();
 
@@ -788,22 +854,26 @@ async function submitDeleteAccount(passwordInputEl, statusTargetEl, formTargetEl
   if (deleteStatusMembersEl !== null) {
     deleteStatusMembersEl.textContent = "회원탈퇴가 완료되었습니다.";
   }
-  await loadUsers();
   clearSession();
   loginStatusEl.textContent = payload.username + " 계정이 삭제되었습니다.";
 }
 
-function openApp(displayName) {
-  loginUserEl.textContent = displayName + " 님";
+function openApp(user) {
+  currentUser = user;
+  loginUserEl.textContent = (user.display_name || user.username) + " 님";
   loginScreenEl.hidden = true;
   appShellEl.hidden = false;
   deleteStatusEl.textContent = "";
+  applyRolePermissions();
   showPage("dashboard", { history: "replace" });
   loadInitialData();
 }
 
 function showPage(page, options) {
   const historyMode = options && options.history ? options.history : "push";
+  if (page === "members" && isAdmin() === false) {
+    page = "dashboard";
+  }
   currentPage = page;
 
   for (const button of navButtons) {
@@ -828,15 +898,52 @@ function showPage(page, options) {
 
 async function loadInitialData() {
   await loadSites();
-  await Promise.all([loadLogs(), loadRequestPosts(), loadBugPosts(), loadUsers()]);
+  await Promise.all([loadLogs(), loadRequestPosts(), loadBugPosts()]);
+  if (isAdmin()) {
+    await Promise.all([loadUsers(), loadActiveSessions(), loadDeletionRequests()]);
+  } else {
+    allUsers = [];
+    allActiveSessions = [];
+    allDeletionRequests = [];
+    renderUserList();
+    renderActiveSessions();
+    renderDeletionRequests();
+  }
   syncHistoryState("replace");
 }
 
 async function loadUsers() {
+  if (isAdmin() === false) {
+    allUsers = [];
+    renderUserList();
+    return;
+  }
   const response = await fetch("/users");
   const users = await response.json();
   allUsers = Array.isArray(users) ? users : [];
   renderUserList();
+}
+
+async function updateUserStatus(userId, isActive) {
+  if (isAdmin() === false) {
+    return;
+  }
+  const response = await fetch("/admin/users/" + userId + "/status", {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ is_active: isActive }),
+  });
+  const payload = await response.json();
+  if (response.ok === false) {
+    window.alert(payload.detail || "사용자 상태 변경에 실패했습니다.");
+    return;
+  }
+  await Promise.all([loadUsers(), loadActiveSessions()]);
+  if (currentUser !== null && currentUser.id === payload.id) {
+    currentUser = payload;
+    loginUserEl.textContent = getCurrentDisplayName() + " 님";
+    applyRolePermissions();
+  }
 }
 
 function renderUserList() {
@@ -846,20 +953,126 @@ function renderUserList() {
 
   memberCountEl.textContent = allUsers.length + "명";
 
+  if (isAdmin() === false) {
+    memberListEl.innerHTML = "<div class='empty'>관리자만 볼 수 있습니다.</div>";
+    return;
+  }
+
   if (allUsers.length === 0) {
     memberListEl.innerHTML = "<div class='empty'>등록된 회원이 없습니다.</div>";
     return;
   }
 
   memberListEl.innerHTML = allUsers.map((user) => {
-    const displayName = user.full_name && user.full_name.trim() !== "" ? user.full_name : user.username;
+    const displayName = user.display_name || user.full_name || user.username;
     const stateLabel = user.is_active ? "사용중" : "비활성";
     return "<article class='member-card'>" +
       "<div>" +
         "<strong>" + escapeHtml(displayName) + "</strong>" +
-        "<p>" + escapeHtml(user.username) + "</p>" +
+        "<p>" + escapeHtml(user.username) + " / " + escapeHtml(user.role || "user") + "</p>" +
       "</div>" +
-      "<span class='member-badge'>" + escapeHtml(stateLabel) + "</span>" +
+      "<div class='request-actions'>" +
+        "<span class='member-badge'>" + escapeHtml(stateLabel) + "</span>" +
+        "<button class='secondary' data-action='toggle-user-status' data-user-id='" + user.id + "' data-next-active='" + String(user.is_active === false) + "' type='button'>" + (user.is_active ? "비활성화" : "활성화") + "</button>" +
+      "</div>" +
+    "</article>";
+  }).join("");
+}
+
+async function loadActiveSessions() {
+  if (isAdmin() === false) {
+    allActiveSessions = [];
+    renderActiveSessions();
+    return;
+  }
+  const response = await fetch("/admin/sessions");
+  const payload = await response.json();
+  allActiveSessions = Array.isArray(payload) ? payload : [];
+  renderActiveSessions();
+}
+
+function renderActiveSessions() {
+  if (activeSessionListEl === null) {
+    return;
+  }
+  if (isAdmin() === false) {
+    activeSessionListEl.innerHTML = "<div class='empty'>관리자만 볼 수 있습니다.</div>";
+    return;
+  }
+  if (allActiveSessions.length === 0) {
+    activeSessionListEl.innerHTML = "<div class='empty'>활성 세션이 없습니다.</div>";
+    return;
+  }
+  activeSessionListEl.innerHTML = allActiveSessions.map((session) => {
+    return "<article class='member-card'>" +
+      "<div>" +
+        "<strong>" + escapeHtml(session.display_name || session.username) + "</strong>" +
+        "<p>" + escapeHtml(session.username) + " / 마지막 활동: " + escapeHtml(formatDate(session.last_seen_at)) + "</p>" +
+        "<p>" + escapeHtml(session.ip_address || "-") + "</p>" +
+      "</div>" +
+      "<span class='member-badge'>" + escapeHtml(session.role || "user") + "</span>" +
+    "</article>";
+  }).join("");
+}
+
+async function loadDeletionRequests() {
+  if (isAdmin() === false) {
+    allDeletionRequests = [];
+    renderDeletionRequests();
+    return;
+  }
+  const response = await fetch("/admin/deletion-requests");
+  const payload = await response.json();
+  allDeletionRequests = Array.isArray(payload) ? payload : [];
+  renderDeletionRequests();
+}
+
+async function reviewDeletionRequest(requestId, action) {
+  if (isAdmin() === false) {
+    return;
+  }
+
+  const response = await fetch("/admin/deletion-requests/" + requestId + "/review", {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ action }),
+  });
+  const payload = await response.json();
+  if (response.ok === false) {
+    window.alert(payload.detail || "삭제 요청 처리에 실패했습니다.");
+    return;
+  }
+  await Promise.all([loadDeletionRequests(), loadLogs()]);
+  statusEl.textContent = (payload.target_label || "선택한 로그") + " 삭제 요청이 처리되었습니다.";
+}
+
+function renderDeletionRequests() {
+  if (deletionRequestListEl === null) {
+    return;
+  }
+  if (isAdmin() === false) {
+    deletionRequestListEl.innerHTML = "<div class='empty'>관리자만 볼 수 있습니다.</div>";
+    return;
+  }
+  if (allDeletionRequests.length === 0) {
+    deletionRequestListEl.innerHTML = "<div class='empty'>등록된 삭제 요청이 없습니다.</div>";
+    return;
+  }
+  deletionRequestListEl.innerHTML = allDeletionRequests.map((item) => {
+    const actions = item.status === "pending"
+      ? "<div class='request-actions'>" +
+          "<button data-action='approve-deletion-request' data-request-id='" + item.id + "' type='button'>허용</button>" +
+          "<button class='secondary' data-action='reject-deletion-request' data-request-id='" + item.id + "' type='button'>거부</button>" +
+        "</div>"
+      : "";
+    return "<article class='request-card'>" +
+      "<div class='request-top'>" +
+        "<div class='request-header'><span class='badge " + (item.status === "pending" ? "wait" : item.status === "executed" ? "done" : "doing") + "'>" + escapeHtml(item.status) + "</span></div>" +
+        actions +
+      "</div>" +
+      "<h3 class='request-title'>" + escapeHtml(item.target_label || ("log #" + item.target_id)) + "</h3>" +
+      "<p class='request-content'>" + escapeHtml(item.reason || "요청 사유 없음") + "</p>" +
+      "<div class='request-meta'><span>요청자: " + escapeHtml(item.requester_name || "-") + "</span><span>요청일: " + escapeHtml(formatDate(item.created_at)) + "</span></div>" +
     "</article>";
   }).join("");
 }
@@ -958,12 +1171,15 @@ function renderSiteList(storageKey, sites) {
 
   view.siteListEl.innerHTML = sites.map((site) => {
     const activeClass = storageState[storageKey].activeSiteId === site.id ? " active" : "";
+    const adminButtons = isAdmin()
+      ? "<button class='secondary' data-action='site-edit' data-storage='" + storageKey + "' data-id='" + site.id + "' type='button'>수정</button>" +
+        "<button class='danger' data-action='site-delete' data-storage='" + storageKey + "' data-id='" + site.id + "' type='button'>삭제</button>"
+      : "";
     return "<article class='site-item" + activeClass + "'>" +
       "<div><strong>" + escapeHtml(site.name) + "</strong><p>" + escapeHtml(toStorageLabel(site.storage_name)) + "</p></div>" +
       "<div class='request-actions'>" +
         "<button data-action='open-site-logs' data-storage='" + storageKey + "' data-id='" + site.id + "' type='button'>로그 보기</button>" +
-        "<button class='secondary' data-action='site-edit' data-storage='" + storageKey + "' data-id='" + site.id + "' type='button'>수정</button>" +
-        "<button class='danger' data-action='site-delete' data-storage='" + storageKey + "' data-id='" + site.id + "' type='button'>삭제</button>" +
+        adminButtons +
       "</div>" +
     "</article>";
   }).join("");
@@ -1386,35 +1602,33 @@ async function deleteStorageSite(storageKey, siteId) {
   await loadLogs();
 }
 
-async function deleteSelectedLog(logId, storageKey) {
+async function requestSelectedLogDeletion(logId) {
   if (logId === null || Number.isNaN(logId)) {
     return;
   }
 
-  const confirmed = window.confirm("선택한 업로드 파일을 삭제하시겠습니까?");
-  if (confirmed === false) {
+  const reason = window.prompt("삭제 요청 사유를 입력하세요.", "");
+  if (reason === null) {
     return;
   }
 
-  const response = await fetch("/logs/" + logId, {
-    method: "DELETE",
+  statusEl.textContent = "삭제 요청 등록 중...";
+  const response = await fetch("/logs/" + logId + "/deletion-requests", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ reason }),
   });
   const payload = await response.json();
 
   if (response.ok === false) {
-    statusEl.textContent = payload.detail || "파일 삭제에 실패했습니다.";
+    statusEl.textContent = payload.detail || "삭제 요청 등록에 실패했습니다.";
     return;
   }
 
-  if (storageState[storageKey].rawId === logId) {
-    storageState[storageKey].rawId = null;
+  statusEl.textContent = (payload.target_label || "선택한 로그") + " 삭제 요청이 등록되었습니다.";
+  if (isAdmin()) {
+    await loadDeletionRequests();
   }
-  if (storageState[storageKey].summaryId === logId) {
-    storageState[storageKey].summaryId = null;
-  }
-  statusEl.textContent = payload.filename + " 삭제 완료";
-  await loadLogs();
-  showPage(storageKey);
 }
 
 async function loadRequestPosts() {
@@ -1465,14 +1679,18 @@ function renderRequestPosts(posts) {
     return;
   }
 
+  const canManage = isAdmin();
   requestListEl.innerHTML = posts.map((post) => {
+    const actions = canManage
+      ? "<div class='request-actions'>" +
+          "<button class='secondary' data-action='request-edit' data-id='" + post.id + "' type='button'>수정</button>" +
+          "<button class='danger' data-action='request-delete' data-id='" + post.id + "' type='button'>삭제</button>" +
+        "</div>"
+      : "";
     return "<article class='request-card'>" +
       "<div class='request-top'>" +
         "<div class='request-header'><span class='badge " + getStatusBadgeClass(post.status) + "'>" + escapeHtml(post.status) + "</span></div>" +
-        "<div class='request-actions'>" +
-          "<button class='secondary' data-action='request-edit' data-id='" + post.id + "' type='button'>수정</button>" +
-          "<button class='danger' data-action='request-delete' data-id='" + post.id + "' type='button'>삭제</button>" +
-        "</div>" +
+        actions +
       "</div>" +
       "<h3 class='request-title'>" + escapeHtml(post.title) + "</h3>" +
       "<p class='request-content'>" + escapeHtml(post.content) + "</p>" +
@@ -1491,14 +1709,18 @@ function renderBugPosts(posts) {
     return;
   }
 
+  const canManage = isAdmin();
   bugListEl.innerHTML = posts.map((post) => {
+    const actions = canManage
+      ? "<div class='request-actions'>" +
+          "<button class='secondary' data-action='bug-edit' data-id='" + post.id + "' type='button'>수정</button>" +
+          "<button class='danger' data-action='bug-delete' data-id='" + post.id + "' type='button'>삭제</button>" +
+        "</div>"
+      : "";
     return "<article class='request-card'>" +
       "<div class='request-top'>" +
         "<div class='request-header'><span class='badge doing'>버그</span></div>" +
-        "<div class='request-actions'>" +
-          "<button class='secondary' data-action='bug-edit' data-id='" + post.id + "' type='button'>수정</button>" +
-          "<button class='danger' data-action='bug-delete' data-id='" + post.id + "' type='button'>삭제</button>" +
-        "</div>" +
+        actions +
       "</div>" +
       "<h3 class='request-title'>" + escapeHtml(post.title) + "</h3>" +
       "<p class='request-content'>" + escapeHtml(post.content) + "</p>" +
@@ -1821,37 +2043,15 @@ window.addEventListener("resize", () => {
   renderAllStoragePages();
 });
 
-function getTodayKey() {
-  return new Date().toISOString().slice(0, 10);
-}
-
 async function restoreSession() {
-  const savedUser = localStorage.getItem(SESSION_KEY);
-  const savedDisplayName = localStorage.getItem(SESSION_NAME_KEY);
-  const savedLoginDate = localStorage.getItem(SESSION_DATE_KEY);
-  const savedServerSession = localStorage.getItem(SESSION_SERVER_KEY);
-
-  if (savedUser === null || savedDisplayName === null || savedLoginDate === null || savedServerSession === null) {
-    clearSession();
-    return;
-  }
-
-  if (savedLoginDate !== getTodayKey()) {
-    clearSession();
-    loginStatusEl.textContent = "세션이 만료되었습니다. 다시 로그인해 주세요.";
-    return;
-  }
-
   try {
-    const response = await fetch("/api", { cache: "no-store" });
+    const response = await fetch("/auth/me", { cache: "no-store" });
     const payload = await response.json();
-    if (response.ok === false || payload.server_session_id !== savedServerSession) {
+    if (response.ok === false || payload.authenticated !== true || payload.user === null) {
       clearSession();
-      loginStatusEl.textContent = "서버가 다시 시작되어 세션이 만료되었습니다. 다시 로그인해 주세요.";
       return;
     }
-
-    openApp(savedDisplayName);
+    openApp(payload.user);
   } catch (error) {
     clearSession();
     loginStatusEl.textContent = "서버에 연결할 수 없어 다시 로그인해 주세요.";

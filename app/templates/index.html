@@ -72,7 +72,7 @@
         <button class="nav-button" data-page="storage1" type="button"><span class="nav-label">스토리지1</span><small>사이트와 로그 탐색</small></button>
         <button class="nav-button" data-page="storage2" type="button"><span class="nav-label">스토리지2</span><small>사이트와 로그 탐색</small></button>
         <button class="nav-button" data-page="storage3" type="button"><span class="nav-label">스토리지3</span><small>사이트와 로그 탐색</small></button>
-        <button class="nav-button" data-page="members" type="button"><span class="nav-label">회원 관리 목록</span><small>계정 현황과 관리</small></button>
+        <button class="nav-button" data-page="members" data-admin-only="true" type="button"><span class="nav-label">회원 관리 목록</span><small>계정 현황과 관리</small></button>
         <button class="nav-button" data-page="bugs" type="button"><span class="nav-label">버그 모음</span><small>운영 이슈 기록</small></button>
         <button class="nav-button" data-page="requests" type="button"><span class="nav-label">수정 요청 게시판</span><small>요청 상태 추적</small></button>
       </nav>
@@ -174,12 +174,12 @@
         </div>
       </section>
 
-      <section id="page-members" class="page-section">
+      <section id="page-members" class="page-section" data-admin-only="true">
         <div class="hero-card member-hero">
           <div>
-            <p class="eyebrow">Members</p>
-            <h2>회원 관리 목록</h2>
-            <p>현재 회원가입된 계정 정보를 확인하고, 로그인한 계정은 아래에서 탈퇴할 수 있습니다.</p>
+            <p class="eyebrow">Admin</p>
+            <h2>관리자 제어 센터</h2>
+            <p>관리자는 회원 상태, 로그인 세션, 로그 삭제 요청을 이 화면에서 확인하고 처리합니다.</p>
           </div>
           <div class="hero-stats">
             <div class="stat-card">
@@ -194,11 +194,35 @@
             <div class="section-head">
               <div>
                 <h3>가입된 계정</h3>
-                <p>회원가입된 계정 목록입니다.</p>
+                <p>관리자는 계정을 비활성화하거나 다시 활성화할 수 있습니다.</p>
               </div>
             </div>
             <div id="member-list" class="member-list">
               <div class="empty">등록된 회원이 없습니다.</div>
+            </div>
+          </section>
+
+          <section class="panel member-panel">
+            <div class="section-head">
+              <div>
+                <h3>현재 로그인 세션</h3>
+                <p>최근 활동 중인 세션과 접속 정보를 확인합니다.</p>
+              </div>
+            </div>
+            <div id="active-session-list" class="member-list">
+              <div class="empty">활성 세션이 없습니다.</div>
+            </div>
+          </section>
+
+          <section class="panel member-panel">
+            <div class="section-head">
+              <div>
+                <h3>로그 삭제 요청</h3>
+                <p>일반 사용자가 요청한 로그 삭제를 허용 또는 거부합니다.</p>
+              </div>
+            </div>
+            <div id="deletion-request-list" class="request-list">
+              <div class="empty">등록된 삭제 요청이 없습니다.</div>
             </div>
           </section>
 
@@ -263,7 +287,7 @@
                   <div class="detail-actions">
                     <button class="secondary" data-action="raw-log-list-back" data-storage="storage1" type="button">목록으로</button>
                     <button class="secondary" data-action="download-raw" data-storage="storage1" type="button">다운로드</button>
-                    <button class="danger" data-action="delete-raw" data-storage="storage1" type="button">삭제</button>
+                    <button class="danger" data-action="delete-raw" data-storage="storage1" type="button">삭제 요청</button>
                   </div>
                 </div>
                 <pre data-role="raw-content" data-storage="storage1"></pre>
@@ -291,7 +315,7 @@
                     <button class="secondary" data-action="summary-log-list-back" data-storage="storage1" type="button">목록으로</button>
                     <button class="secondary" data-action="edit-manual-fields" data-storage="storage1" type="button">직접 입력 수정</button>
                     <button class="secondary" data-action="download-summary" data-storage="storage1" type="button">원본 다운로드</button>
-                    <button class="danger" data-action="delete-summary" data-storage="storage1" type="button">삭제</button>
+                    <button class="danger" data-action="delete-summary" data-storage="storage1" type="button">삭제 요청</button>
                   </div>
                 </div>
                 <div class="summary-section-tabs">
@@ -327,7 +351,7 @@
         </div>
         <div data-role="storage-sites-view" data-storage="storage1">
           <div class="storage-site-grid storage-site-grid-manage">
-            <section class="panel site-panel">
+            <section class="panel site-panel" data-admin-only="true">
               <div class="section-head">
                 <div>
                   <h3>사이트 목록</h3>
@@ -336,7 +360,7 @@
               </div>
               <div class="site-list" data-role="site-list" data-storage="storage1"></div>
             </section>
-            <section class="panel site-panel">
+            <section class="panel site-panel" data-admin-only="true">
               <div class="section-head">
                 <div>
                   <h3>사이트 관리</h3>
@@ -402,7 +426,7 @@
                 <div class="detail-actions">
                   <button class="secondary" data-action="raw-log-list-back" data-storage="storage2" type="button">목록으로</button>
                   <button class="secondary" data-action="download-raw" data-storage="storage2" type="button">다운로드</button>
-                  <button class="danger" data-action="delete-raw" data-storage="storage2" type="button">삭제</button>
+                  <button class="danger" data-action="delete-raw" data-storage="storage2" type="button">삭제 요청</button>
                 </div>
               </div>
               <pre data-role="raw-content" data-storage="storage2"></pre>
@@ -430,7 +454,7 @@
                   <button class="secondary" data-action="summary-log-list-back" data-storage="storage2" type="button">목록으로</button>
                   <button class="secondary" data-action="edit-manual-fields" data-storage="storage2" type="button">직접 입력 수정</button>
                   <button class="secondary" data-action="download-summary" data-storage="storage2" type="button">원본 다운로드</button>
-                  <button class="danger" data-action="delete-summary" data-storage="storage2" type="button">삭제</button>
+                  <button class="danger" data-action="delete-summary" data-storage="storage2" type="button">삭제 요청</button>
                 </div>
               </div>
               <div class="summary-section-tabs">
@@ -466,7 +490,7 @@
         </div>
         <div data-role="storage-sites-view" data-storage="storage2">
           <div class="storage-site-grid storage-site-grid-manage">
-            <section class="panel site-panel">
+            <section class="panel site-panel" data-admin-only="true">
               <div class="section-head">
                 <div>
                   <h3>사이트 목록</h3>
@@ -541,7 +565,7 @@
                 <div class="detail-actions">
                   <button class="secondary" data-action="raw-log-list-back" data-storage="storage3" type="button">목록으로</button>
                   <button class="secondary" data-action="download-raw" data-storage="storage3" type="button">다운로드</button>
-                  <button class="danger" data-action="delete-raw" data-storage="storage3" type="button">삭제</button>
+                  <button class="danger" data-action="delete-raw" data-storage="storage3" type="button">삭제 요청</button>
                 </div>
               </div>
               <pre data-role="raw-content" data-storage="storage3"></pre>
@@ -569,7 +593,7 @@
                   <button class="secondary" data-action="summary-log-list-back" data-storage="storage3" type="button">목록으로</button>
                   <button class="secondary" data-action="edit-manual-fields" data-storage="storage3" type="button">직접 입력 수정</button>
                   <button class="secondary" data-action="download-summary" data-storage="storage3" type="button">원본 다운로드</button>
-                  <button class="danger" data-action="delete-summary" data-storage="storage3" type="button">삭제</button>
+                  <button class="danger" data-action="delete-summary" data-storage="storage3" type="button">삭제 요청</button>
                 </div>
               </div>
               <div class="summary-section-tabs">
