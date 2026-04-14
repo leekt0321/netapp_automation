@@ -11,7 +11,6 @@ from app.models import DeletionRequest, User, UserSession
 def ensure_admin_user(db: Session) -> None:
     existing_user = db.query(User).filter(User.username == settings.admin_username).first()
     if existing_user:
-        existing_user.password_hash = hash_password(settings.admin_password)
         existing_user.full_name = settings.admin_full_name
         existing_user.role = USER_ROLE_ADMIN
         existing_user.is_active = True
