@@ -57,4 +57,7 @@ else
   PYTHON_BIN="python"
 fi
 
+echo "Running database migrations..."
+"$PYTHON_BIN" -m alembic -c "$ROOT_DIR/alembic.ini" upgrade head
+
 exec "$PYTHON_BIN" -m uvicorn app.main:app --host "${HOST:-0.0.0.0}" --port "${PORT:-8000}"

@@ -6,6 +6,7 @@ from uuid import uuid4
 
 from fastapi import HTTPException, UploadFile
 from fastapi.responses import FileResponse
+from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session
 
 from app.core.constants import MANUAL_FIELD_DEFINITIONS, SUMMARY_DISPLAY_LABELS
@@ -58,6 +59,37 @@ def get_unique_filename(filename: str) -> str:
 def get_summary_filename(filename: str) -> str:
     candidate = Path(filename)
     return get_unique_filename(f"{candidate.stem}_summary.txt")
+
+
+def resolve_summary_path(log: UploadedLog) -> Path:
+    if log.summary_path:
+        return Path(log.summary_path)
+    return UPLOAD_DIR / f"{Path(log.filename).stem}_summary.txt"
+
+
+def read_summary_text(summary_path: Path) -> str:
+    if not summary_path.exists():
+        raise HTTPException(status_code=404, detail="summary 파일을 찾을 수 없습니다.")
+    return summary_path.read_text(encoding="utf-8")
+
+
+def write_summary_file(saved_name: str, summary: dict) -> Path:
+    summary_name = get_summary_filename(saved_name)
+    summary_path = UPLOAD_DIR / summary_name
+    summary_path.write_text(format_summary_text(summary), encoding="utf-8")
+    return summary_path
+
+
+def cleanup_generated_files(*paths: Optional[Path]) -> None:
+    for path in paths:
+        if path is None:
+            continue
+        try:
+            if path.exists():
+                path.unlink()
+        except OSError:
+            # Best-effort cleanup only. The DB transaction is the source of truth.
+            continue
 
 
 def normalize_manual_fields(raw_fields: Optional[dict]) -> dict[str, str]:
@@ -182,27 +214,41 @@ async def upload_log(file: UploadFile, save_name: str, storage_name: str, site: 
     content = await file.read()
     if not content:
         raise HTTPException(status_code=400, detail="빈 파일은 업로드할 수 없습니다.")
-    saved_path.write_bytes(content)
+    summary_path: Optional[Path] = None
 
-    text_content = decode_text_content(content)
-    summary = parse_netapp_log(text_content)
-    summary_name = get_summary_filename(saved_name)
-    summary_path = UPLOAD_DIR / summary_name
-    summary_path.write_text(format_summary_text(summary), encoding="utf-8")
+    try:
+        saved_path.write_bytes(content)
 
-    log = UploadedLog(
-        filename=saved_name,
-        stored_path=str(saved_path),
-        content_type=file.content_type,
-        size=len(content),
-        status="uploaded",
-        storage_name=validate_storage_name(storage_name),
-        site_id=site.id,
-        manual_fields_json=encode_manual_fields_json(manual_fields),
-    )
-    db.add(log)
-    db.commit()
-    db.refresh(log)
+        text_content = decode_text_content(content)
+        summary = parse_netapp_log(text_content)
+        summary_path = write_summary_file(saved_name, summary)
+
+        log = UploadedLog(
+            filename=saved_name,
+            stored_path=str(saved_path),
+            summary_path=str(summary_path),
+            content_type=file.content_type,
+            size=len(content),
+            status="uploaded",
+            storage_name=validate_storage_name(storage_name),
+            site_id=site.id,
+            manual_fields_json=encode_manual_fields_json(manual_fields),
+        )
+        db.add(log)
+        db.commit()
+        db.refresh(log)
+    except HTTPException:
+        db.rollback()
+        cleanup_generated_files(summary_path, saved_path)
+        raise
+    except SQLAlchemyError:
+        db.rollback()
+        cleanup_generated_files(summary_path, saved_path)
+        raise HTTPException(status_code=500, detail="로그 메타데이터 저장에 실패했습니다.")
+    except Exception:
+        db.rollback()
+        cleanup_generated_files(summary_path, saved_path)
+        raise
 
     return {
         "id": log.id,
@@ -214,8 +260,8 @@ async def upload_log(file: UploadFile, save_name: str, storage_name: str, site: 
         "site_id": site.id,
         "site_name": site.name,
         "manual_fields": manual_fields,
-        "summary_filename": summary_name,
-        "summary_stored_path": str(summary_path),
+        "summary_filename": Path(log.summary_path).name if log.summary_path else "",
+        "summary_stored_path": log.summary_path,
         "summary": summary,
     }
 
@@ -258,6 +304,7 @@ def list_logs(storage_name: Optional[str], site_id: Optional[int], db: Session) 
             "id": row[0].id,
             "filename": row[0].filename,
             "stored_path": row[0].stored_path,
+            "summary_stored_path": row[0].summary_path,
             "content_type": row[0].content_type,
             "size": row[0].size,
             "status": row[0].status,
@@ -306,17 +353,26 @@ def delete_log(log_id: int, db: Session) -> dict:
     if not log:
         raise HTTPException(status_code=404, detail="업로드 파일을 찾을 수 없습니다.")
     raw_path = Path(log.stored_path)
-    summary_path = UPLOAD_DIR / f"{Path(log.filename).stem}_summary.txt"
-    if raw_path.exists():
-        raw_path.unlink()
-    if summary_path.exists():
-        summary_path.unlink()
+    summary_path = resolve_summary_path(log)
     filename = log.filename
     storage_name = log.storage_name
     site_id = log.site_id
+    summary_stored_path = log.summary_path or str(summary_path)
     db.delete(log)
-    db.commit()
-    return {"deleted": True, "id": log_id, "filename": filename, "storage_name": storage_name, "site_id": site_id}
+    try:
+        db.commit()
+    except SQLAlchemyError:
+        db.rollback()
+        raise HTTPException(status_code=500, detail="로그 삭제 중 DB 처리에 실패했습니다.")
+    cleanup_generated_files(raw_path, summary_path)
+    return {
+        "deleted": True,
+        "id": log_id,
+        "filename": filename,
+        "storage_name": storage_name,
+        "site_id": site_id,
+        "summary_stored_path": summary_stored_path,
+    }
 
 
 def get_log_summary(log_id: int, db: Session) -> dict:
@@ -324,11 +380,9 @@ def get_log_summary(log_id: int, db: Session) -> dict:
     if not row:
         raise HTTPException(status_code=404, detail="업로드 파일을 찾을 수 없습니다.")
     log = row[0]
-    summary_filename = f"{Path(log.filename).stem}_summary.txt"
-    summary_path = UPLOAD_DIR / summary_filename
-    if not summary_path.exists():
-        raise HTTPException(status_code=404, detail="summary 파일을 찾을 수 없습니다.")
-    raw_text = summary_path.read_text(encoding="utf-8")
+    summary_path = resolve_summary_path(log)
+    summary_filename = summary_path.name
+    raw_text = read_summary_text(summary_path)
     display_raw_text = raw_text.replace("cluster_name:", "hostname:")
     original_raw_text = Path(log.stored_path).read_text(encoding="utf-8", errors="replace")
     summary = {}

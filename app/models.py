@@ -19,6 +19,7 @@ class UploadedLog(Base):
     id = Column(Integer, primary_key=True, index=True)
     filename = Column(String(255), nullable=False)
     stored_path = Column(String(500), nullable=False)
+    summary_path = Column(String(500), nullable=True, index=True)
     content_type = Column(String(255), nullable=True)
     size = Column(Integer, nullable=False, default=0)
     status = Column(String(50), nullable=False, default="uploaded")
