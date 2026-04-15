@@ -12,7 +12,6 @@ export function createStorageState(storageKeys, createEmptyManualFields) {
       pageSize: 10,
       rawPage: 1,
       summaryPage: 1,
-      showSummaryRaw: false,
       activeSummarySection: "overview",
       activeEventLogFilter: "all",
       currentSummarySections: {},

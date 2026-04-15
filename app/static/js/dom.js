@@ -102,7 +102,6 @@ export function createStorageViews(storageKeys) {
       summaryMetaEl: getStorageElement(storageKey, "summary-meta"),
       summaryGridEl: getStorageElement(storageKey, "summary-grid"),
       summaryRawEl: getStorageElement(storageKey, "summary-raw"),
-      summaryRawToggleEl: getStorageElement(storageKey, "summary-raw-toggle"),
       summaryOverviewPageEl: getStorageElement(storageKey, "summary-overview-page"),
       summarySectionPageEl: getStorageElement(storageKey, "summary-section-page"),
       summarySectionTitleEl: getStorageElement(storageKey, "summary-section-title"),

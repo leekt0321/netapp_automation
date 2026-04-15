@@ -530,12 +530,6 @@ document.addEventListener("click", async (event) => {
     return;
   }
 
-  if (action === "toggle-summary-raw") {
-    storageState[storageKey].showSummaryRaw = !storageState[storageKey].showSummaryRaw;
-    renderSummaryRawVisibility(storageKey);
-    return;
-  }
-
   if (action === "event-log-filter") {
     storageState[storageKey].activeEventLogFilter = actionButton.dataset.eventLogFilter || "all";
     renderSummarySectionView(storageKey);
@@ -1481,7 +1475,6 @@ function renderSummaryEmptyState(storageKey, message) {
   state.currentSummarySections = {};
   state.currentSpecialNotes = [];
   state.activeSummarySection = "overview";
-  renderSummaryRawVisibility(storageKey);
   renderSummarySectionView(storageKey);
 }
 
@@ -1527,19 +1520,7 @@ async function loadSummary(storageKey, logId) {
   storageState[storageKey].currentManualFields = payload.manual_fields || createEmptyManualFields();
   storageState[storageKey].specialNoteDraft = "";
   storageState[storageKey].specialNoteSourceId = "";
-  renderSummaryRawVisibility(storageKey);
   renderSummarySectionView(storageKey);
-}
-
-function renderSummaryRawVisibility(storageKey) {
-  const view = storageViews[storageKey];
-  const shouldShow = storageState[storageKey].showSummaryRaw;
-  if (view.summaryRawEl !== null) {
-    view.summaryRawEl.hidden = !shouldShow;
-  }
-  if (view.summaryRawToggleEl !== null) {
-    view.summaryRawToggleEl.textContent = shouldShow ? "원문 접기" : "원문 펼치기";
-  }
 }
 
 function renderSummaryFieldsMarkup(summary) {
