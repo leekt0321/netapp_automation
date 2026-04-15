@@ -13,6 +13,8 @@ import {
   bugEditIdEl,
   bugFormEl,
   bugListEl,
+  bugCountEl,
+  bugSearchEl,
   bugStatusMessageEl,
   bugSubmitButtonEl,
   bugTitleEl,
@@ -65,6 +67,7 @@ import {
   requestFilterButtons,
   requestFormEl,
   requestListEl,
+  requestCountEl,
   requestSearchEl,
   requestStatusEl,
   requestStatusMessageEl,
@@ -265,6 +268,12 @@ if (manualFieldsFormEl !== null) {
 if (requestSearchEl !== null) {
   requestSearchEl.addEventListener("input", () => {
     renderFilteredRequestPosts();
+  });
+}
+
+if (bugSearchEl !== null) {
+  bugSearchEl.addEventListener("input", () => {
+    renderFilteredBugPosts();
   });
 }
 
@@ -521,6 +530,12 @@ document.addEventListener("click", async (event) => {
     return;
   }
 
+  if (action === "toggle-summary-raw") {
+    storageState[storageKey].showSummaryRaw = !storageState[storageKey].showSummaryRaw;
+    renderSummaryRawVisibility(storageKey);
+    return;
+  }
+
   if (action === "event-log-filter") {
     storageState[storageKey].activeEventLogFilter = actionButton.dataset.eventLogFilter || "all";
     renderSummarySectionView(storageKey);
@@ -619,6 +634,14 @@ document.addEventListener("click", async (event) => {
     return;
   }
 
+  if (action === "log-page-prev" || action === "log-page-next") {
+    const pageKey = actionButton.dataset.logType === "summary" ? "summaryPage" : "rawPage";
+    const delta = action === "log-page-next" ? 1 : -1;
+    storageState[storageKey][pageKey] = Math.max(1, storageState[storageKey][pageKey] + delta);
+    renderStoragePage(storageKey);
+    return;
+  }
+
   if (action === "site-edit") {
     if (isAdmin() === false) {
       return;
@@ -684,6 +707,45 @@ document.addEventListener("click", async (event) => {
 
   if (action === "reject-deletion-request") {
     await reviewDeletionRequest(Number(actionButton.dataset.requestId), "reject");
+  }
+});
+
+document.addEventListener("input", (event) => {
+  const target = event.target;
+  if (!(target instanceof HTMLInputElement)) {
+    return;
+  }
+  if (target.dataset.action === "log-search") {
+    const storageKey = target.dataset.storage;
+    storageState[storageKey].logSearchQuery = target.value.trim();
+    storageState[storageKey].rawPage = 1;
+    storageState[storageKey].summaryPage = 1;
+    renderStoragePage(storageKey);
+  }
+});
+
+document.addEventListener("change", (event) => {
+  const target = event.target;
+  if (!(target instanceof HTMLSelectElement)) {
+    return;
+  }
+  const storageKey = target.dataset.storage;
+  if (!storageKey) {
+    return;
+  }
+  if (target.dataset.action === "log-sort") {
+    storageState[storageKey].logSortMode = target.value;
+    storageState[storageKey].rawPage = 1;
+    storageState[storageKey].summaryPage = 1;
+    renderStoragePage(storageKey);
+    return;
+  }
+  if (target.dataset.action === "log-page-size") {
+    const parsed = Number(target.value);
+    storageState[storageKey].pageSize = Number.isFinite(parsed) && parsed > 0 ? parsed : 10;
+    storageState[storageKey].rawPage = 1;
+    storageState[storageKey].summaryPage = 1;
+    renderStoragePage(storageKey);
   }
 });
 
@@ -1215,12 +1277,17 @@ function renderStoragePage(storageKey) {
     return;
   }
 
-  const logs = allLogs.filter((log) => log.storage_name === storageKey && log.site_id === state.activeSiteId);
+  const logs = getStorageLogs(storageKey);
+  const visibleLogs = getVisibleLogs(storageKey, logs);
+  syncStorageLogControls(storageKey, logs.length, visibleLogs.length);
+
   if (logs.length === 0) {
     state.rawId = null;
     state.summaryId = null;
     view.rawListEl.innerHTML = "<div class='empty'>선택한 사이트에 업로드된 로그가 없습니다.</div>";
     view.summaryListEl.innerHTML = "<div class='empty'>선택한 사이트에 업로드된 summary가 없습니다.</div>";
+    updateLogPagination(storageKey, "raw", 0, 0, 0);
+    updateLogPagination(storageKey, "summary", 0, 0, 0);
     renderRawEmptyState(storageKey, "업로드된 원본 로그가 없습니다.");
     renderSummaryEmptyState(storageKey, "업로드된 summary가 없습니다.");
     toggleLogDetailPage(storageKey, "raw", false);
@@ -1228,7 +1295,21 @@ function renderStoragePage(storageKey) {
     return;
   }
 
-  const availableIds = logs.map((log) => log.id);
+  if (visibleLogs.length === 0) {
+    state.rawId = null;
+    state.summaryId = null;
+    view.rawListEl.innerHTML = "<div class='empty'>검색 조건과 일치하는 원본 로그가 없습니다.</div>";
+    view.summaryListEl.innerHTML = "<div class='empty'>검색 조건과 일치하는 summary가 없습니다.</div>";
+    updateLogPagination(storageKey, "raw", 0, 0, 0);
+    updateLogPagination(storageKey, "summary", 0, 0, 0);
+    renderRawEmptyState(storageKey, "검색 조건을 바꾸면 원본 로그를 다시 볼 수 있습니다.");
+    renderSummaryEmptyState(storageKey, "검색 조건을 바꾸면 summary를 다시 볼 수 있습니다.");
+    toggleLogDetailPage(storageKey, "raw", false);
+    toggleLogDetailPage(storageKey, "summary", false);
+    return;
+  }
+
+  const availableIds = visibleLogs.map((log) => log.id);
   if (availableIds.includes(state.rawId) === false) {
     state.rawId = null;
   }
@@ -1236,8 +1317,8 @@ function renderStoragePage(storageKey) {
     state.summaryId = null;
   }
 
-  renderLogListPage(storageKey, "raw", logs, state.rawId);
-  renderLogListPage(storageKey, "summary", logs, state.summaryId);
+  renderLogListPage(storageKey, "raw", visibleLogs, state.rawId);
+  renderLogListPage(storageKey, "summary", visibleLogs, state.summaryId);
 
   if (state.rawId !== null) {
     loadRawLog(storageKey, state.rawId);
@@ -1254,11 +1335,106 @@ function renderStoragePage(storageKey) {
   }
 }
 
-function renderLogListPage(storageKey, type, logs, activeId) {
+function getStorageLogs(storageKey) {
+  return allLogs.filter((log) => {
+    return log.storage_name === storageKey && log.site_id === storageState[storageKey].activeSiteId;
+  });
+}
+
+function getVisibleLogs(storageKey, logs) {
+  const state = storageState[storageKey];
+  const query = state.logSearchQuery.trim().toLowerCase();
+  const filteredLogs = logs.filter((log) => {
+    if (query === "") {
+      return true;
+    }
+    const haystack = [log.filename, log.site_name, log.storage_name]
+      .filter((value) => value !== null && value !== undefined)
+      .join(" ")
+      .toLowerCase();
+    return haystack.includes(query);
+  });
+
+  filteredLogs.sort((left, right) => {
+    if (state.logSortMode === "oldest") {
+      return new Date(left.created_at).getTime() - new Date(right.created_at).getTime();
+    }
+    if (state.logSortMode === "name-asc") {
+      return left.filename.localeCompare(right.filename, "ko");
+    }
+    if (state.logSortMode === "name-desc") {
+      return right.filename.localeCompare(left.filename, "ko");
+    }
+    return new Date(right.created_at).getTime() - new Date(left.created_at).getTime();
+  });
+
+  return filteredLogs;
+}
+
+function syncStorageLogControls(storageKey, totalCount, filteredCount) {
+  const state = storageState[storageKey];
+  const view = storageViews[storageKey];
+  const resultText = filteredCount === totalCount ? "총 " + filteredCount + "건" : "총 " + totalCount + "건 중 " + filteredCount + "건";
+  const controls = [
+    [view.rawSearchEl, state.logSearchQuery],
+    [view.summarySearchEl, state.logSearchQuery],
+    [view.rawSortEl, state.logSortMode],
+    [view.summarySortEl, state.logSortMode],
+    [view.rawPageSizeEl, String(state.pageSize)],
+    [view.summaryPageSizeEl, String(state.pageSize)],
+    [view.rawCountEl, resultText],
+    [view.summaryCountEl, resultText],
+  ];
+
+  for (const [element, value] of controls) {
+    if (element === null) {
+      continue;
+    }
+    if (element instanceof HTMLInputElement || element instanceof HTMLSelectElement) {
+      element.value = value;
+      continue;
+    }
+    element.textContent = value;
+  }
+}
+
+function updateLogPagination(storageKey, type, totalCount, page, pageCount) {
   const view = storageViews[storageKey];
   const container = type === "raw" ? view.rawListEl : view.summaryListEl;
+  const statusEl = type === "raw" ? view.rawPageStatusEl : view.summaryPageStatusEl;
+  const prevButton = document.querySelector('[data-action="log-page-prev"][data-storage="' + storageKey + '"][data-log-type="' + type + '"]');
+  const nextButton = document.querySelector('[data-action="log-page-next"][data-storage="' + storageKey + '"][data-log-type="' + type + '"]');
+
+  if (statusEl !== null) {
+    statusEl.textContent = totalCount === 0 ? "0 / 0" : page + " / " + pageCount;
+  }
+  if (prevButton !== null) {
+    prevButton.disabled = page <= 1;
+  }
+  if (nextButton !== null) {
+    nextButton.disabled = pageCount === 0 || page >= pageCount;
+  }
+  if (container !== null && totalCount === 0) {
+    container.innerHTML = "<div class='empty'>표시할 로그가 없습니다.</div>";
+  }
+}
+
+function renderLogListPage(storageKey, type, logs, activeId) {
+  const view = storageViews[storageKey];
+  const state = storageState[storageKey];
+  const container = type === "raw" ? view.rawListEl : view.summaryListEl;
   const action = type === "raw" ? "open-raw-log" : "open-summary-log";
-  container.innerHTML = logs.map((log) => {
+  const pageKey = type === "raw" ? "rawPage" : "summaryPage";
+  const pageSize = state.pageSize;
+  const pageCount = Math.max(1, Math.ceil(logs.length / pageSize));
+  state[pageKey] = Math.min(Math.max(1, state[pageKey]), pageCount);
+  const page = state[pageKey];
+  const startIndex = (page - 1) * pageSize;
+  const pageLogs = logs.slice(startIndex, startIndex + pageSize);
+
+  updateLogPagination(storageKey, type, logs.length, page, pageCount);
+
+  container.innerHTML = pageLogs.map((log) => {
     const activeClass = log.id === activeId ? " active" : "";
     return "<button class='log-item " + activeClass + "' data-action='" + action + "' data-storage='" + storageKey + "' data-id='" + log.id + "' type='button'>" +
       "<strong>" + escapeHtml(type === "raw" ? log.filename : log.filename + "_summary") + "</strong>" +
@@ -1305,6 +1481,7 @@ function renderSummaryEmptyState(storageKey, message) {
   state.currentSummarySections = {};
   state.currentSpecialNotes = [];
   state.activeSummarySection = "overview";
+  renderSummaryRawVisibility(storageKey);
   renderSummarySectionView(storageKey);
 }
 
@@ -1350,7 +1527,19 @@ async function loadSummary(storageKey, logId) {
   storageState[storageKey].currentManualFields = payload.manual_fields || createEmptyManualFields();
   storageState[storageKey].specialNoteDraft = "";
   storageState[storageKey].specialNoteSourceId = "";
+  renderSummaryRawVisibility(storageKey);
   renderSummarySectionView(storageKey);
+}
+
+function renderSummaryRawVisibility(storageKey) {
+  const view = storageViews[storageKey];
+  const shouldShow = storageState[storageKey].showSummaryRaw;
+  if (view.summaryRawEl !== null) {
+    view.summaryRawEl.hidden = !shouldShow;
+  }
+  if (view.summaryRawToggleEl !== null) {
+    view.summaryRawToggleEl.textContent = shouldShow ? "원문 접기" : "원문 펼치기";
+  }
 }
 
 function renderSummaryFieldsMarkup(summary) {
@@ -1623,7 +1812,7 @@ async function loadRequestPosts() {
 async function loadBugPosts() {
   const { payload } = await getJson("/bugs");
   allBugPosts = Array.isArray(payload) ? payload : [];
-  renderBugPosts(allBugPosts);
+  renderFilteredBugPosts();
 }
 
 function renderFilteredRequestPosts() {
@@ -1655,6 +1844,9 @@ function updateRequestFilterButtons() {
 }
 
 function renderRequestPosts(posts) {
+  if (requestCountEl !== null) {
+    requestCountEl.textContent = posts.length + "건";
+  }
   if (posts.length === 0) {
     requestListEl.innerHTML = "<div class='empty'>등록된 수정 요청이 없습니다.</div>";
     return;
@@ -1680,9 +1872,28 @@ function renderRequestPosts(posts) {
   }).join("");
 }
 
+function renderFilteredBugPosts() {
+  const keyword = bugSearchEl && typeof bugSearchEl.value === "string" ? bugSearchEl.value.trim().toLowerCase() : "";
+  const filteredPosts = allBugPosts.filter((post) => {
+    if (keyword === "") {
+      return true;
+    }
+    const haystack = [post.title, post.content, post.author]
+      .filter((value) => value !== null && value !== undefined)
+      .join(" ")
+      .toLowerCase();
+    return haystack.includes(keyword);
+  });
+  renderBugPosts(filteredPosts);
+}
+
 function renderBugPosts(posts) {
   if (bugListEl === null) {
     return;
+  }
+
+  if (bugCountEl !== null) {
+    bugCountEl.textContent = posts.length + "건";
   }
 
   if (posts.length === 0) {

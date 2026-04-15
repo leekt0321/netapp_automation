@@ -659,6 +659,10 @@ textarea {
   gap: 10px;
 }
 
+.log-list-vertical {
+  align-content: start;
+}
+
 [data-role="raw-log-list-page"],
 [data-role="summary-log-list-page"],
 [data-role="raw-log-detail-page"],
@@ -666,9 +670,64 @@ textarea {
   min-width: 0;
 }
 
+[data-role="raw-log-list-page"],
+[data-role="summary-log-list-page"] {
+  display: grid;
+  gap: 14px;
+  align-content: start;
+}
+
 .log-list {
   max-height: 380px;
   overflow: auto;
+}
+
+.log-toolbar,
+.list-pagination,
+.summary-overview-tools {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.log-toolbar {
+  flex-wrap: wrap;
+  margin-bottom: 14px;
+}
+
+.log-toolbar input,
+.log-toolbar select {
+  min-height: 44px;
+}
+
+.log-toolbar input[type="search"] {
+  flex: 1 1 240px;
+}
+
+.list-count,
+.list-page-status {
+  color: var(--text-muted);
+  font-size: 0.84rem;
+  font-weight: 600;
+}
+
+.list-count {
+  margin-left: auto;
+}
+
+.list-pagination {
+  justify-content: flex-end;
+  margin-top: 14px;
+}
+
+.list-pagination button[disabled] {
+  opacity: 0.45;
+  cursor: default;
+}
+
+.summary-overview-tools {
+  justify-content: flex-end;
+  margin-bottom: 12px;
 }
 
 .log-item {
@@ -744,6 +803,12 @@ pre {
 
 .summary-section-tabs {
   margin-bottom: 16px;
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  padding: 8px 0;
+  background: linear-gradient(180deg, rgba(248, 250, 252, 0.96), rgba(248, 250, 252, 0.82));
+  backdrop-filter: blur(8px);
 }
 
 .summary-subfilter-tabs {
@@ -932,16 +997,26 @@ pre {
     margin-bottom: 0;
   }
 
+  [data-role="storage-raw-view"] .detail-panel > .log-toolbar,
+  [data-role="storage-summary-view"] .detail-panel > .log-toolbar {
+    grid-column: 1;
+    grid-row: 2;
+    align-self: start;
+  }
+
   [data-role="raw-log-list-page"],
   [data-role="summary-log-list-page"] {
-    position: sticky;
-    top: 14px;
+    grid-column: 1;
+    grid-row: 3;
   }
 
   [data-role="raw-log-detail-page"],
   [data-role="summary-log-detail-page"] {
+    grid-column: 2;
+    grid-row: 2 / span 2;
     display: grid;
     gap: 14px;
+    min-width: 0;
   }
 
   .log-list-vertical {
@@ -1013,6 +1088,14 @@ pre {
   .request-list {
     overflow: visible;
     padding-right: 0;
+  }
+
+  .list-count {
+    margin-left: 0;
+  }
+
+  .list-pagination {
+    justify-content: space-between;
   }
 }
 

@@ -308,8 +308,28 @@
                   <p>파일 목록에서 선택한 원본 로그를 확인합니다.</p>
                 </div>
               </div>
+              <div class="log-toolbar" data-storage="storage1">
+                <input data-action="log-search" data-role="raw-log-search" data-storage="storage1" type="search" placeholder="파일명으로 검색">
+                <select data-action="log-sort" data-role="raw-log-sort" data-storage="storage1">
+                  <option value="newest">최신순</option>
+                  <option value="oldest">오래된순</option>
+                  <option value="name-asc">이름 오름차순</option>
+                  <option value="name-desc">이름 내림차순</option>
+                </select>
+                <select data-action="log-page-size" data-role="raw-log-page-size" data-storage="storage1">
+                  <option value="10">10개</option>
+                  <option value="20">20개</option>
+                  <option value="50">50개</option>
+                </select>
+                <span class="list-count" data-role="raw-log-count" data-storage="storage1"></span>
+              </div>
               <div data-role="raw-log-list-page" data-storage="storage1">
                 <div class="log-list-vertical" data-role="raw-log-list" data-storage="storage1"></div>
+                <div class="list-pagination" data-storage="storage1">
+                  <button class="secondary" data-action="log-page-prev" data-storage="storage1" data-log-type="raw" type="button">이전</button>
+                  <span class="list-page-status" data-role="raw-log-page-status" data-storage="storage1"></span>
+                  <button class="secondary" data-action="log-page-next" data-storage="storage1" data-log-type="raw" type="button">다음</button>
+                </div>
               </div>
               <div data-role="raw-log-detail-page" data-storage="storage1" hidden>
                 <div class="preview-head">
@@ -334,8 +354,28 @@
                   <p>파일 목록에서 선택한 summary를 확인합니다.</p>
                 </div>
               </div>
+              <div class="log-toolbar" data-storage="storage1">
+                <input data-action="log-search" data-role="summary-log-search" data-storage="storage1" type="search" placeholder="파일명으로 검색">
+                <select data-action="log-sort" data-role="summary-log-sort" data-storage="storage1">
+                  <option value="newest">최신순</option>
+                  <option value="oldest">오래된순</option>
+                  <option value="name-asc">이름 오름차순</option>
+                  <option value="name-desc">이름 내림차순</option>
+                </select>
+                <select data-action="log-page-size" data-role="summary-log-page-size" data-storage="storage1">
+                  <option value="10">10개</option>
+                  <option value="20">20개</option>
+                  <option value="50">50개</option>
+                </select>
+                <span class="list-count" data-role="summary-log-count" data-storage="storage1"></span>
+              </div>
               <div data-role="summary-log-list-page" data-storage="storage1">
                 <div class="log-list-vertical" data-role="summary-log-list" data-storage="storage1"></div>
+                <div class="list-pagination" data-storage="storage1">
+                  <button class="secondary" data-action="log-page-prev" data-storage="storage1" data-log-type="summary" type="button">이전</button>
+                  <span class="list-page-status" data-role="summary-log-page-status" data-storage="storage1"></span>
+                  <button class="secondary" data-action="log-page-next" data-storage="storage1" data-log-type="summary" type="button">다음</button>
+                </div>
               </div>
               <div data-role="summary-log-detail-page" data-storage="storage1" hidden>
                 <div class="preview-head">
@@ -363,6 +403,9 @@
                   <button class="summary-section-button" data-action="summary-section-view" data-storage="storage1" data-summary-section="특이사항" type="button">특이사항</button>
                 </div>
                 <div data-role="summary-overview-page" data-storage="storage1">
+                  <div class="summary-overview-tools">
+                    <button class="secondary" data-action="toggle-summary-raw" data-role="summary-raw-toggle" data-storage="storage1" type="button">원문 펼치기</button>
+                  </div>
                   <div class="summary-grid" data-role="summary-grid" data-storage="storage1"></div>
                   <pre data-role="summary-raw" data-storage="storage1"></pre>
                 </div>
@@ -445,8 +488,28 @@
                 <p>파일 목록에서 선택한 원본 로그를 확인합니다.</p>
               </div>
             </div>
+            <div class="log-toolbar" data-storage="storage2">
+              <input data-action="log-search" data-role="raw-log-search" data-storage="storage2" type="search" placeholder="파일명으로 검색">
+              <select data-action="log-sort" data-role="raw-log-sort" data-storage="storage2">
+                <option value="newest">최신순</option>
+                <option value="oldest">오래된순</option>
+                <option value="name-asc">이름 오름차순</option>
+                <option value="name-desc">이름 내림차순</option>
+              </select>
+              <select data-action="log-page-size" data-role="raw-log-page-size" data-storage="storage2">
+                <option value="10">10개</option>
+                <option value="20">20개</option>
+                <option value="50">50개</option>
+              </select>
+              <span class="list-count" data-role="raw-log-count" data-storage="storage2"></span>
+            </div>
             <div data-role="raw-log-list-page" data-storage="storage2">
               <div class="log-list-vertical" data-role="raw-log-list" data-storage="storage2"></div>
+              <div class="list-pagination" data-storage="storage2">
+                <button class="secondary" data-action="log-page-prev" data-storage="storage2" data-log-type="raw" type="button">이전</button>
+                <span class="list-page-status" data-role="raw-log-page-status" data-storage="storage2"></span>
+                <button class="secondary" data-action="log-page-next" data-storage="storage2" data-log-type="raw" type="button">다음</button>
+              </div>
             </div>
             <div data-role="raw-log-detail-page" data-storage="storage2" hidden>
               <div class="preview-head">
@@ -471,8 +534,28 @@
                 <p>파일 목록에서 선택한 summary를 확인합니다.</p>
               </div>
             </div>
+            <div class="log-toolbar" data-storage="storage2">
+              <input data-action="log-search" data-role="summary-log-search" data-storage="storage2" type="search" placeholder="파일명으로 검색">
+              <select data-action="log-sort" data-role="summary-log-sort" data-storage="storage2">
+                <option value="newest">최신순</option>
+                <option value="oldest">오래된순</option>
+                <option value="name-asc">이름 오름차순</option>
+                <option value="name-desc">이름 내림차순</option>
+              </select>
+              <select data-action="log-page-size" data-role="summary-log-page-size" data-storage="storage2">
+                <option value="10">10개</option>
+                <option value="20">20개</option>
+                <option value="50">50개</option>
+              </select>
+              <span class="list-count" data-role="summary-log-count" data-storage="storage2"></span>
+            </div>
             <div data-role="summary-log-list-page" data-storage="storage2">
               <div class="log-list-vertical" data-role="summary-log-list" data-storage="storage2"></div>
+              <div class="list-pagination" data-storage="storage2">
+                <button class="secondary" data-action="log-page-prev" data-storage="storage2" data-log-type="summary" type="button">이전</button>
+                <span class="list-page-status" data-role="summary-log-page-status" data-storage="storage2"></span>
+                <button class="secondary" data-action="log-page-next" data-storage="storage2" data-log-type="summary" type="button">다음</button>
+              </div>
             </div>
             <div data-role="summary-log-detail-page" data-storage="storage2" hidden>
               <div class="preview-head">
@@ -500,6 +583,9 @@
                 <button class="summary-section-button" data-action="summary-section-view" data-storage="storage2" data-summary-section="특이사항" type="button">특이사항</button>
               </div>
               <div data-role="summary-overview-page" data-storage="storage2">
+                <div class="summary-overview-tools">
+                  <button class="secondary" data-action="toggle-summary-raw" data-role="summary-raw-toggle" data-storage="storage2" type="button">원문 펼치기</button>
+                </div>
                 <div class="summary-grid" data-role="summary-grid" data-storage="storage2"></div>
                 <pre data-role="summary-raw" data-storage="storage2"></pre>
               </div>
@@ -582,8 +668,28 @@
                 <p>파일 목록에서 선택한 원본 로그를 확인합니다.</p>
               </div>
             </div>
+            <div class="log-toolbar" data-storage="storage3">
+              <input data-action="log-search" data-role="raw-log-search" data-storage="storage3" type="search" placeholder="파일명으로 검색">
+              <select data-action="log-sort" data-role="raw-log-sort" data-storage="storage3">
+                <option value="newest">최신순</option>
+                <option value="oldest">오래된순</option>
+                <option value="name-asc">이름 오름차순</option>
+                <option value="name-desc">이름 내림차순</option>
+              </select>
+              <select data-action="log-page-size" data-role="raw-log-page-size" data-storage="storage3">
+                <option value="10">10개</option>
+                <option value="20">20개</option>
+                <option value="50">50개</option>
+              </select>
+              <span class="list-count" data-role="raw-log-count" data-storage="storage3"></span>
+            </div>
             <div data-role="raw-log-list-page" data-storage="storage3">
               <div class="log-list-vertical" data-role="raw-log-list" data-storage="storage3"></div>
+              <div class="list-pagination" data-storage="storage3">
+                <button class="secondary" data-action="log-page-prev" data-storage="storage3" data-log-type="raw" type="button">이전</button>
+                <span class="list-page-status" data-role="raw-log-page-status" data-storage="storage3"></span>
+                <button class="secondary" data-action="log-page-next" data-storage="storage3" data-log-type="raw" type="button">다음</button>
+              </div>
             </div>
             <div data-role="raw-log-detail-page" data-storage="storage3" hidden>
               <div class="preview-head">
@@ -608,8 +714,28 @@
                 <p>파일 목록에서 선택한 summary를 확인합니다.</p>
               </div>
             </div>
+            <div class="log-toolbar" data-storage="storage3">
+              <input data-action="log-search" data-role="summary-log-search" data-storage="storage3" type="search" placeholder="파일명으로 검색">
+              <select data-action="log-sort" data-role="summary-log-sort" data-storage="storage3">
+                <option value="newest">최신순</option>
+                <option value="oldest">오래된순</option>
+                <option value="name-asc">이름 오름차순</option>
+                <option value="name-desc">이름 내림차순</option>
+              </select>
+              <select data-action="log-page-size" data-role="summary-log-page-size" data-storage="storage3">
+                <option value="10">10개</option>
+                <option value="20">20개</option>
+                <option value="50">50개</option>
+              </select>
+              <span class="list-count" data-role="summary-log-count" data-storage="storage3"></span>
+            </div>
             <div data-role="summary-log-list-page" data-storage="storage3">
               <div class="log-list-vertical" data-role="summary-log-list" data-storage="storage3"></div>
+              <div class="list-pagination" data-storage="storage3">
+                <button class="secondary" data-action="log-page-prev" data-storage="storage3" data-log-type="summary" type="button">이전</button>
+                <span class="list-page-status" data-role="summary-log-page-status" data-storage="storage3"></span>
+                <button class="secondary" data-action="log-page-next" data-storage="storage3" data-log-type="summary" type="button">다음</button>
+              </div>
             </div>
             <div data-role="summary-log-detail-page" data-storage="storage3" hidden>
               <div class="preview-head">
@@ -637,6 +763,9 @@
                 <button class="summary-section-button" data-action="summary-section-view" data-storage="storage3" data-summary-section="특이사항" type="button">특이사항</button>
               </div>
               <div data-role="summary-overview-page" data-storage="storage3">
+                <div class="summary-overview-tools">
+                  <button class="secondary" data-action="toggle-summary-raw" data-role="summary-raw-toggle" data-storage="storage3" type="button">원문 펼치기</button>
+                </div>
                 <div class="summary-grid" data-role="summary-grid" data-storage="storage3"></div>
                 <pre data-role="summary-raw" data-storage="storage3"></pre>
               </div>
@@ -729,6 +858,7 @@
                 <h3>수정 요청 게시판</h3>
                 <p>등록된 요청을 확인하고 수정하거나 삭제할 수 있습니다.</p>
               </div>
+              <span id="request-count" class="member-count">0건</span>
             </div>
             <div class="request-filter-bar">
               <div id="request-filter-tabs" class="request-filter-tabs">
@@ -776,6 +906,10 @@
                 <h3>버그 목록</h3>
                 <p>등록된 버그를 확인하고 수정하거나 삭제할 수 있습니다.</p>
               </div>
+              <span id="bug-count" class="member-count">0건</span>
+            </div>
+            <div class="request-filter-bar">
+              <input id="bug-search" type="text" placeholder="제목, 내용, 작성자로 검색">
             </div>
             <div id="bug-list" class="request-list"></div>
           </section>

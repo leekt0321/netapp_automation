@@ -62,6 +62,7 @@ export const requestListEl = document.getElementById("request-list");
 export const requestSubmitButtonEl = document.getElementById("request-submit-button");
 export const requestCancelButtonEl = document.getElementById("request-cancel-button");
 export const requestSearchEl = document.getElementById("request-search");
+export const requestCountEl = document.getElementById("request-count");
 export const requestFilterButtons = Array.from(document.querySelectorAll("[data-request-filter]"));
 export const bugFormEl = document.getElementById("bug-form");
 export const bugEditIdEl = document.getElementById("bug-edit-id");
@@ -71,6 +72,8 @@ export const bugStatusMessageEl = document.getElementById("bug-status-message");
 export const bugListEl = document.getElementById("bug-list");
 export const bugSubmitButtonEl = document.getElementById("bug-submit-button");
 export const bugCancelButtonEl = document.getElementById("bug-cancel-button");
+export const bugSearchEl = document.getElementById("bug-search");
+export const bugCountEl = document.getElementById("bug-count");
 
 export function createStorageViews(storageKeys) {
   const storageViews = {};
@@ -79,16 +82,27 @@ export function createStorageViews(storageKeys) {
       rawListEl: getStorageElement(storageKey, "raw-log-list"),
       rawListPageEl: getStorageElement(storageKey, "raw-log-list-page"),
       rawDetailPageEl: getStorageElement(storageKey, "raw-log-detail-page"),
+      rawSearchEl: getStorageElement(storageKey, "raw-log-search"),
+      rawSortEl: getStorageElement(storageKey, "raw-log-sort"),
+      rawPageSizeEl: getStorageElement(storageKey, "raw-log-page-size"),
+      rawCountEl: getStorageElement(storageKey, "raw-log-count"),
+      rawPageStatusEl: getStorageElement(storageKey, "raw-log-page-status"),
       rawNameEl: getStorageElement(storageKey, "raw-name"),
       rawMetaEl: getStorageElement(storageKey, "raw-meta"),
       rawContentEl: getStorageElement(storageKey, "raw-content"),
       summaryListEl: getStorageElement(storageKey, "summary-log-list"),
       summaryListPageEl: getStorageElement(storageKey, "summary-log-list-page"),
       summaryDetailPageEl: getStorageElement(storageKey, "summary-log-detail-page"),
+      summarySearchEl: getStorageElement(storageKey, "summary-log-search"),
+      summarySortEl: getStorageElement(storageKey, "summary-log-sort"),
+      summaryPageSizeEl: getStorageElement(storageKey, "summary-log-page-size"),
+      summaryCountEl: getStorageElement(storageKey, "summary-log-count"),
+      summaryPageStatusEl: getStorageElement(storageKey, "summary-log-page-status"),
       summaryNameEl: getStorageElement(storageKey, "summary-name"),
       summaryMetaEl: getStorageElement(storageKey, "summary-meta"),
       summaryGridEl: getStorageElement(storageKey, "summary-grid"),
       summaryRawEl: getStorageElement(storageKey, "summary-raw"),
+      summaryRawToggleEl: getStorageElement(storageKey, "summary-raw-toggle"),
       summaryOverviewPageEl: getStorageElement(storageKey, "summary-overview-page"),
       summarySectionPageEl: getStorageElement(storageKey, "summary-section-page"),
       summarySectionTitleEl: getStorageElement(storageKey, "summary-section-title"),
