@@ -67,8 +67,16 @@
 
 ### P3. 테스트 체계 복구
 
-- 현재 깨진 테스트 정리
-- 파서/서비스/API 테스트 재구성
+- 상태: 핵심 범위 구현 완료
+- 완료 범위
+  - 오래된 테스트를 현재 구조 기준으로 재구성
+  - parser 단위 테스트 추가
+  - auth/site/log/board/admin 테스트 추가
+  - 성공/실패 경로를 포함한 최소 회귀 세트 확보
+- 추후 보강 가능 항목
+  - PostgreSQL 전용 테스트 DB 전략 강화
+  - parser/운영 edge case 테스트 확대
+  - CI 자동 실행 연결
 
 ### P4. 프론트 구조 분리
 
@@ -716,35 +724,38 @@ P0는 아래 범위로 고정하는 것이 가장 현실적이다.
 
 ### 변경 대상 파일
 
-- [tests/test_upload_summary.py](/root/2026_project/tests/test_upload_summary.py:1)
-- 새 파일 후보:
-  - `tests/test_auth.py`
-  - `tests/test_sites.py`
-  - `tests/test_logs.py`
-  - `tests/test_boards.py`
-  - `tests/test_parser_netapp.py`
-  - `tests/conftest.py`
+- [tests/conftest.py](/root/2026_project/tests/conftest.py:1)
+- [tests/test_auth.py](/root/2026_project/tests/test_auth.py:1)
+- [tests/test_sites.py](/root/2026_project/tests/test_sites.py:1)
+- [tests/test_logs.py](/root/2026_project/tests/test_logs.py:1)
+- [tests/test_boards.py](/root/2026_project/tests/test_boards.py:1)
+- [tests/test_admin.py](/root/2026_project/tests/test_admin.py:1)
+- [tests/test_parser_netapp.py](/root/2026_project/tests/test_parser_netapp.py:1)
 
 ### 파일별 수정 목적
 
-- `test_upload_summary.py`
-  - 오래된 시그니처/가정 제거
 - `conftest.py`
-  - PostgreSQL 테스트 환경 또는 분리된 test DB fixture 구성
+  - 분리된 test DB 및 업로드 디렉토리 fixture 구성
 - `test_parser_netapp.py`
   - 파서 핵심 케이스 fixture화
 - `test_logs.py`
-  - 업로드/조회/삭제/summary 생성 검증
+  - 업로드/조회/삭제/summary 생성 및 실패 경로 검증
 - `test_auth.py`
-  - 로그인/권한 테스트
+  - 로그인/승인/비밀번호 변경 테스트
+- `test_sites.py`
+  - 사이트 권한 정책 테스트
+- `test_boards.py`
+  - 게시판 공용 수정/삭제 정책 테스트
+- `test_admin.py`
+  - 관리자 세션/삭제 요청 reject/비활성화 테스트
 
 ### 구현 순서
 
 1. 기존 깨진 테스트를 현행 구조에 맞게 폐기 또는 재작성
 2. parser 단위 테스트 작성
-3. auth/service 단위 테스트 작성
-4. API 통합 테스트 작성
-5. PostgreSQL 테스트 DB 전략 확정
+3. auth/service/API 테스트 작성
+4. 게시판/관리자/실패 경로 테스트 확장
+5. 테스트 DB 전략 정리
 6. 배포 전 기본 테스트 세트 정의
 
 ### 완료 조건
