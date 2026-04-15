@@ -40,9 +40,18 @@
 
 ### P0. 인증/인가 체계 도입
 
-- 서버가 실제 로그인 상태를 강제하도록 변경
-- 보호 API에 auth dependency 적용
-- 관리자 권한 모델 도입
+- 상태: 핵심 범위 구현 완료
+- 완료 범위
+  - 서버가 실제 로그인 상태를 강제하도록 변경
+  - 보호 API에 auth dependency 적용
+  - 관리자 권한 모델 도입
+  - 관리자 승인형 회원가입 도입
+  - 로그 삭제 요청 -> 관리자 승인/거부 흐름 적용
+  - 비밀번호 변경, 세션 유지시간 24시간 적용
+- 보류 범위
+  - 세션 강제 종료/세션별 제어
+  - 사용자 제한 세분화
+  - 로그 외 리소스까지 승인형 삭제 확장
 
 ### P1. PostgreSQL 스키마 관리 정리
 
@@ -83,6 +92,30 @@
 
 ## 2. P0. 인증/인가 체계 도입
 
+### 현재 상태
+
+P0는 현재 기준으로 핵심 목표가 구현 완료된 상태다.
+
+완료된 항목:
+
+- 서버 세션 + HttpOnly 쿠키 기반 인증 적용
+- `admin` / `user` 2단계 권한 모델 적용
+- 보호 API에 인증/권한 체크 적용
+- 관리자 전용 회원 관리 화면 및 사용자 활성/비활성 처리
+- 일반 사용자의 로그 삭제 요청, 관리자의 승인/거부 처리
+- 비밀번호 변경 기능
+- 게시판/버그 게시판 공용 수정/삭제 정책 반영
+- 스토리지별 권한 노출 정리
+- 회원가입 후 `승인 대기 -> 관리자 승인 -> 로그인 가능` 흐름 적용
+- 세션 유지시간 24시간 적용
+
+보류된 항목:
+
+- 세션별 강제 종료 // X
+- 사용자 제한 사유/기간/세부 권한 모델  // 보류
+- 로그 외 다른 리소스까지 승인형 삭제 확대 // X
+
+
 ### 목표
 
 현재의 localStorage 기반 "화면용 로그인"을 실제 서버 인증/인가 체계로 바꾸고,  
@@ -90,6 +123,12 @@
 
 또한 "삭제 가능 여부"를 단순 role 제한으로 끝내지 않고,  
 `user가 삭제 요청을 올리고 admin이 허용/거부하는 승인형 흐름`으로 재설계한다.
+
+현재 구현 결과:
+
+- 위 목표는 로그 삭제 기준으로 구현 완료
+- 게시판/버그 게시판은 승인형 삭제 대상에서 제외하고 공용 수정/삭제 방식으로 확정
+- 회원가입은 이메일 인증 대신 관리자 승인형으로 확정
 
 ### 왜 먼저 해야 하는가
 
@@ -101,6 +140,11 @@
   - 일반 사용자는 사이트 추가/수정/삭제를 하면 안 됨
   - 삭제는 바로 실행되면 안 되고 관리자 승인 후 실행되어야 함
   - 관리자는 로그인된 사용자 상태를 보고 제한할 수 있어야 함
+
+현재 상태 메모:
+
+- 앞의 세 가지는 구현 완료
+- 마지막 항목은 "세션 목록 확인"까지 구현됐고, 세션별 강제 종료/세밀한 제한은 보류
 
 ### 변경 대상 파일
 
@@ -142,6 +186,13 @@
   - 회원 관리 목록 접근 불가
   - 사이트 관리 접근 불가
 
+현재 적용 상태:
+
+- 위 권한 모델은 현재 코드에 반영됨
+- 추가 정책 확정 사항:
+  - 게시판/버그 게시판은 일반 사용자도 공용 수정/삭제 가능
+  - 로그 삭제만 승인형 유지
+
 #### 삭제 정책
 
 - 기존 구조:
@@ -152,12 +203,22 @@
   - 허용 시 실제 삭제 실행
   - 거부 시 삭제 미실행 + 상태 기록
 
+현재 적용 상태:
+
+- `log` 대상에 대해 구현 완료
+- `request_post`, `bug_post`는 승인형 대상에서 제외
+
 #### 사용자 제한 정책
 
 - 관리자는 현재 로그인된 사용자를 볼 수 있어야 함
 - 관리자는 이상 사용자에 대해 제한 조치를 할 수 있어야 함
 - 제한 상태 사용자는 로그인 불가 또는 주요 기능 사용 제한
 - 최소한 `is_active`만으로 끝낼지, 더 세부적인 제한 상태를 둘지 결정 필요
+
+현재 적용 상태:
+
+- 현재는 `is_active` 기반 활성/비활성만 적용
+- 세분화된 제한 정책은 보류
 
 #### 인증 방식 후보
 
@@ -170,6 +231,11 @@
   - 현재 구조에서는 오히려 복잡도 증가 가능
 
 현재 프로젝트 성격상 1안이 더 적합할 가능성이 높다.
+
+확정 결과:
+
+- 서버 세션 + HttpOnly 쿠키 방식으로 구현 완료
+- JWT는 현재 범위에서 채택하지 않음
 
 ### 파일별 수정 목적
 
@@ -217,12 +283,30 @@
   - 권한별 버튼 표시/비표시 대응
   - admin 전용 패널 자리 확보
 
+현재 구현 기준 주요 반영 파일:
+
+- [app/api/auth_routes.py](/root/2026_project/app/api/auth_routes.py:1)
+- [app/api/admin_routes.py](/root/2026_project/app/api/admin_routes.py:1)
+- [app/api/log_routes.py](/root/2026_project/app/api/log_routes.py:1)
+- [app/api/site_routes.py](/root/2026_project/app/api/site_routes.py:1)
+- [app/api/board_routes.py](/root/2026_project/app/api/board_routes.py:1)
+- [app/services/auth_service.py](/root/2026_project/app/services/auth_service.py:1)
+- [app/services/admin_service.py](/root/2026_project/app/services/admin_service.py:1)
+- [app/models.py](/root/2026_project/app/models.py:1)
+- [app/core/lifecycle.py](/root/2026_project/app/core/lifecycle.py:1)
+- [app/static/app.js](/root/2026_project/app/static/app.js:1)
+- [app/templates/index.html](/root/2026_project/app/templates/index.html:1)
+
+현재 이 문단의 나머지 내용은 "당시 설계 후보"로 남겨두되,  
+실제 구현은 위 파일들을 기준으로 판단하는 것이 맞다.
+
 ### 추가 테이블/컬럼 후보
 
 #### 사용자 관련
 
 - `users.role`
 - `users.is_active` 유지
+- `users.approved_at`
 - 필요 시
   - `users.restricted_reason`
   - `users.last_login_at`
@@ -257,6 +341,13 @@
 
 - `log`
 - 필요하면 향후 `site`, `request_post`, `bug_post` 등으로 확장 가능
+
+현재 구현 상태:
+
+- `users.role`, `users.is_active`, `users.approved_at` 반영됨
+- `user_sessions` 반영됨
+- `deletion_requests` 반영됨
+- `target_type` 확장은 아직 하지 않고 `log` 중심으로 운용
 
 `status` 예시:
 
