@@ -1,183 +1,119 @@
-const STORAGE_KEYS = ["storage1", "storage2", "storage3"];
+import {
+  ADMIN_REFRESH_INTERVAL_MS,
+  MANUAL_FIELD_KEYS,
+  SESSION_USER_STORAGE_KEY,
+  STORAGE_KEYS,
+  pageMeta,
+} from "/static/js/constants.js";
+import {
+  activeSessionListEl,
+  appShellEl,
+  bugCancelButtonEl,
+  bugContentEl,
+  bugEditIdEl,
+  bugFormEl,
+  bugListEl,
+  bugStatusMessageEl,
+  bugSubmitButtonEl,
+  bugTitleEl,
+  changePasswordFormEl,
+  changePasswordFormMembersEl,
+  changePasswordStatusEl,
+  changePasswordStatusMembersEl,
+  createStorageViews,
+  currentPasswordEl,
+  currentPasswordMembersEl,
+  deleteFormEl,
+  deleteFormMembersEl,
+  deletePasswordEl,
+  deletePasswordMembersEl,
+  deleteStatusEl,
+  deleteStatusMembersEl,
+  deletionRequestListEl,
+  fileInputEl,
+  latestLogNameEl,
+  loginFormEl,
+  loginIdEl,
+  loginPasswordEl,
+  loginScreenEl,
+  loginStatusEl,
+  loginUserEl,
+  logoutButtonEl,
+  manualFieldsCloseEl,
+  manualFieldsFormEl,
+  manualFieldsModalEl,
+  manualFieldsResetEl,
+  manualFieldsStatusEl,
+  manualFieldsTitleEl,
+  memberCountEl,
+  memberListEl,
+  navButtons,
+  newPasswordEl,
+  newPasswordMembersEl,
+  openUploadManualFieldsButtonEl,
+  pageDescriptionEl,
+  pageSections,
+  pageTitleEl,
+  registerFormEl,
+  registerIdEl,
+  registerNameEl,
+  registerPasswordEl,
+  registerStatusEl,
+  requestCancelButtonEl,
+  requestContentEl,
+  requestEditIdEl,
+  requestFilterButtons,
+  requestFormEl,
+  requestListEl,
+  requestSearchEl,
+  requestStatusEl,
+  requestStatusMessageEl,
+  requestSubmitButtonEl,
+  requestTitleEl,
+  siteIdEl,
+  statusEl,
+  storageNameEl,
+  totalLogCountEl,
+  uploadFileListEl,
+  uploadFormEl,
+} from "/static/js/dom.js";
+import {
+  createEmptyManualFields,
+  escapeHtml,
+  formatBytes,
+  formatDate,
+  getStatusBadgeClass,
+  isDesktopLogSplitView,
+  toStorageLabel,
+} from "/static/js/utils.js";
+import { createAppState, createStorageState } from "/static/js/state.js";
+import { deleteJson, getJson, postForm, postJson, putJson } from "/static/js/api.js";
+import {
+  applyHistoryState as applyHistoryStateModule,
+  getHistoryStateSnapshot as getHistoryStateSnapshotModule,
+  syncHistoryState as syncHistoryStateModule,
+} from "/static/js/history.js";
 
-const loginScreenEl = document.getElementById("login-screen");
-const appShellEl = document.getElementById("app-shell");
-const loginFormEl = document.getElementById("login-form");
-const loginIdEl = document.getElementById("login-id");
-const loginPasswordEl = document.getElementById("login-password");
-const loginStatusEl = document.getElementById("login-status");
-const registerFormEl = document.getElementById("register-form");
-const registerNameEl = document.getElementById("register-name");
-const registerIdEl = document.getElementById("register-id");
-const registerPasswordEl = document.getElementById("register-password");
-const registerStatusEl = document.getElementById("register-status");
-const loginUserEl = document.getElementById("login-user");
-const logoutButtonEl = document.getElementById("logout-button");
-const deleteFormEl = document.getElementById("delete-form");
-const deletePasswordEl = document.getElementById("delete-password");
-const deleteStatusEl = document.getElementById("delete-status");
-const deleteFormMembersEl = document.getElementById("delete-form-members");
-const deletePasswordMembersEl = document.getElementById("delete-password-members");
-const deleteStatusMembersEl = document.getElementById("delete-status-members");
-const changePasswordFormEl = document.getElementById("change-password-form");
-const currentPasswordEl = document.getElementById("current-password");
-const newPasswordEl = document.getElementById("new-password");
-const changePasswordStatusEl = document.getElementById("change-password-status");
-const changePasswordFormMembersEl = document.getElementById("change-password-form-members");
-const currentPasswordMembersEl = document.getElementById("current-password-members");
-const newPasswordMembersEl = document.getElementById("new-password-members");
-const changePasswordStatusMembersEl = document.getElementById("change-password-status-members");
-const memberCountEl = document.getElementById("member-count");
-const memberListEl = document.getElementById("member-list");
-const activeSessionListEl = document.getElementById("active-session-list");
-const deletionRequestListEl = document.getElementById("deletion-request-list");
-
-const navButtons = Array.from(document.querySelectorAll(".nav-button"));
-const pageSections = Array.from(document.querySelectorAll(".page-section"));
-const pageTitleEl = document.getElementById("page-title");
-const pageDescriptionEl = document.getElementById("page-description");
-
-const uploadFormEl = document.getElementById("upload-form");
-const fileInputEl = document.getElementById("file");
-const storageNameEl = document.getElementById("storage-name");
-const siteIdEl = document.getElementById("site-id");
-const uploadFileListEl = document.getElementById("upload-file-list");
-const statusEl = document.getElementById("status");
-const totalLogCountEl = document.getElementById("total-log-count");
-const latestLogNameEl = document.getElementById("latest-log-name");
-const openUploadManualFieldsButtonEl = document.getElementById("open-upload-manual-fields");
-const manualFieldsModalEl = document.getElementById("manual-fields-modal");
-const manualFieldsTitleEl = document.getElementById("manual-fields-title");
-const manualFieldsFormEl = document.getElementById("manual-fields-form");
-const manualFieldsCloseEl = document.getElementById("manual-fields-close");
-const manualFieldsResetEl = document.getElementById("manual-fields-reset");
-const manualFieldsStatusEl = document.getElementById("manual-fields-status");
-
-const requestFormEl = document.getElementById("request-form");
-const requestEditIdEl = document.getElementById("request-edit-id");
-const requestStatusEl = document.getElementById("request-status");
-const requestTitleEl = document.getElementById("request-title");
-const requestContentEl = document.getElementById("request-content");
-const requestStatusMessageEl = document.getElementById("request-status-message");
-const requestListEl = document.getElementById("request-list");
-const requestSubmitButtonEl = document.getElementById("request-submit-button");
-const requestCancelButtonEl = document.getElementById("request-cancel-button");
-const requestSearchEl = document.getElementById("request-search");
-const requestFilterButtons = Array.from(document.querySelectorAll("[data-request-filter]"));
-const bugFormEl = document.getElementById("bug-form");
-const bugEditIdEl = document.getElementById("bug-edit-id");
-const bugTitleEl = document.getElementById("bug-title");
-const bugContentEl = document.getElementById("bug-content");
-const bugStatusMessageEl = document.getElementById("bug-status-message");
-const bugListEl = document.getElementById("bug-list");
-const bugSubmitButtonEl = document.getElementById("bug-submit-button");
-const bugCancelButtonEl = document.getElementById("bug-cancel-button");
-const MANUAL_FIELD_KEYS = ["install_date", "warranty", "maintenance", "office_name", "install_rack", "service", "manager_contact", "id_password", "asup", "aggr_diskcount_override"];
-const DESKTOP_LOG_MEDIA_QUERY = "(min-width: 1181px)";
-const SESSION_USER_STORAGE_KEY = "baobab.currentUser";
-const ADMIN_REFRESH_INTERVAL_MS = 10000;
-
-const pageMeta = {
-  dashboard: {
-    title: "Dashboard",
-    description: "업로드 파일 수와 최근 업로드 파일을 확인합니다.",
-  },
-  storage1: {
-    title: "스토리지1",
-    description: "스토리지1 내부 사이트별 원본 로그와 요약 로그를 확인합니다.",
-  },
-  storage2: {
-    title: "스토리지2",
-    description: "스토리지2 내부 사이트별 원본 로그와 요약 로그를 확인합니다.",
-  },
-  storage3: {
-    title: "스토리지3",
-    description: "스토리지3 내부 사이트별 원본 로그와 요약 로그를 확인합니다.",
-  },
-  members: {
-    title: "회원 관리 목록",
-    description: "회원가입된 계정 정보를 확인하고 내 계정을 관리합니다.",
-  },
-  bugs: {
-    title: "버그 모음",
-    description: "운영 중 확인된 버그와 추후 정리할 이슈를 모아봅니다.",
-  },
-  requests: {
-    title: "수정 요청 게시판",
-    description: "수정 요청을 등록하고 진행 상태를 관리합니다.",
-  },
-};
-
-function getStorageElement(storageKey, role) {
-  return document.querySelector('[data-storage="' + storageKey + '"][data-role="' + role + '"]');
-}
-
-const storageViews = {};
-const storageState = {};
-for (const storageKey of STORAGE_KEYS) {
-  storageViews[storageKey] = {
-    rawListEl: getStorageElement(storageKey, "raw-log-list"),
-    rawListPageEl: getStorageElement(storageKey, "raw-log-list-page"),
-    rawDetailPageEl: getStorageElement(storageKey, "raw-log-detail-page"),
-    rawNameEl: getStorageElement(storageKey, "raw-name"),
-    rawMetaEl: getStorageElement(storageKey, "raw-meta"),
-    rawContentEl: getStorageElement(storageKey, "raw-content"),
-    summaryListEl: getStorageElement(storageKey, "summary-log-list"),
-    summaryListPageEl: getStorageElement(storageKey, "summary-log-list-page"),
-    summaryDetailPageEl: getStorageElement(storageKey, "summary-log-detail-page"),
-    summaryNameEl: getStorageElement(storageKey, "summary-name"),
-    summaryMetaEl: getStorageElement(storageKey, "summary-meta"),
-    summaryGridEl: getStorageElement(storageKey, "summary-grid"),
-    summaryRawEl: getStorageElement(storageKey, "summary-raw"),
-    summaryOverviewPageEl: getStorageElement(storageKey, "summary-overview-page"),
-    summarySectionPageEl: getStorageElement(storageKey, "summary-section-page"),
-    summarySectionTitleEl: getStorageElement(storageKey, "summary-section-title"),
-    summarySectionMessageEl: getStorageElement(storageKey, "summary-section-message"),
-    eventLogFilterTabsEl: getStorageElement(storageKey, "event-log-filter-tabs"),
-    siteFormEl: getStorageElement(storageKey, "site-form"),
-    siteEditIdEl: getStorageElement(storageKey, "site-edit-id"),
-    siteNameInputEl: getStorageElement(storageKey, "site-name-input"),
-    siteStatusEl: getStorageElement(storageKey, "site-status"),
-    siteListEl: getStorageElement(storageKey, "site-list"),
-    siteCurrentEl: getStorageElement(storageKey, "site-current"),
-    logsViewEl: getStorageElement(storageKey, "storage-logs-view"),
-    sitesViewEl: getStorageElement(storageKey, "storage-sites-view"),
-    rawSectionEl: getStorageElement(storageKey, "storage-raw-view"),
-    summarySectionEl: getStorageElement(storageKey, "storage-summary-view"),
-  };
-  storageState[storageKey] = {
-    rawId: null,
-    summaryId: null,
-    activeSiteId: null,
-    activeView: "sites",
-    activeLogView: "raw",
-    activeSummarySection: "overview",
-    activeEventLogFilter: "all",
-    currentSummarySections: {},
-    currentSpecialNotes: [],
-    specialNoteDraft: "",
-    specialNoteSourceId: "",
-    currentManualFields: createEmptyManualFields(),
-  };
-}
-
-let allLogs = [];
-let allSites = [];
-let allRequestPosts = [];
-let allBugPosts = [];
-let allUsers = [];
-let allActiveSessions = [];
-let allDeletionRequests = [];
-let activeRequestFilter = "all";
-let uploadManualFields = createEmptyManualFields();
-let manualFieldsModalMode = "upload";
-let manualFieldsModalTarget = { storageKey: null, logId: null };
-let currentPage = "dashboard";
-let isApplyingHistoryState = false;
-let lastHistorySnapshot = "";
-let lastLogLayoutMode = isDesktopLogSplitView();
-let currentUser = null;
-let adminRefreshTimerId = null;
+const storageViews = createStorageViews(STORAGE_KEYS);
+const storageState = createStorageState(STORAGE_KEYS, createEmptyManualFields);
+const appState = createAppState(createEmptyManualFields, isDesktopLogSplitView);
+let allLogs = appState.allLogs;
+let allSites = appState.allSites;
+let allRequestPosts = appState.allRequestPosts;
+let allBugPosts = appState.allBugPosts;
+let allUsers = appState.allUsers;
+let allActiveSessions = appState.allActiveSessions;
+let allDeletionRequests = appState.allDeletionRequests;
+let activeRequestFilter = appState.activeRequestFilter;
+let uploadManualFields = appState.uploadManualFields;
+let manualFieldsModalMode = appState.manualFieldsModalMode;
+let manualFieldsModalTarget = appState.manualFieldsModalTarget;
+let currentPage = appState.currentPage;
+let isApplyingHistoryState = appState.isApplyingHistoryState;
+let lastHistorySnapshot = appState.lastHistorySnapshot;
+let lastLogLayoutMode = appState.lastLogLayoutMode;
+let currentUser = appState.currentUser;
+let adminRefreshTimerId = appState.adminRefreshTimerId;
 
 loginFormEl.addEventListener("submit", async (event) => {
   event.preventDefault();
@@ -190,13 +126,7 @@ loginFormEl.addEventListener("submit", async (event) => {
   }
 
   loginStatusEl.textContent = "로그인 확인 중...";
-  const response = await fetch("/auth/login", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    credentials: "same-origin",
-    body: JSON.stringify({ username, password }),
-  });
-  const payload = await response.json();
+  const { response, payload } = await postJson("/auth/login", { username, password });
 
   if (response.ok === false) {
     loginStatusEl.textContent = payload.detail || "로그인에 실패했습니다.";
@@ -220,13 +150,7 @@ registerFormEl.addEventListener("submit", async (event) => {
   }
 
   registerStatusEl.textContent = "회원가입 처리 중...";
-  const response = await fetch("/auth/register", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    credentials: "same-origin",
-    body: JSON.stringify({ username, password, full_name: fullName || null }),
-  });
-  const payload = await response.json();
+  const { response, payload } = await postJson("/auth/register", { username, password, full_name: fullName || null });
 
   if (response.ok === false) {
     registerStatusEl.textContent = payload.detail || "회원가입에 실패했습니다.";
@@ -325,12 +249,7 @@ if (manualFieldsFormEl !== null) {
     }
 
     manualFieldsStatusEl.textContent = "직접 입력 항목 저장 중...";
-    const response = await fetch("/logs/" + manualFieldsModalTarget.logId + "/manual-fields", {
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ manual_fields: fields }),
-    });
-    const payload = await response.json();
+    const { response, payload } = await putJson("/logs/" + manualFieldsModalTarget.logId + "/manual-fields", { manual_fields: fields });
     if (response.ok === false) {
       manualFieldsStatusEl.textContent = payload.detail || "직접 입력 항목 저장에 실패했습니다.";
       return;
@@ -411,11 +330,7 @@ uploadFormEl.addEventListener("submit", async (event) => {
   }
 
   try {
-    const response = await fetch("/upload", {
-      method: "POST",
-      body: formData,
-    });
-    const payload = await response.json();
+    const { response, payload } = await postForm("/upload", formData);
     if (response.ok === false) {
       statusEl.textContent = payload.detail || "업로드에 실패했습니다.";
       return;
@@ -453,13 +368,9 @@ requestFormEl.addEventListener("submit", async (event) => {
   const isEdit = editId !== "";
   requestStatusMessageEl.textContent = isEdit ? "수정 요청 저장 중..." : "수정 요청 등록 중...";
 
-  const response = await fetch(isEdit ? "/requests/" + editId : "/requests", {
-    method: isEdit ? "PUT" : "POST",
-    credentials: "same-origin",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ title, content, status, author }),
-  });
-  const payload = await response.json();
+  const requestUrl = isEdit ? "/requests/" + editId : "/requests";
+  const requestCall = isEdit ? putJson : postJson;
+  const { response, payload } = await requestCall(requestUrl, { title, content, status, author });
 
   if (response.ok === false) {
     requestStatusMessageEl.textContent = payload.detail || "수정 요청 저장에 실패했습니다.";
@@ -492,13 +403,9 @@ if (bugFormEl !== null) {
     const isEdit = editId !== "";
     bugStatusMessageEl.textContent = isEdit ? "버그 글 저장 중..." : "버그 글 등록 중...";
 
-    const response = await fetch(isEdit ? "/bugs/" + editId : "/bugs", {
-      method: isEdit ? "PUT" : "POST",
-      credentials: "same-origin",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ title, content, author }),
-    });
-    const payload = await response.json();
+    const bugUrl = isEdit ? "/bugs/" + editId : "/bugs";
+    const bugCall = isEdit ? putJson : postJson;
+    const { response, payload } = await bugCall(bugUrl, { title, content, author });
 
     if (response.ok === false) {
       bugStatusMessageEl.textContent = payload.detail || "버그 글 저장에 실패했습니다.";
@@ -842,10 +749,7 @@ function applyRolePermissions() {
 
 async function logoutCurrentUser() {
   try {
-    await fetch("/auth/logout", {
-      method: "POST",
-      credentials: "same-origin",
-    });
+    await postJson("/auth/logout", {});
   } catch (error) {
     console.error("logout failed", error);
   }
@@ -867,13 +771,7 @@ async function submitDeleteAccount(passwordInputEl, statusTargetEl, formTargetEl
     statusTargetEl.textContent = "회원탈퇴 처리 중...";
   }
 
-  const response = await fetch("/auth/delete", {
-    method: "DELETE",
-    headers: { "Content-Type": "application/json" },
-    credentials: "same-origin",
-    body: JSON.stringify({ password }),
-  });
-  const payload = await response.json();
+  const { response, payload } = await deleteJson("/auth/delete", { password });
 
   if (response.ok === false) {
     if (statusTargetEl !== null) {
@@ -932,13 +830,10 @@ async function submitChangePassword(formTargetEl, currentPasswordInputEl, newPas
     statusTargetEl.textContent = "비밀번호 변경 중...";
   }
 
-  const response = await fetch("/auth/password", {
-    method: "PUT",
-    headers: { "Content-Type": "application/json" },
-    credentials: "same-origin",
-    body: JSON.stringify({ current_password: currentPassword, new_password: newPassword }),
+  const { response, payload } = await putJson("/auth/password", {
+    current_password: currentPassword,
+    new_password: newPassword,
   });
-  const payload = await response.json();
 
   if (response.ok === false) {
     if (statusTargetEl !== null) {
@@ -1004,8 +899,7 @@ async function loadUsers() {
     renderUserList();
     return;
   }
-  const response = await fetch("/users", { credentials: "same-origin" });
-  const users = await response.json();
+  const { payload: users } = await getJson("/users");
   allUsers = Array.isArray(users) ? users : [];
   renderUserList();
 }
@@ -1014,13 +908,7 @@ async function updateUserStatus(userId, isActive) {
   if (isAdmin() === false) {
     return;
   }
-  const response = await fetch("/admin/users/" + userId + "/status", {
-    method: "PUT",
-    headers: { "Content-Type": "application/json" },
-    credentials: "same-origin",
-    body: JSON.stringify({ is_active: isActive }),
-  });
-  const payload = await response.json();
+  const { response, payload } = await putJson("/admin/users/" + userId + "/status", { is_active: isActive });
   if (response.ok === false) {
     window.alert(payload.detail || "사용자 상태 변경에 실패했습니다.");
     return;
@@ -1074,8 +962,7 @@ async function loadActiveSessions() {
     renderActiveSessions();
     return;
   }
-  const response = await fetch("/admin/sessions", { credentials: "same-origin" });
-  const payload = await response.json();
+  const { payload } = await getJson("/admin/sessions");
   allActiveSessions = Array.isArray(payload) ? payload : [];
   renderActiveSessions();
 }
@@ -1110,8 +997,7 @@ async function loadDeletionRequests() {
     renderDeletionRequests();
     return;
   }
-  const response = await fetch("/admin/deletion-requests", { credentials: "same-origin" });
-  const payload = await response.json();
+  const { payload } = await getJson("/admin/deletion-requests");
   allDeletionRequests = Array.isArray(payload) ? payload : [];
   renderDeletionRequests();
 }
@@ -1121,13 +1007,7 @@ async function reviewDeletionRequest(requestId, action) {
     return;
   }
 
-  const response = await fetch("/admin/deletion-requests/" + requestId + "/review", {
-    method: "PUT",
-    headers: { "Content-Type": "application/json" },
-    credentials: "same-origin",
-    body: JSON.stringify({ action }),
-  });
-  const payload = await response.json();
+  const { response, payload } = await putJson("/admin/deletion-requests/" + requestId + "/review", { action });
   if (response.ok === false) {
     window.alert(payload.detail || "삭제 요청 처리에 실패했습니다.");
     return;
@@ -1194,8 +1074,7 @@ function startAdminRefresh() {
 }
 
 async function loadSites() {
-  const response = await fetch("/sites", { credentials: "same-origin" });
-  const payload = await response.json();
+  const { payload } = await getJson("/sites");
   allSites = Array.isArray(payload) ? payload : [];
   renderSiteSections();
   syncUploadSiteOptions();
@@ -1203,8 +1082,7 @@ async function loadSites() {
 }
 
 async function loadLogs() {
-  const response = await fetch("/logs", { credentials: "same-origin" });
-  const logs = await response.json();
+  const { payload: logs } = await getJson("/logs");
   allLogs = Array.isArray(logs) ? logs : [];
   updateDashboard(allLogs);
   renderAllStoragePages();
@@ -1639,12 +1517,9 @@ async function saveStorageSite(storageKey) {
   }
 
   view.siteStatusEl.textContent = isEdit ? "사이트 수정 중..." : "사이트 등록 중...";
-  const response = await fetch(isEdit ? "/sites/" + editId : "/sites", {
-    method: isEdit ? "PUT" : "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ storage_name: storageKey, name: siteName }),
-  });
-  const payload = await response.json();
+  const siteUrl = isEdit ? "/sites/" + editId : "/sites";
+  const siteCall = isEdit ? putJson : postJson;
+  const { response, payload } = await siteCall(siteUrl, { storage_name: storageKey, name: siteName });
 
   if (response.ok === false) {
     view.siteStatusEl.textContent = payload.detail || "사이트 저장에 실패했습니다.";
@@ -1696,10 +1571,7 @@ async function deleteStorageSite(storageKey, siteId) {
     return;
   }
 
-  const response = await fetch("/sites/" + siteId, {
-    method: "DELETE",
-  });
-  const payload = await response.json();
+  const { response, payload } = await deleteJson("/sites/" + siteId);
 
   if (response.ok === false) {
     storageViews[storageKey].siteStatusEl.textContent = payload.detail || "사이트 삭제에 실패했습니다.";
@@ -1729,13 +1601,7 @@ async function requestSelectedLogDeletion(logId) {
   }
 
   statusEl.textContent = "삭제 요청 등록 중...";
-  const response = await fetch("/logs/" + logId + "/deletion-requests", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    credentials: "same-origin",
-    body: JSON.stringify({ reason }),
-  });
-  const payload = await response.json();
+  const { response, payload } = await postJson("/logs/" + logId + "/deletion-requests", { reason });
 
   if (response.ok === false) {
     statusEl.textContent = payload.detail || "삭제 요청 등록에 실패했습니다.";
@@ -1749,15 +1615,13 @@ async function requestSelectedLogDeletion(logId) {
 }
 
 async function loadRequestPosts() {
-  const response = await fetch("/requests", { credentials: "same-origin" });
-  const payload = await response.json();
+  const { payload } = await getJson("/requests");
   allRequestPosts = Array.isArray(payload) ? payload : [];
   renderFilteredRequestPosts();
 }
 
 async function loadBugPosts() {
-  const response = await fetch("/bugs", { credentials: "same-origin" });
-  const payload = await response.json();
+  const { payload } = await getJson("/bugs");
   allBugPosts = Array.isArray(payload) ? payload : [];
   renderBugPosts(allBugPosts);
 }
@@ -1847,9 +1711,8 @@ function renderBugPosts(posts) {
 }
 
 function populateRequestForm(postId) {
-  fetch("/requests", { credentials: "same-origin" })
-    .then((response) => response.json())
-    .then((posts) => {
+  getJson("/requests")
+    .then(({ payload: posts }) => {
       const target = Array.isArray(posts) ? posts.find((post) => post.id === postId) : null;
       if (target === undefined || target === null) {
         return;
@@ -1885,11 +1748,7 @@ async function deleteRequestPost(postId) {
     return;
   }
 
-  const response = await fetch("/requests/" + postId, {
-    method: "DELETE",
-    credentials: "same-origin",
-  });
-  const payload = await response.json();
+  const { response, payload } = await deleteJson("/requests/" + postId);
 
   if (response.ok === false) {
     requestStatusMessageEl.textContent = payload.detail || "수정 요청 삭제에 실패했습니다.";
@@ -1909,11 +1768,7 @@ async function deleteBugPost(postId) {
     return;
   }
 
-  const response = await fetch("/bugs/" + postId, {
-    method: "DELETE",
-    credentials: "same-origin",
-  });
-  const payload = await response.json();
+  const { response, payload } = await deleteJson("/bugs/" + postId);
 
   if (response.ok === false) {
     bugStatusMessageEl.textContent = payload.detail || "버그 글 삭제에 실패했습니다.";
@@ -1970,77 +1825,6 @@ function getSitesByStorage(storageKey) {
   return allSites.filter((site) => site.storage_name === storageKey);
 }
 
-function getStatusBadgeClass(status) {
-  if (status === "완료") {
-    return "done";
-  }
-  if (status === "진행중") {
-    return "doing";
-  }
-  return "wait";
-}
-
-function formatBytes(bytes) {
-  if (bytes === 0 || bytes === null || bytes === undefined) {
-    return "0 B";
-  }
-  const units = ["B", "KB", "MB", "GB"];
-  let value = bytes;
-  let index = 0;
-  while (value >= 1024 && index < units.length - 1) {
-    value /= 1024;
-    index += 1;
-  }
-  return value.toFixed(value >= 10 || index === 0 ? 0 : 1) + " " + units[index];
-}
-
-function formatDate(value) {
-  if (!value) {
-    return "-";
-  }
-  const parsed = new Date(value);
-  if (Number.isNaN(parsed.getTime())) {
-    return String(value);
-  }
-  return parsed.toLocaleString("ko-KR", {
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-    hour: "2-digit",
-    minute: "2-digit",
-  });
-}
-
-function escapeHtml(value) {
-  return String(value)
-    .replaceAll("&", "&amp;")
-    .replaceAll("<", "&lt;")
-    .replaceAll(">", "&gt;")
-    .replaceAll('"', "&quot;")
-    .replaceAll("'", "&#39;");
-}
-
-function toStorageLabel(storageKey) {
-  if (storageKey === "storage1") {
-    return "스토리지1";
-  }
-  if (storageKey === "storage2") {
-    return "스토리지2";
-  }
-  if (storageKey === "storage3") {
-    return "스토리지3";
-  }
-  return storageKey || "-";
-}
-
-function createEmptyManualFields() {
-  const fields = {};
-  for (const key of MANUAL_FIELD_KEYS) {
-    fields[key] = "";
-  }
-  return fields;
-}
-
 function fillManualFieldsForm(fields) {
   const values = fields || createEmptyManualFields();
   for (const key of MANUAL_FIELD_KEYS) {
@@ -2079,74 +1863,38 @@ function closeManualFieldsModal() {
   manualFieldsStatusEl.textContent = "";
 }
 
-function isDesktopLogSplitView() {
-  return window.matchMedia(DESKTOP_LOG_MEDIA_QUERY).matches;
-}
-
 function getHistoryStateSnapshot() {
-  const state = { view: "app", page: currentPage };
-  if (STORAGE_KEYS.includes(currentPage)) {
-    const storage = storageState[currentPage];
-    state.storage = {
-      activeSiteId: storage.activeSiteId,
-      activeView: storage.activeView,
-      activeLogView: storage.activeLogView,
-      rawId: storage.rawId,
-      summaryId: storage.summaryId,
-      activeSummarySection: storage.activeSummarySection,
-      activeEventLogFilter: storage.activeEventLogFilter,
-    };
-  }
-  return state;
+  return getHistoryStateSnapshotModule(currentPage, STORAGE_KEYS, storageState);
 }
 
 function syncHistoryState(mode) {
-  if (appShellEl.hidden || isApplyingHistoryState) {
-    return;
-  }
-
-  const historyMode = mode || "push";
-  if (historyMode === "skip") {
-    return;
-  }
-
-  const state = getHistoryStateSnapshot();
-  const snapshot = JSON.stringify(state);
-  if (historyMode === "push" && snapshot === lastHistorySnapshot) {
-    return;
-  }
-
-  if (historyMode === "replace") {
-    window.history.replaceState(state, "", window.location.pathname);
-  } else {
-    window.history.pushState(state, "", window.location.pathname);
-  }
-  lastHistorySnapshot = snapshot;
+  lastHistorySnapshot = syncHistoryStateModule({
+    appHidden: appShellEl.hidden,
+    isApplyingHistoryState,
+    mode,
+    lastHistorySnapshot,
+    currentPage,
+    storageKeys: STORAGE_KEYS,
+    storageState,
+  });
 }
 
 function applyHistoryState(state) {
-  if (!state || state.view !== "app") {
+  isApplyingHistoryState = true;
+  const applied = applyHistoryStateModule(state, {
+    pageMeta,
+    storageKeys: STORAGE_KEYS,
+    storageState,
+    showPage,
+    renderAllStoragePages,
+  });
+  if (applied === null) {
+    isApplyingHistoryState = false;
     return;
   }
-
-  isApplyingHistoryState = true;
-  currentPage = pageMeta[state.page] ? state.page : "dashboard";
-
-  if (STORAGE_KEYS.includes(currentPage) && state.storage) {
-    const storage = storageState[currentPage];
-    storage.activeSiteId = state.storage.activeSiteId === null ? null : Number(state.storage.activeSiteId);
-    storage.activeView = state.storage.activeView === "logs" ? "logs" : "sites";
-    storage.activeLogView = state.storage.activeLogView === "summary" ? "summary" : "raw";
-    storage.rawId = state.storage.rawId === null ? null : Number(state.storage.rawId);
-    storage.summaryId = state.storage.summaryId === null ? null : Number(state.storage.summaryId);
-    storage.activeSummarySection = state.storage.activeSummarySection || "overview";
-    storage.activeEventLogFilter = state.storage.activeEventLogFilter || "all";
-  }
-
-  showPage(currentPage, { history: "skip" });
-  renderAllStoragePages();
+  currentPage = applied.currentPage;
   isApplyingHistoryState = false;
-  lastHistorySnapshot = JSON.stringify(getHistoryStateSnapshot());
+  lastHistorySnapshot = applied.snapshot;
 }
 
 window.addEventListener("popstate", (event) => {
