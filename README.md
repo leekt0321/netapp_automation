@@ -297,6 +297,37 @@ uvicorn app.main:app --host 0.0.0.0 --port 8000
 - `PUT /bugs/{post_id}`
 - `DELETE /bugs/{post_id}`
 
+### 관리자/운영
+
+- `GET /admin/sessions`
+- `GET /admin/deletion-requests`
+- `PUT /admin/deletion-requests/{request_id}/review`
+- `PUT /admin/users/{user_id}/status`
+- `GET /admin/operations/integrity`
+
+## 운영 확인 지점
+
+문제가 생겼을 때는 아래 순서로 보면 됩니다.
+
+1. `GET /health`
+   - 앱 응답
+   - DB 연결
+   - 업로드 디렉토리 접근 가능 여부
+   - Alembic revision / 필수 테이블 누락 여부
+2. 서버 로그
+   - 요청 단위 로그
+   - 업로드/삭제/summary 조회 실패 로그
+3. 정합성 점검
+   - 관리자 API: `GET /admin/operations/integrity`
+   - CLI: `python scripts/check_integrity.py`
+
+CLI 예시:
+
+```bash
+/root/2026_project/.venv/bin/python scripts/check_integrity.py --json
+/root/2026_project/.venv/bin/python scripts/check_integrity.py --fail-on-issues
+```
+
 ## 릴리스 패키지 생성
 
 현재 릴리스는 `내장 Python + site-packages + 실행 스크립트`를 포함하는 실용 포터블 패키지로 생성합니다.

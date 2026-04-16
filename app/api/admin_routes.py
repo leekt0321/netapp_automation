@@ -7,6 +7,7 @@ from app.db import get_db
 from app.schemas.payloads import DeletionReviewPayload, UserStatusPayload
 from app.services.admin_service import list_active_sessions, list_deletion_requests, review_deletion_request, update_user_status
 from app.services.auth_service import require_admin_user
+from app.services.operations_service import build_integrity_report
 
 
 router = APIRouter(prefix="/admin")
@@ -44,3 +45,8 @@ def review_deletion_request_route(
     db: Session = Depends(get_db),
 ):
     return review_deletion_request(request_id, payload, admin_user, db)
+
+
+@router.get("/operations/integrity")
+def integrity_report_route(_: object = Depends(require_admin_user), db: Session = Depends(get_db)):
+    return build_integrity_report(db)

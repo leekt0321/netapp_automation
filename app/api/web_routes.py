@@ -1,12 +1,12 @@
 from fastapi import APIRouter, Depends, Request
 from fastapi.responses import HTMLResponse
-from sqlalchemy import text
 from sqlalchemy.orm import Session
 
 from app.config import settings
 from app.core.constants import REQUEST_STATUS_CHOICES, SERVER_SESSION_ID, STORAGE_CHOICES
 from app.core.paths import INDEX_PAGE
 from app.db import get_db
+from app.services.operations_service import build_health_report
 
 
 router = APIRouter()
@@ -30,10 +30,4 @@ def api_root(request: Request):
 
 @router.get("/health")
 def health(db: Session = Depends(get_db)):
-    try:
-        db.execute(text("SELECT 1"))
-        db_status = "ok"
-    except Exception as error:
-        db_status = f"error: {str(error)}"
-    return {"app": "ok", "db": db_status}
-
+    return build_health_report(db)

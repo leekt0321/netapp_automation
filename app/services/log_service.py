@@ -1,4 +1,5 @@
 import json
+import logging
 from datetime import datetime
 from pathlib import Path
 from typing import List, Optional
@@ -28,6 +29,9 @@ from app.parser_netapp import (
 )
 from app.schemas.payloads import ManualFieldsPayload, SpecialNotePayload
 from app.services.site_service import get_validated_site, validate_storage_name
+
+
+logger = logging.getLogger("storage_ai.log_service")
 
 
 def normalize_filename(requested_name: str, original_filename: str) -> str:
@@ -237,17 +241,44 @@ async def upload_log(file: UploadFile, save_name: str, storage_name: str, site: 
         db.add(log)
         db.commit()
         db.refresh(log)
+        logger.info(
+            "log_upload_success log_id=%s filename=%s storage=%s site_id=%s summary_path=%s size=%s",
+            log.id,
+            log.filename,
+            log.storage_name,
+            site.id,
+            log.summary_path,
+            log.size,
+        )
     except HTTPException:
         db.rollback()
         cleanup_generated_files(summary_path, saved_path)
+        logger.warning(
+            "log_upload_http_error requested_name=%s storage=%s site_id=%s",
+            requested_name,
+            storage_name,
+            site.id,
+        )
         raise
     except SQLAlchemyError:
         db.rollback()
         cleanup_generated_files(summary_path, saved_path)
+        logger.exception(
+            "log_upload_db_failure requested_name=%s storage=%s site_id=%s",
+            requested_name,
+            storage_name,
+            site.id,
+        )
         raise HTTPException(status_code=500, detail="로그 메타데이터 저장에 실패했습니다.")
     except Exception:
         db.rollback()
         cleanup_generated_files(summary_path, saved_path)
+        logger.exception(
+            "log_upload_unhandled_error requested_name=%s storage=%s site_id=%s",
+            requested_name,
+            storage_name,
+            site.id,
+        )
         raise
 
     return {
@@ -324,6 +355,7 @@ def get_raw_log(log_id: int, db: Session) -> dict:
     log = row[0]
     raw_path = Path(log.stored_path)
     if not raw_path.exists():
+        logger.warning("raw_log_missing_file log_id=%s path=%s", log.id, raw_path)
         raise HTTPException(status_code=404, detail="원본 로그 파일을 찾을 수 없습니다.")
     return {
         "id": log.id,
@@ -344,6 +376,7 @@ def download_log(log_id: int, db: Session) -> FileResponse:
         raise HTTPException(status_code=404, detail="업로드 파일을 찾을 수 없습니다.")
     raw_path = Path(log.stored_path)
     if not raw_path.exists():
+        logger.warning("raw_log_missing_download_file log_id=%s path=%s", log.id, raw_path)
         raise HTTPException(status_code=404, detail="원본 로그 파일을 찾을 수 없습니다.")
     return FileResponse(path=raw_path, filename=log.filename, media_type=log.content_type or "application/octet-stream")
 
@@ -363,8 +396,17 @@ def delete_log(log_id: int, db: Session) -> dict:
         db.commit()
     except SQLAlchemyError:
         db.rollback()
+        logger.exception("log_delete_db_failure log_id=%s filename=%s", log_id, filename)
         raise HTTPException(status_code=500, detail="로그 삭제 중 DB 처리에 실패했습니다.")
     cleanup_generated_files(raw_path, summary_path)
+    logger.info(
+        "log_delete_success log_id=%s filename=%s storage=%s site_id=%s summary_path=%s",
+        log_id,
+        filename,
+        storage_name,
+        site_id,
+        summary_stored_path,
+    )
     return {
         "deleted": True,
         "id": log_id,
@@ -382,6 +424,8 @@ def get_log_summary(log_id: int, db: Session) -> dict:
     log = row[0]
     summary_path = resolve_summary_path(log)
     summary_filename = summary_path.name
+    if summary_path.exists() is False:
+        logger.warning("summary_log_missing_file log_id=%s path=%s", log.id, summary_path)
     raw_text = read_summary_text(summary_path)
     display_raw_text = raw_text.replace("cluster_name:", "hostname:")
     original_raw_text = Path(log.stored_path).read_text(encoding="utf-8", errors="replace")
