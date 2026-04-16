@@ -52,13 +52,13 @@ export function escapeHtml(value) {
 
 export function toStorageLabel(storageKey) {
   if (storageKey === "storage1") {
-    return "스토리지1";
+    return "스토리지1팀";
   }
   if (storageKey === "storage2") {
-    return "스토리지2";
+    return "스토리지2팀";
   }
   if (storageKey === "storage3") {
-    return "스토리지3";
+    return "스토리지3팀";
   }
   return storageKey || "-";
 }

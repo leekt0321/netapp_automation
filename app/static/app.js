@@ -1531,8 +1531,42 @@ function renderSummaryFieldsMarkup(summary) {
 
   return entries.map(([key, value]) => {
     const safeValue = value === null || value === undefined || value === "" ? "-" : String(value);
-    return "<div class='summary-field'><strong>" + escapeHtml(key) + "</strong><span>" + escapeHtml(safeValue) + "</span></div>";
+    return "<div class='summary-field'><strong>" + escapeHtml(key) + "</strong><span>" + formatSummaryOverviewValue(key, safeValue) + "</span></div>";
   }).join("");
+}
+
+function formatSummaryOverviewValue(key, value) {
+  let formatted = value;
+
+  if (key === "Serial number") {
+    formatted = formatted.replace(/\s*,\s*/g, "\n");
+  }
+
+  if (key === "SP IP/SP Version") {
+    formatted = formatted.replace(/\s*,\s*/g, "\n");
+    formatted = formatted.replace(/\s*\/\s*/g, "/");
+  }
+
+  if (key === "maxraidsize, diskcount") {
+    formatted = formatted.replace(/\s*,\s*/g, "\n");
+    formatted = formatted.replace(/\s*:\s*/g, ": ");
+  }
+
+  if (key === "현재 장착 중인 확장 슬롯" || key === "현재 장착중인 확장 슬롯") {
+    formatted = formatted
+      .replace(/\s*,\s*/g, ", ")
+      .replace(/\s*,\s*(?=slot\s*\d+\s*:)/gi, "\n")
+      .replace(/\s*(slot\s*\d+\s*:)\s*/gi, (match, slotLabel, offset) => {
+        const normalizedLabel = slotLabel.replace(/\s+/g, " ").trim();
+        if (offset === 0) {
+          return normalizedLabel;
+        }
+        return "\n" + normalizedLabel;
+      })
+      .trim();
+  }
+
+  return escapeHtml(formatted).replace(/\n/g, "<br>");
 }
 
 function renderSummarySectionView(storageKey) {

@@ -23,16 +23,16 @@ export const pageMeta = {
     description: "업로드 파일 수와 최근 업로드 파일을 확인합니다.",
   },
   storage1: {
-    title: "스토리지1",
-    description: "스토리지1 내부 사이트별 원본 로그와 요약 로그를 확인합니다.",
+    title: "스토리지1팀",
+    description: "스토리지1팀 내부 사이트별 원본 로그와 요약 로그를 확인합니다.",
   },
   storage2: {
-    title: "스토리지2",
-    description: "스토리지2 내부 사이트별 원본 로그와 요약 로그를 확인합니다.",
+    title: "스토리지2팀",
+    description: "스토리지2팀 내부 사이트별 원본 로그와 요약 로그를 확인합니다.",
   },
   storage3: {
-    title: "스토리지3",
-    description: "스토리지3 내부 사이트별 원본 로그와 요약 로그를 확인합니다.",
+    title: "스토리지3팀",
+    description: "스토리지3팀 내부 사이트별 원본 로그와 요약 로그를 확인합니다.",
   },
   members: {
     title: "회원 관리 목록",

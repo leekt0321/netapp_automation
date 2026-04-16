@@ -13,7 +13,9 @@
           <p class="eyebrow">Baobab Technology</p>
           <h1>Storage Insight Portal</h1>
           <p class="login-copy">안녕하세요. 바오밥테크놀로지 장비현황관리 페이지입니다.</p>
-          <p class="login-copy muted-strong">CVP Ops Console 느낌의 집중된 워크스페이스로 로그, 회원, 요청 현황을 한 번에 관리합니다.</p>
+          <p class="login-copy muted-strong">스토리지 사이트별 로그 관리와 장비 정보를 쉽게 파악할 수 있도록 현황 관리를 위해 만들었습니다.</p>
+          <p class="login-copy muted-strong">추가적인 기능들을 넣을 예정이며, 수정할 부분이나 더 필요한 기능이 있으면 수정 게시판에 올려주세요</p>
+          <p class="login-copy muted-strong">오른쪽에서 회원가입을 하시면 admin계정에서 승인해야 해당 ID로 로그인이 됩니다.</p>
           <form id="login-form" class="login-form">
             <label>
               아이디
@@ -64,17 +66,17 @@
           </div>
         </div>
         <div class="sidebar-copy">
-          <p>스토리지별 로그 현황과 수정 요청을 한 화면 구조 안에서 관리할 수 있습니다.</p>
+          <p>스토리지팀 사이트별 로그, 장비현황, 에러정보 및 버그를 편리하게 확인할 수 있는 현황 관리를 목적으로 두고 있습니다.</p>
         </div>
       </div>
       <nav class="nav-list">
-        <button class="nav-button active" data-page="dashboard" type="button"><span class="nav-label">Dashboard</span><small>업로드와 전체 현황</small></button>
-        <button class="nav-button" data-page="storage1" type="button"><span class="nav-label">스토리지1</span><small>사이트와 로그 탐색</small></button>
-        <button class="nav-button" data-page="storage2" type="button"><span class="nav-label">스토리지2</span><small>사이트와 로그 탐색</small></button>
-        <button class="nav-button" data-page="storage3" type="button"><span class="nav-label">스토리지3</span><small>사이트와 로그 탐색</small></button>
+        <button class="nav-button active" data-page="dashboard" type="button"><span class="nav-label">Dashboard</span><small>홈 화면/파일 업로드</small></button>
+        <button class="nav-button" data-page="storage1" type="button"><span class="nav-label">스토리지1팀</span><small>스토리지1팀 장비 정보 확인</small></button>
+        <button class="nav-button" data-page="storage2" type="button"><span class="nav-label">스토리지2팀</span><small>스토리지2팀 장비 정보 확인</small></button>
+        <button class="nav-button" data-page="storage3" type="button"><span class="nav-label">스토리지3팀</span><small>스토리지3팀 장비 정보 확인</small></button>
         <button class="nav-button" data-page="members" data-admin-only="true" type="button"><span class="nav-label">회원 관리 목록</span><small>계정 현황과 관리</small></button>
-        <button class="nav-button" data-page="bugs" type="button"><span class="nav-label">버그 모음</span><small>운영 이슈 기록</small></button>
-        <button class="nav-button" data-page="requests" type="button"><span class="nav-label">수정 요청 게시판</span><small>요청 상태 추적</small></button>
+        <button class="nav-button" data-page="bugs" type="button"><span class="nav-label">버그 모음</span><small>운영중 버그 기록</small></button>
+        <button class="nav-button" data-page="requests" type="button"><span class="nav-label">수정 요청 게시판</span><small>수정요청 시 여기에 게시</small></button>
       </nav>
       <div class="sidebar-footer">
         <p id="login-user" class="sidebar-user"></p>
@@ -99,7 +101,13 @@
           <div>
             <p class="eyebrow">Baobab Technology</p>
             <h2>안녕하세요. 바오밥테크놀로지 입니다.</h2>
-            <p>대시보드는 전체 현황을 보여주고, 각 스토리지 페이지에서는 원본 로그와 요약 로그를 분리해서 확인할 수 있습니다.</p>
+            <h3>파일 업로드로 필요한 정보를 간편하게 얻습니다.</h3>
+            <p><사용 방법></p>
+            <p>1. 팀별로 로그를 관리할 수 있도록 구분되어 있고 업로드할 로그에 해당하는 사이트에 올리면 됩니다.</p>
+            <p>2. 업로드하려는 사이트가 없는 경우에는 admin 계정을 통해 사이트를 추가/수정/삭제 할 수 있습니다.</p>
+            <p>3. 업로드할 파일 선택시 여러 파일을 한 번에 업로드 할 수 있고, 파일별로 이름을 수정해 업로드 할 수 있습니다.</p>
+            <p>4. 직접 입력 항목은 옵션 사항으로 업로두 이후 수정 할 수 있습니다.</p>
+            <p>* 직접 입력 항목: [설치 항목, 워런티, 유지보수, 국사명, 설치 상면, 서비스, 담당자(연락처), ID/PW, ASUP, maxraidsize,diskcount]</p>
           </div>
           <div class="hero-stats">
             <div class="stat-card">
@@ -125,9 +133,9 @@
               <label>
                 표시할 스토리지
                 <select id="storage-name" name="storage_name" required>
-                  <option value="storage1">스토리지1</option>
-                  <option value="storage2">스토리지2</option>
-                  <option value="storage3">스토리지3</option>
+                  <option value="storage1">스토리지1팀</option>
+                  <option value="storage2">스토리지2팀</option>
+                  <option value="storage3">스토리지3팀</option>
                 </select>
               </label>
               <label>
@@ -280,9 +288,14 @@
 
       <section id="page-storage1" class="page-section storage-page" data-storage-page="storage1">
         <div class="storage-hero panel">
-          <p class="eyebrow">Storage 1</p>
-          <h2>스토리지1 로그 센터</h2>
-          <p>스토리지1에 지정된 원본 로그와 요약 로그를 함께 확인합니다.</p>
+          <p class="eyebrow">Storage Team 1</p>
+          <h2>스토리지1팀 로그 센터</h2>
+          <p>- 사이트 목록에 원하는 사이트가 없으시면 admin 계정에서 사이트를 생성해야 합니다.</p>
+          <p>- 요약 로그 > 요약 개요에서 원하는 정보가 수집되지 않았을 경우를 대비해 주요 정보별로 관련 로그 내용을 볼 수 있게 해뒀습니다.</p>
+          <p>* 그럼에도 원하는 정보를 찾지 못 한 경우에는 원본 로그를 통해서 확인하시면 됩니다.</p>
+          <p>- 또한 원본 로그를 다운로드 받을 수 있습니다.</p>
+          <p>* 무분별한 삭제와 실수를 방지하기 위해 삭제 요청 후 admin에서 승인해야 업로드된 파일을 삭제 할 수 있도록 했습니다.</p>
+          <p>감사합니다.</p>
         </div>
         <div data-role="storage-logs-view" data-storage="storage1" hidden>
           <div class="storage-site-grid">
@@ -439,7 +452,7 @@
               <div class="section-head">
                 <div>
                   <h3>사이트 관리</h3>
-                  <p>스토리지1에서 사용할 사이트를 추가, 수정, 삭제합니다.</p>
+                  <p>스토리지1팀에서 사용할 사이트를 추가, 수정, 삭제합니다.</p>
                 </div>
               </div>
               <form class="upload-form compact" data-role="site-form" data-storage="storage1">
@@ -461,9 +474,14 @@
 
       <section id="page-storage2" class="page-section storage-page" data-storage-page="storage2">
         <div class="storage-hero panel accent-two">
-          <p class="eyebrow">Storage 2</p>
-          <h2>스토리지2 로그 센터</h2>
-          <p>스토리지2에 지정된 원본 로그와 요약 로그를 함께 확인합니다.</p>
+          <p class="eyebrow">Storage Team 2</p>
+          <h2>스토리지2팀 로그 센터</h2>
+          <p>- 사이트 목록에 원하는 사이트가 없으시면 admin 계정에서 사이트를 생성해야 합니다.</p>
+          <p>- 요약 로그 > 요약 개요에서 원하는 정보가 수집되지 않았을 경우를 대비해 주요 정보별로 관련 로그 내용을 볼 수 있게 해뒀습니다.</p>
+          <p>* 그럼에도 원하는 정보를 찾지 못 한 경우에는 원본 로그를 통해서 확인하시면 됩니다.</p>
+          <p>- 또한 원본 로그를 다운로드 받을 수 있습니다.</p>
+          <p>* 무분별한 삭제와 실수를 방지하기 위해 삭제 요청 후 admin에서 승인해야 업로드된 파일을 삭제 할 수 있도록 했습니다.</p>
+          <p>감사합니다.</p>
         </div>
         <div data-role="storage-logs-view" data-storage="storage2" hidden>
         <div class="storage-site-grid">
@@ -620,7 +638,7 @@
               <div class="section-head">
                 <div>
                   <h3>사이트 관리</h3>
-                  <p>스토리지2에서 사용할 사이트를 추가, 수정, 삭제합니다.</p>
+                  <p>스토리지2팀에서 사용할 사이트를 추가, 수정, 삭제합니다.</p>
                 </div>
               </div>
               <form class="upload-form compact" data-role="site-form" data-storage="storage2">
@@ -642,9 +660,14 @@
 
       <section id="page-storage3" class="page-section storage-page" data-storage-page="storage3">
         <div class="storage-hero panel accent-three">
-          <p class="eyebrow">Storage 3</p>
-          <h2>스토리지3 로그 센터</h2>
-          <p>스토리지3에 지정된 원본 로그와 요약 로그를 함께 확인합니다.</p>
+          <p class="eyebrow">Storage Team 3</p>
+          <h2>스토리지3팀 로그 센터</h2>
+          <p>- 사이트 목록에 원하는 사이트가 없으시면 admin 계정에서 사이트를 생성해야 합니다.</p>
+          <p>- 요약 로그 > 요약 개요에서 원하는 정보가 수집되지 않았을 경우를 대비해 주요 정보별로 관련 로그 내용을 볼 수 있게 해뒀습니다.</p>
+          <p>* 그럼에도 원하는 정보를 찾지 못 한 경우에는 원본 로그를 통해서 확인하시면 됩니다.</p>
+          <p>- 또한 원본 로그를 다운로드 받을 수 있습니다.</p>
+          <p>* 무분별한 삭제와 실수를 방지하기 위해 삭제 요청 후 admin에서 승인해야 업로드된 파일을 삭제 할 수 있도록 했습니다.</p>
+          <p>감사합니다.</p>
         </div>
         <div data-role="storage-logs-view" data-storage="storage3" hidden>
         <div class="storage-site-grid">
@@ -801,7 +824,7 @@
               <div class="section-head">
                 <div>
                   <h3>사이트 관리</h3>
-                  <p>스토리지3에서 사용할 사이트를 추가, 수정, 삭제합니다.</p>
+                  <p>스토리지3팀에서 사용할 사이트를 추가, 수정, 삭제합니다.</p>
                 </div>
               </div>
               <form class="upload-form compact" data-role="site-form" data-storage="storage3">
