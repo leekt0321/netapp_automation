@@ -6,6 +6,7 @@ class Settings(BaseSettings):
     app_env: str = "dev"
     database_url: str
     upload_dir: str = "upload"
+    allowed_upload_extensions: str = ".log,.txt"
     admin_username: str = "admin"
     admin_password: str = "admin1234"
     admin_full_name: str = "Baobab Administrator"

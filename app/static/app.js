@@ -1,5 +1,6 @@
 import {
   ADMIN_REFRESH_INTERVAL_MS,
+  ALLOWED_UPLOAD_EXTENSIONS,
   MANUAL_FIELD_KEYS,
   SESSION_USER_STORAGE_KEY,
   STORAGE_KEYS,
@@ -117,6 +118,11 @@ let lastHistorySnapshot = appState.lastHistorySnapshot;
 let lastLogLayoutMode = appState.lastLogLayoutMode;
 let currentUser = appState.currentUser;
 let adminRefreshTimerId = appState.adminRefreshTimerId;
+
+function hasAllowedUploadExtension(filename) {
+  const lowerName = typeof filename === "string" ? filename.toLowerCase() : "";
+  return ALLOWED_UPLOAD_EXTENSIONS.some((extension) => lowerName.endsWith(extension));
+}
 
 loginFormEl.addEventListener("submit", async (event) => {
   event.preventDefault();
@@ -307,6 +313,10 @@ uploadFormEl.addEventListener("submit", async (event) => {
     statusEl.textContent = "업로드할 파일을 선택하세요.";
     return;
   }
+  if (selectedFiles.some((selectedFile) => !hasAllowedUploadExtension(selectedFile.name))) {
+    statusEl.textContent = "업로드 가능한 파일 형식은 .log, .txt 뿐입니다.";
+    return;
+  }
   if (uploadFileListEl === null) {
     statusEl.textContent = "업로드 화면을 새로고침한 뒤 다시 시도해 주세요.";
     return;
@@ -323,6 +333,10 @@ uploadFormEl.addEventListener("submit", async (event) => {
   });
   if (saveNames.some((value) => value === "")) {
     statusEl.textContent = "각 파일의 저장 이름을 모두 입력하세요.";
+    return;
+  }
+  if (saveNames.some((value) => !hasAllowedUploadExtension(value))) {
+    statusEl.textContent = "저장 이름도 .log 또는 .txt 확장자만 사용할 수 있습니다.";
     return;
   }
 
@@ -751,6 +765,10 @@ function renderSelectedFiles() {
 
   if (selectedFiles.length === 0) {
     uploadFileListEl.innerHTML = "<div class='empty'>파일을 선택하면 각 파일의 저장 이름 입력칸이 여기에 표시됩니다.</div>";
+    return;
+  }
+  if (selectedFiles.some((selectedFile) => !hasAllowedUploadExtension(selectedFile.name))) {
+    uploadFileListEl.innerHTML = "<div class='empty'>.log 또는 .txt 파일만 선택할 수 있습니다.</div>";
     return;
   }
 

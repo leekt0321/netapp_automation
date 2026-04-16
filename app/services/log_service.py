@@ -12,6 +12,7 @@ from sqlalchemy.orm import Session
 
 from app.core.constants import MANUAL_FIELD_DEFINITIONS, SUMMARY_DISPLAY_LABELS
 from app.core.paths import INVALID_FILENAME_CHARS, UPLOAD_DIR
+from app.config import settings
 from app.models import StorageSite, UploadedLog
 from app.parser_netapp import (
     decode_text_content,
@@ -32,6 +33,20 @@ from app.services.site_service import get_validated_site, validate_storage_name
 
 
 logger = logging.getLogger("storage_ai.log_service")
+ALLOWED_UPLOAD_EXTENSIONS = tuple(
+    extension.strip().lower()
+    for extension in settings.allowed_upload_extensions.split(",")
+    if extension.strip()
+)
+
+
+def validate_allowed_extension(filename: str) -> str:
+    raw_value = str(filename).strip().lower()
+    suffix = raw_value if raw_value.startswith(".") else Path(raw_value).suffix.lower()
+    if suffix not in ALLOWED_UPLOAD_EXTENSIONS:
+        allowed = ", ".join(ALLOWED_UPLOAD_EXTENSIONS)
+        raise HTTPException(status_code=400, detail=f"업로드 가능한 파일 형식은 {allowed} 뿐입니다.")
+    return suffix
 
 
 def normalize_filename(requested_name: str, original_filename: str) -> str:
@@ -39,8 +54,9 @@ def normalize_filename(requested_name: str, original_filename: str) -> str:
     if not cleaned_name:
         raise HTTPException(status_code=400, detail="저장할 파일 이름을 입력해주세요.")
     requested_path = Path(cleaned_name)
-    original_ext = Path(original_filename).suffix
+    original_ext = validate_allowed_extension(original_filename)
     final_ext = requested_path.suffix or original_ext
+    validate_allowed_extension(final_ext)
     final_stem = requested_path.stem if requested_path.suffix else cleaned_name
     final_stem = final_stem.strip().strip(".")
     if not final_stem:

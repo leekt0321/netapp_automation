@@ -63,6 +63,7 @@ def app_module(monkeypatch: pytest.MonkeyPatch, tmp_path: Path):
 
     monkeypatch.setenv("DATABASE_URL", database_url)
     monkeypatch.setenv("UPLOAD_DIR", str(upload_dir))
+    monkeypatch.setenv("ALLOWED_UPLOAD_EXTENSIONS", ".log,.txt")
     monkeypatch.setenv("ADMIN_USERNAME", "admin")
     monkeypatch.setenv("ADMIN_PASSWORD", "secret123")
     monkeypatch.setenv("ADMIN_FULL_NAME", "Baobab Admin")

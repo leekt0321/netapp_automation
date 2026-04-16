@@ -176,3 +176,45 @@ def test_upload_cleanup_runs_when_parser_fails(upload_dir: Path, app_module, mon
         )
         assert response.status_code == 500
     assert list(upload_dir.iterdir()) == []
+
+
+def test_upload_rejects_disallowed_file_extension(client, upload_dir: Path, sample_log: str):
+    admin_login = login(client, "admin", "secret123")
+    assert admin_login.status_code == 200
+
+    site = create_site_as_admin(client, "storage1", "하나금융티아이")
+
+    response = client.post(
+        "/upload",
+        data={
+            "save_name": "malware.exe",
+            "storage_name": "storage1",
+            "site_id": str(site["id"]),
+            "manual_fields_json": "",
+        },
+        files={"file": ("malware.exe", sample_log, "text/plain")},
+    )
+    assert response.status_code == 400
+    assert response.json()["detail"] == "업로드 가능한 파일 형식은 .log, .txt 뿐입니다."
+    assert list(upload_dir.iterdir()) == []
+
+
+def test_upload_rejects_disallowed_save_name_extension(client, upload_dir: Path, sample_log: str):
+    admin_login = login(client, "admin", "secret123")
+    assert admin_login.status_code == 200
+
+    site = create_site_as_admin(client, "storage1", "하나금융티아이")
+
+    response = client.post(
+        "/upload",
+        data={
+            "save_name": "renamed.exe",
+            "storage_name": "storage1",
+            "site_id": str(site["id"]),
+            "manual_fields_json": "",
+        },
+        files={"file": ("safe.log", sample_log, "text/plain")},
+    )
+    assert response.status_code == 400
+    assert response.json()["detail"] == "업로드 가능한 파일 형식은 .log, .txt 뿐입니다."
+    assert list(upload_dir.iterdir()) == []

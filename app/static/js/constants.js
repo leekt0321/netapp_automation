@@ -16,6 +16,7 @@ export const MANUAL_FIELD_KEYS = [
 export const DESKTOP_LOG_MEDIA_QUERY = "(min-width: 1181px)";
 export const SESSION_USER_STORAGE_KEY = "baobab.currentUser";
 export const ADMIN_REFRESH_INTERVAL_MS = 10000;
+export const ALLOWED_UPLOAD_EXTENSIONS = [".log", ".txt"];
 
 export const pageMeta = {
   dashboard: {

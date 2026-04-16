@@ -158,6 +158,7 @@ APP_NAME=Storage AI Web
 APP_ENV=prod
 DATABASE_URL=postgresql+psycopg://postgres:postgres@localhost/storage_ai
 UPLOAD_DIR=upload
+ALLOWED_UPLOAD_EXTENSIONS=.log,.txt
 ADMIN_USERNAME=admin
 ADMIN_PASSWORD=admin1234
 ADMIN_FULL_NAME=Baobab Administrator
