@@ -54,6 +54,12 @@ def create_app() -> FastAPI:
             client_host,
             duration_ms,
         )
+        if request.url.path.startswith("/static/"):
+            response.headers["Cache-Control"] = "no-cache, max-age=0, must-revalidate"
+            response.headers["Pragma"] = "no-cache"
+            response.headers["Expires"] = "0"
+        elif request.url.path == "/":
+            response.headers["Cache-Control"] = "no-store"
         return response
 
     app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")

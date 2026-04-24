@@ -25,6 +25,18 @@ def test_health_report_includes_operational_components(client):
     assert payload["components"]["schema"]["current_revision"] is not None
 
 
+def test_static_assets_force_browser_revalidation(client):
+    index_response = client.get("/")
+    assert index_response.status_code == 200
+    assert index_response.headers["cache-control"] == "no-store"
+
+    css_response = client.get("/static/app.css")
+    assert css_response.status_code == 200
+    assert css_response.headers["cache-control"] == "no-cache, max-age=0, must-revalidate"
+    assert css_response.headers["pragma"] == "no-cache"
+    assert css_response.headers["expires"] == "0"
+
+
 def test_websocket_health_stream_reports_server_session(client):
     api_response = client.get("/api")
     assert api_response.status_code == 200
