@@ -7,6 +7,17 @@
 </head>
 <body>
   <div id="app-live-region" class="sr-only" aria-live="polite" aria-atomic="true"></div>
+  <div id="server-offline-overlay" class="server-offline-overlay" hidden>
+    <div class="server-offline-panel" role="alertdialog" aria-modal="true" aria-labelledby="server-offline-title" aria-describedby="server-offline-message" tabindex="-1">
+      <p class="eyebrow">Connection Monitor</p>
+      <h2 id="server-offline-title">서버 연결을 확인하는 중입니다.</h2>
+      <p id="server-offline-message">실시간 연결이 복구되면 화면이 자동으로 다시 활성화됩니다.</p>
+      <p id="server-offline-meta" class="server-offline-meta">연결 상태를 준비하고 있습니다.</p>
+      <div class="form-actions">
+        <button id="server-reconnect-button" type="button">지금 다시 연결</button>
+      </div>
+    </div>
+  </div>
   <div id="login-screen" class="login-screen">
     <section class="login-panel wide">
       <div class="auth-columns">
@@ -55,44 +66,53 @@
   </div>
 
   <div id="app-shell" class="app-shell" hidden>
-    <aside class="sidebar">
+    <aside id="sidebar" class="sidebar">
       <div>
         <div class="brand-lockup">
           <div class="brand-mark">
-            <img src="/static/baobab-logo.gif" alt="Baobab Technology 로고" class="brand-logo">
+            <img src="/static/logo.png" alt="Baobab Technology 로고" class="brand-logo">
           </div>
           <div class="brand-copy">
             <p class="eyebrow light brand-name">BAOBAB TECHNOLOGY</p>
             <h2 class="brand-title">Storage Control Center</h2>
           </div>
         </div>
-        <div class="sidebar-copy">
-          <p>스토리지팀 사이트별 로그, 장비현황, 에러정보 및 버그를 편리하게 확인할 수 있는 현황 관리를 목적으로 두고 있습니다.</p>
-        </div>
       </div>
       <nav class="nav-list" aria-label="주요 메뉴">
-        <button class="nav-button active" data-page="dashboard" type="button"><span class="nav-label">대시보드</span><small>홈 화면과 파일 업로드</small></button>
-        <button class="nav-button" data-page="storage1" type="button"><span class="nav-label">스토리지1팀</span><small>스토리지1팀 장비 정보 보기</small></button>
-        <button class="nav-button" data-page="storage2" type="button"><span class="nav-label">스토리지2팀</span><small>스토리지2팀 장비 정보 보기</small></button>
-        <button class="nav-button" data-page="storage3" type="button"><span class="nav-label">스토리지3팀</span><small>스토리지3팀 장비 정보 보기</small></button>
-        <button class="nav-button" data-page="members" data-admin-only="true" type="button"><span class="nav-label">회원 관리</span><small>계정 현황과 승인 관리</small></button>
-        <button class="nav-button" data-page="bugs" type="button"><span class="nav-label">버그 기록</span><small>운영 중 확인된 버그 정리</small></button>
-        <button class="nav-button" data-page="requests" type="button"><span class="nav-label">수정 요청</span><small>수정 요청 등록과 진행 확인</small></button>
+        <button class="nav-button active" data-page="dashboard" data-rail="홈" type="button"><span class="nav-label">Dashboard</span><small>홈 화면과 파일 업로드</small></button>
+        <button class="nav-button" data-page="storage1" data-rail="1팀" type="button"><span class="nav-label">스토리지1팀</span><small>스토리지1팀 장비 정보 보기</small></button>
+        <button class="nav-button" data-page="storage2" data-rail="2팀" type="button"><span class="nav-label">스토리지2팀</span><small>스토리지2팀 장비 정보 보기</small></button>
+        <button class="nav-button" data-page="storage3" data-rail="3팀" type="button"><span class="nav-label">스토리지3팀</span><small>스토리지3팀 장비 정보 보기</small></button>
+        <button class="nav-button" data-page="members" data-rail="사용자" data-admin-only="true" type="button"><span class="nav-label">회원 관리</span><small>계정 현황과 승인 관리</small></button>
+        <button class="nav-button" data-page="bugs" data-rail="버그" type="button"><span class="nav-label">버그 기록</span><small>운영 중 확인된 버그 정리</small></button>
+        <button class="nav-button" data-page="requests" data-rail="수정" type="button"><span class="nav-label">수정 요청</span><small>수정 요청 등록과 진행 확인</small></button>
       </nav>
       <div class="sidebar-footer">
         <p id="login-user" class="sidebar-user"></p>
         <button id="logout-button" class="secondary sidebar-button" type="button">로그아웃</button>
       </div>
     </aside>
+    <button id="sidebar-rail-toggle-button" class="secondary sidebar-rail-toggle" type="button" aria-controls="sidebar" aria-expanded="true" aria-label="사이드바 접기">&lt;&lt;&lt;</button>
 
     <main class="content-shell">
       <header class="topbar">
-        <div class="topbar-copy">
-          <p class="eyebrow">Operations Console</p>
-          <h1 id="page-title">대시보드</h1>
+        <div class="topbar-left">
+          <div class="topbar-copy">
+            <p class="eyebrow">Operations Console</p>
+            <h1 id="page-title">Dashboard</h1>
+          </div>
         </div>
         <div class="topbar-meta">
-          <span class="topbar-badge">실시간 작업 공간</span>
+          <div class="topbar-actions">
+            <button id="refresh-data-button" class="secondary topbar-refresh-button" data-action="refresh-data" type="button">새로고침</button>
+            <div id="refresh-data-status" class="refresh-data-status" aria-live="polite">
+              <span id="refresh-data-label" class="refresh-data-label"></span>
+              <span id="refresh-data-percent" class="refresh-data-percent"></span>
+              <span class="refresh-progress-track" aria-hidden="true">
+                <span id="refresh-progress-bar" class="refresh-progress-bar"></span>
+              </span>
+            </div>
+          </div>
           <p id="page-description" class="page-description">업로드 파일 수와 최근 업로드 파일을 확인합니다.</p>
         </div>
       </header>
@@ -101,13 +121,12 @@
         <div class="hero-card">
           <div>
             <p class="eyebrow">Baobab Technology</p>
-            <h2>복잡한 NetApp 로그를 빠르게 올리고, 필요한 장비 정보만 차분하게 확인합니다.</h2>
-            <p class="hero-intro">업로드 준비와 검토 흐름을 한 화면에서 이어서 처리할 수 있도록 구성했습니다.</p>
+            <h2>NetApp 로그 파일 업로드로 필요한 정보를 빠르게 확인하세요.</h2>
             <p class="hero-kicker">업로드 전 확인</p>
             <ul class="hero-checklist">
               <li>업로드할 팀과 사이트를 먼저 선택합니다.</li>
               <li>사이트가 없으면 관리자 화면에서 사이트를 추가합니다.</li>
-              <li>여러 파일을 한 번에 올리고 저장 이름도 각각 지정할 수 있습니다.</li>
+              <li>파일을 선택하고 업로드할 파일 이름을 수정해 업로드 합니다.</li>
               <li>직접 입력 항목은 선택 사항이며 업로드 후에도 다시 수정할 수 있습니다.</li>
             </ul>
             <p class="hero-note">직접 입력 항목: 설치 날짜, 워런티, 유지보수, 국사명, 설치 상면, 서비스, 담당자, ID/PW, ASUP, maxraidsize, diskcount</p>
@@ -124,88 +143,91 @@
                 <dd id="latest-log-name">-</dd>
               </div>
             </dl>
-            <p class="hero-aside-note">가장 최근에 들어온 파일명과 전체 업로드 수를 바로 확인할 수 있습니다.</p>
           </aside>
         </div>
 
         <div class="dashboard-grid">
-          <section class="panel upload-panel">
-            <div class="section-head">
-              <div>
-                <h3>파일 업로드</h3>
-                <p>업로드할 스토리지를 선택하고, 파일별 저장 이름을 지정한 뒤 업로드하세요.</p>
-              </div>
-            </div>
-            <form id="upload-form" class="upload-form">
-              <label>
-                표시할 스토리지
-                <select id="storage-name" name="storage_name" required>
-                  <option value="storage1">스토리지1팀</option>
-                  <option value="storage2">스토리지2팀</option>
-                  <option value="storage3">스토리지3팀</option>
-                </select>
-              </label>
-              <label>
-                사이트
-                <select id="site-id" name="site_id" required>
-                  <option value="">사이트를 먼저 선택하세요</option>
-                </select>
-              </label>
-              <label>
-                파일 선택
-                <input id="file" name="files" type="file" accept=".log,.txt,text/plain" multiple required>
-              </label>
-              <div>
-                <p class="upload-help">파일별 저장 이름</p>
-                <div id="upload-file-list" class="upload-file-list">
-                  <div class="empty">파일을 선택하면 각 파일의 저장 이름 입력칸이 여기에 표시됩니다.</div>
+          <div class="dashboard-main-column">
+            <section class="panel upload-panel">
+              <div class="section-head">
+                <div>
+                  <h3>파일 업로드</h3>
+                  <p>업로드할 스토리지를 선택하고, 파일별 저장 이름을 지정한 뒤 업로드하세요.</p>
                 </div>
               </div>
-              <div class="form-actions">
-                <button id="open-upload-manual-fields" class="secondary" type="button">직접 입력 항목</button>
-                <button type="submit">업로드</button>
-              </div>
-            </form>
-            <p id="status" class="status" role="status" aria-live="polite" aria-atomic="true"></p>
-          </section>
+              <form id="upload-form" class="upload-form">
+                <label>
+                  표시할 스토리지
+                  <select id="storage-name" name="storage_name" required>
+                    <option value="storage1">스토리지1팀</option>
+                    <option value="storage2">스토리지2팀</option>
+                    <option value="storage3">스토리지3팀</option>
+                  </select>
+                </label>
+                <label>
+                  사이트
+                  <select id="site-id" name="site_id" required>
+                    <option value="">사이트를 먼저 선택하세요</option>
+                  </select>
+                </label>
+                <label>
+                  파일 선택
+                  <input id="file" name="files" type="file" accept=".log,.txt,text/plain" multiple required>
+                </label>
+                <div>
+                  <p class="upload-help">파일별 저장 이름</p>
+                  <div id="upload-file-list" class="upload-file-list">
+                    <div class="empty">파일을 선택하면 각 파일의 저장 이름 입력칸이 여기에 표시됩니다.</div>
+                  </div>
+                </div>
+                <div class="form-actions">
+                  <button id="open-upload-manual-fields" class="secondary" type="button">직접 입력 항목</button>
+                  <button type="submit">업로드</button>
+                </div>
+              </form>
+              <p id="status" class="status" role="status" aria-live="polite" aria-atomic="true"></p>
+            </section>
+          </div>
 
-          <section class="panel account-panel">
-            <div class="section-head">
-              <div>
-                <h3>회원 관리</h3>
-                <p>현재 로그인한 계정을 탈퇴할 수 있습니다.</p>
+          <div class="dashboard-side-column">
+            <section class="panel account-panel">
+              <div class="section-head">
+                <div>
+                  <h3>비밀번호 변경</h3>
+                  <p>현재 비밀번호를 확인한 뒤 새 비밀번호로 변경합니다.</p>
+                </div>
               </div>
-            </div>
-            <form id="delete-form" class="upload-form compact">
-              <label>
-                비밀번호 확인
-                <input id="delete-password" type="password" placeholder="현재 비밀번호" required>
-              </label>
-              <button id="delete-button" class="danger" type="submit">회원탈퇴</button>
-            </form>
-            <p id="delete-status" class="status" role="status" aria-live="polite" aria-atomic="true"></p>
-          </section>
+              <form id="change-password-form" class="upload-form compact">
+                <label>
+                  현재 비밀번호
+                  <input id="current-password" type="password" placeholder="현재 비밀번호" required>
+                </label>
+                <label>
+                  새 비밀번호
+                  <input id="new-password" type="password" placeholder="새 비밀번호" required>
+                </label>
+                <button type="submit">비밀번호 변경</button>
+              </form>
+              <p id="change-password-status" class="status" role="status" aria-live="polite" aria-atomic="true"></p>
+            </section>
 
-          <section class="panel account-panel">
-            <div class="section-head">
-              <div>
-                <h3>비밀번호 변경</h3>
-                <p>현재 비밀번호를 확인한 뒤 새 비밀번호로 변경합니다.</p>
+            <section class="panel account-panel">
+              <div class="section-head">
+                <div>
+                  <h3>회원 관리</h3>
+                  <p>현재 로그인한 계정을 탈퇴할 수 있습니다.</p>
+                </div>
               </div>
-            </div>
-            <form id="change-password-form" class="upload-form compact">
-              <label>
-                현재 비밀번호
-                <input id="current-password" type="password" placeholder="현재 비밀번호" required>
-              </label>
-              <label>
-                새 비밀번호
-                <input id="new-password" type="password" placeholder="새 비밀번호" required>
-              </label>
-              <button type="submit">비밀번호 변경</button>
-            </form>
-            <p id="change-password-status" class="status" role="status" aria-live="polite" aria-atomic="true"></p>
-          </section>
+              <form id="delete-form" class="upload-form compact">
+                <label>
+                  비밀번호 확인
+                  <input id="delete-password" type="password" placeholder="현재 비밀번호" required>
+                </label>
+                <button id="delete-button" class="danger" type="submit">회원탈퇴</button>
+              </form>
+              <p id="delete-status" class="status" role="status" aria-live="polite" aria-atomic="true"></p>
+            </section>
+          </div>
 
         </div>
       </section>
@@ -263,6 +285,19 @@
             </div>
           </section>
 
+          <section class="panel member-panel">
+            <div class="section-head">
+              <div>
+                <h3>업로드 무결성</h3>
+                <p>DB 기록과 업로드 파일이 어긋난 항목을 확인하고 정리합니다.</p>
+              </div>
+              <button id="integrity-cleanup-button" class="secondary" data-action="cleanup-integrity" type="button">정리 실행</button>
+            </div>
+            <div id="integrity-report-list" class="member-list">
+              <div class="empty">무결성 상태를 확인하는 중입니다.</div>
+            </div>
+          </section>
+
           <section class="panel account-panel">
             <div class="section-head">
               <div>
@@ -298,12 +333,6 @@
         <div class="storage-hero panel">
           <p class="eyebrow">Storage Team 1</p>
           <h2>스토리지1팀 로그 센터</h2>
-          <p>- 사이트 목록에 원하는 사이트가 없으시면 admin 계정에서 사이트를 생성해야 합니다.</p>
-          <p>- 요약 로그 > 요약 개요에서 원하는 정보가 수집되지 않았을 경우를 대비해 주요 정보별로 관련 로그 내용을 볼 수 있게 해뒀습니다.</p>
-          <p>* 그럼에도 원하는 정보를 찾지 못 한 경우에는 원본 로그를 통해서 확인하시면 됩니다.</p>
-          <p>- 또한 원본 로그를 다운로드 받을 수 있습니다.</p>
-          <p>* 무분별한 삭제와 실수를 방지하기 위해 삭제 요청 후 admin에서 승인해야 업로드된 파일을 삭제 할 수 있도록 했습니다.</p>
-          <p>감사합니다.</p>
         </div>
         <div data-role="storage-logs-view" data-storage="storage1" hidden>
           <div class="storage-site-grid">
@@ -484,12 +513,6 @@
         <div class="storage-hero panel accent-two">
           <p class="eyebrow">Storage Team 2</p>
           <h2>스토리지2팀 로그 센터</h2>
-          <p>- 사이트 목록에 원하는 사이트가 없으시면 admin 계정에서 사이트를 생성해야 합니다.</p>
-          <p>- 요약 로그 > 요약 개요에서 원하는 정보가 수집되지 않았을 경우를 대비해 주요 정보별로 관련 로그 내용을 볼 수 있게 해뒀습니다.</p>
-          <p>* 그럼에도 원하는 정보를 찾지 못 한 경우에는 원본 로그를 통해서 확인하시면 됩니다.</p>
-          <p>- 또한 원본 로그를 다운로드 받을 수 있습니다.</p>
-          <p>* 무분별한 삭제와 실수를 방지하기 위해 삭제 요청 후 admin에서 승인해야 업로드된 파일을 삭제 할 수 있도록 했습니다.</p>
-          <p>감사합니다.</p>
         </div>
         <div data-role="storage-logs-view" data-storage="storage2" hidden>
         <div class="storage-site-grid">
@@ -670,12 +693,6 @@
         <div class="storage-hero panel accent-three">
           <p class="eyebrow">Storage Team 3</p>
           <h2>스토리지3팀 로그 센터</h2>
-          <p>- 사이트 목록에 원하는 사이트가 없으시면 admin 계정에서 사이트를 생성해야 합니다.</p>
-          <p>- 요약 로그 > 요약 개요에서 원하는 정보가 수집되지 않았을 경우를 대비해 주요 정보별로 관련 로그 내용을 볼 수 있게 해뒀습니다.</p>
-          <p>* 그럼에도 원하는 정보를 찾지 못 한 경우에는 원본 로그를 통해서 확인하시면 됩니다.</p>
-          <p>- 또한 원본 로그를 다운로드 받을 수 있습니다.</p>
-          <p>* 무분별한 삭제와 실수를 방지하기 위해 삭제 요청 후 admin에서 승인해야 업로드된 파일을 삭제 할 수 있도록 했습니다.</p>
-          <p>감사합니다.</p>
         </div>
         <div data-role="storage-logs-view" data-storage="storage3" hidden>
         <div class="storage-site-grid">

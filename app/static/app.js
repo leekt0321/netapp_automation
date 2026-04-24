@@ -3,6 +3,9 @@ import {
   ALLOWED_UPLOAD_EXTENSIONS,
   MANUAL_FIELD_KEYS,
   SESSION_USER_STORAGE_KEY,
+  SERVER_HEARTBEAT_TIMEOUT_MS,
+  SERVER_RECONNECT_BASE_MS,
+  SERVER_RECONNECT_MAX_MS,
   STORAGE_KEYS,
   pageMeta,
 } from "/static/js/constants.js";
@@ -46,6 +49,8 @@ import {
   deleteStatusMembersEl,
   deletionRequestListEl,
   fileInputEl,
+  integrityCleanupButtonEl,
+  integrityReportListEl,
   latestLogNameEl,
   loginFormEl,
   loginIdEl,
@@ -75,6 +80,11 @@ import {
   registerNameEl,
   registerPasswordEl,
   registerStatusEl,
+  refreshDataButtonEl,
+  refreshDataLabelEl,
+  refreshDataPercentEl,
+  refreshDataStatusEl,
+  refreshProgressBarEl,
   requestCancelButtonEl,
   requestContentEl,
   requestEditIdEl,
@@ -87,6 +97,13 @@ import {
   requestStatusMessageEl,
   requestSubmitButtonEl,
   requestTitleEl,
+  sidebarEl,
+  sidebarRailToggleButtonEl,
+  serverOfflineMessageEl,
+  serverOfflineMetaEl,
+  serverOfflineOverlayEl,
+  serverOfflineTitleEl,
+  serverReconnectButtonEl,
   siteIdEl,
   statusEl,
   storageNameEl,
@@ -115,6 +132,7 @@ import {
 const storageViews = createStorageViews(STORAGE_KEYS);
 const storageState = createStorageState(STORAGE_KEYS, createEmptyManualFields);
 const appState = createAppState(createEmptyManualFields, isDesktopLogSplitView);
+const SIDEBAR_COLLAPSED_STORAGE_KEY = "baobab.sidebarCollapsed";
 let allLogs = appState.allLogs;
 let allSites = appState.allSites;
 let allRequestPosts = appState.allRequestPosts;
@@ -132,9 +150,13 @@ let lastHistorySnapshot = appState.lastHistorySnapshot;
 let lastLogLayoutMode = appState.lastLogLayoutMode;
 let currentUser = appState.currentUser;
 let adminRefreshTimerId = appState.adminRefreshTimerId;
+const serverConnection = appState.serverConnection;
 let lastFocusedElement = null;
 let confirmResolver = null;
 let modalOpenCount = 0;
+let sidebarCollapsed = false;
+let refreshProgressTimerId = null;
+let refreshProgressValue = 0;
 const debouncedLogSearchRenderers = Object.fromEntries(
   STORAGE_KEYS.map((storageKey) => {
     return [storageKey, debounce(() => {
@@ -171,6 +193,206 @@ function setMarkup(targetEl, markup) {
   if (targetEl !== null && targetEl.innerHTML !== markup) {
     targetEl.innerHTML = markup;
   }
+}
+
+function updateSidebarUI() {
+  if (appShellEl !== null) {
+    appShellEl.classList.toggle("sidebar-collapsed", sidebarCollapsed);
+  }
+  if (sidebarEl !== null) {
+    sidebarEl.setAttribute("aria-hidden", "false");
+  }
+  if (sidebarRailToggleButtonEl !== null) {
+    sidebarRailToggleButtonEl.textContent = sidebarCollapsed ? ">>" : "<<";
+    sidebarRailToggleButtonEl.setAttribute("aria-expanded", sidebarCollapsed ? "false" : "true");
+    sidebarRailToggleButtonEl.setAttribute("aria-label", sidebarCollapsed ? "사이드바 펼치기" : "사이드바 접기");
+  }
+}
+
+function setSidebarCollapsed(nextCollapsed, persist = true) {
+  sidebarCollapsed = nextCollapsed === true;
+  if (persist) {
+    window.localStorage.setItem(SIDEBAR_COLLAPSED_STORAGE_KEY, sidebarCollapsed ? "true" : "false");
+  }
+  updateSidebarUI();
+}
+
+function restoreSidebarPreference() {
+  const savedValue = window.localStorage.getItem(SIDEBAR_COLLAPSED_STORAGE_KEY);
+  sidebarCollapsed = savedValue === "true";
+  updateSidebarUI();
+}
+
+function setServerOverlayContent(title, message, meta) {
+  if (serverOfflineTitleEl !== null) {
+    serverOfflineTitleEl.textContent = title;
+  }
+  if (serverOfflineMessageEl !== null) {
+    serverOfflineMessageEl.textContent = message;
+  }
+  if (serverOfflineMetaEl !== null) {
+    serverOfflineMetaEl.textContent = meta;
+  }
+}
+
+function updateServerConnectionUI() {
+  if (serverOfflineOverlayEl === null) {
+    return;
+  }
+
+  const shouldShowOverlay = serverConnection.connected === false;
+  serverOfflineOverlayEl.hidden = !shouldShowOverlay;
+  document.body.classList.toggle("server-offline", shouldShowOverlay);
+
+  if (shouldShowOverlay === false) {
+    return;
+  }
+
+  let title = "서버 연결이 끊어졌습니다.";
+  let message = "서버가 다시 올라오면 화면이 자동으로 복구됩니다. 열려 있는 내용은 새로고침 없이 다시 연결을 시도합니다.";
+  let meta = "자동 재연결을 준비하고 있습니다.";
+
+  if (serverConnection.status === "connecting") {
+    title = "서버 연결을 확인하는 중입니다.";
+    message = "실시간 연결이 확인되면 화면이 자동으로 다시 활성화됩니다.";
+    meta = "초기 연결을 시도하고 있습니다.";
+  } else if (serverConnection.status === "reconnecting") {
+    const attempt = Math.max(1, serverConnection.reconnectAttempt);
+    title = "서버가 응답하지 않습니다.";
+    message = "서버가 내려갔거나 재시작 중일 수 있습니다. 연결이 복구될 때까지 화면 조작을 잠시 막습니다.";
+    meta = "재연결 시도 " + attempt + "회차";
+    if (serverConnection.lastDisconnectReason) {
+      meta += " / " + serverConnection.lastDisconnectReason;
+    }
+  }
+
+  setServerOverlayContent(title, message, meta);
+}
+
+function clearReconnectTimer() {
+  if (serverConnection.reconnectTimerId !== null) {
+    window.clearTimeout(serverConnection.reconnectTimerId);
+    serverConnection.reconnectTimerId = null;
+  }
+}
+
+function clearHeartbeatTimer() {
+  if (serverConnection.heartbeatTimerId !== null) {
+    window.clearTimeout(serverConnection.heartbeatTimerId);
+    serverConnection.heartbeatTimerId = null;
+  }
+}
+
+function scheduleHeartbeatDeadline() {
+  clearHeartbeatTimer();
+  serverConnection.heartbeatTimerId = window.setTimeout(() => {
+    const socket = serverConnection.socket;
+    if (socket instanceof WebSocket) {
+      socket.close();
+    }
+  }, SERVER_HEARTBEAT_TIMEOUT_MS);
+}
+
+function buildServerHealthWebSocketUrl() {
+  const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
+  return protocol + "//" + window.location.host + "/ws/health";
+}
+
+function scheduleReconnect() {
+  clearReconnectTimer();
+  serverConnection.reconnectAttempt += 1;
+  serverConnection.status = "reconnecting";
+  updateServerConnectionUI();
+  const delay = Math.min(
+    SERVER_RECONNECT_BASE_MS * (2 ** Math.max(0, serverConnection.reconnectAttempt - 1)),
+    SERVER_RECONNECT_MAX_MS,
+  );
+  serverConnection.reconnectTimerId = window.setTimeout(() => {
+    connectServerHealthMonitor();
+  }, delay);
+}
+
+function handleServerConnectionMessage(rawMessage) {
+  let payload = null;
+  try {
+    payload = JSON.parse(rawMessage);
+  } catch (error) {
+    return;
+  }
+
+  if (payload === null || typeof payload !== "object") {
+    return;
+  }
+
+  if (payload.server_session_id) {
+    serverConnection.serverSessionId = payload.server_session_id;
+  }
+
+  if (payload.type === "server_status" || payload.type === "heartbeat") {
+    serverConnection.lastHeartbeatAt = Date.now();
+    scheduleHeartbeatDeadline();
+  }
+}
+
+function markServerConnected() {
+  const wasDisconnected = serverConnection.connected === false;
+  serverConnection.connected = true;
+  serverConnection.status = "connected";
+  serverConnection.reconnectAttempt = 0;
+  serverConnection.lastDisconnectReason = "";
+  updateServerConnectionUI();
+  if (wasDisconnected && isAuthenticated()) {
+    loadInitialData().catch((error) => {
+      console.error("reload after reconnect failed", error);
+    });
+  }
+}
+
+function markServerDisconnected(reason) {
+  serverConnection.connected = false;
+  serverConnection.lastDisconnectReason = reason || "";
+  updateServerConnectionUI();
+}
+
+function connectServerHealthMonitor() {
+  clearReconnectTimer();
+  clearHeartbeatTimer();
+
+  if (serverConnection.socket instanceof WebSocket) {
+    serverConnection.socket.onopen = null;
+    serverConnection.socket.onmessage = null;
+    serverConnection.socket.onerror = null;
+    serverConnection.socket.onclose = null;
+    serverConnection.socket.close();
+  }
+
+  serverConnection.status = serverConnection.reconnectAttempt > 0 ? "reconnecting" : "connecting";
+  updateServerConnectionUI();
+
+  const socket = new WebSocket(buildServerHealthWebSocketUrl());
+  serverConnection.socket = socket;
+
+  socket.onopen = () => {
+    markServerConnected();
+  };
+
+  socket.onmessage = (event) => {
+    handleServerConnectionMessage(event.data);
+  };
+
+  socket.onerror = () => {
+    markServerDisconnected("연결 오류");
+  };
+
+  socket.onclose = () => {
+    if (serverConnection.socket !== socket) {
+      return;
+    }
+    serverConnection.socket = null;
+    clearHeartbeatTimer();
+    markServerDisconnected("서버 연결 종료");
+    scheduleReconnect();
+  };
 }
 
 function setPanelTabRelationship(panelEl, tabId) {
@@ -642,7 +864,6 @@ uploadFormEl.addEventListener("submit", async (event) => {
     storageState[payload.storage_name].activeSiteId = payload.site_id;
     storageState[payload.storage_name].activeView = "logs";
     await loadLogs();
-    showPage(payload.storage_name);
   } catch (error) {
     console.error("upload failed", error);
     statusEl.textContent = "서버에 연결하지 못했습니다. 서버 재시작 후 새로고침해서 다시 시도해 주세요.";
@@ -735,6 +956,17 @@ document.addEventListener("click", async (event) => {
     const logId = Number(actionButton.dataset.id);
     if (Number.isNaN(logId) === false) {
       window.location.href = "/logs/" + logId + "/download";
+    }
+    return;
+  }
+
+  if (action === "toggle-board-item") {
+    const panelId = actionButton.dataset.panelId;
+    const panel = panelId ? document.getElementById(panelId) : null;
+    if (panel !== null) {
+      const expanded = actionButton.getAttribute("aria-expanded") === "true";
+      actionButton.setAttribute("aria-expanded", expanded ? "false" : "true");
+      panel.hidden = expanded;
     }
     return;
   }
@@ -989,6 +1221,17 @@ document.addEventListener("click", async (event) => {
 
   if (action === "reject-deletion-request") {
     await reviewDeletionRequest(Number(actionButton.dataset.requestId), "reject");
+    return;
+  }
+
+  if (action === "cleanup-integrity") {
+    await cleanupIntegrityIssues();
+    return;
+  }
+
+  if (action === "refresh-data") {
+    await refreshCurrentData();
+    return;
   }
 });
 
@@ -1236,7 +1479,7 @@ async function loadInitialData() {
   await loadSites();
   await Promise.all([loadLogs(), loadRequestPosts(), loadBugPosts()]);
   if (isAdmin()) {
-    await Promise.all([loadUsers(), loadActiveSessions(), loadDeletionRequests()]);
+    await Promise.all([loadUsers(), loadActiveSessions(), loadDeletionRequests(), loadIntegrityReport()]);
   } else {
     allUsers = [];
     allActiveSessions = [];
@@ -1244,8 +1487,103 @@ async function loadInitialData() {
     renderUserList();
     renderActiveSessions();
     renderDeletionRequests();
+    renderIntegrityReport(null);
   }
   syncHistoryState("replace");
+}
+
+function renderRefreshProgress(percent, label) {
+  const normalizedPercent = Math.max(0, Math.min(100, Math.round(percent)));
+  refreshProgressValue = normalizedPercent;
+  if (refreshDataLabelEl !== null) {
+    refreshDataLabelEl.textContent = label || "";
+  }
+  if (refreshDataPercentEl !== null) {
+    refreshDataPercentEl.textContent = label ? normalizedPercent + "%" : "";
+  }
+  if (refreshProgressBarEl !== null) {
+    refreshProgressBarEl.style.transform = "scaleX(" + (normalizedPercent / 100).toFixed(2) + ")";
+  }
+}
+
+function stopRefreshProgress() {
+  if (refreshProgressTimerId !== null) {
+    window.clearInterval(refreshProgressTimerId);
+    refreshProgressTimerId = null;
+  }
+}
+
+function startRefreshProgress() {
+  stopRefreshProgress();
+  if (refreshDataStatusEl !== null) {
+    refreshDataStatusEl.classList.remove("is-complete", "is-error");
+  }
+  renderRefreshProgress(0, "갱신 중");
+  refreshProgressTimerId = window.setInterval(() => {
+    const remaining = 94 - refreshProgressValue;
+    if (remaining <= 0) {
+      return;
+    }
+    const nextIncrement = Math.max(1, Math.ceil(remaining * 0.16));
+    renderRefreshProgress(refreshProgressValue + nextIncrement, "갱신 중");
+  }, 130);
+}
+
+function finishRefreshProgress(label) {
+  stopRefreshProgress();
+  if (refreshDataStatusEl !== null) {
+    refreshDataStatusEl.classList.add("is-complete");
+  }
+  renderRefreshProgress(100, label);
+}
+
+function wait(ms) {
+  return new Promise((resolve) => {
+    window.setTimeout(resolve, ms);
+  });
+}
+
+async function refreshCurrentData() {
+  const startedAt = performance.now();
+  if (refreshDataButtonEl !== null) {
+    refreshDataButtonEl.disabled = true;
+    refreshDataButtonEl.textContent = "새로고침 중";
+  }
+  if (refreshDataStatusEl !== null) {
+    refreshDataStatusEl.classList.add("is-refreshing");
+  }
+  startRefreshProgress();
+  announce("데이터를 새로고침하는 중입니다.");
+  try {
+    await loadInitialData();
+    const elapsed = performance.now() - startedAt;
+    if (elapsed < 650) {
+      await wait(650 - elapsed);
+    }
+    const refreshedAt = new Date().toLocaleTimeString("ko-KR", {
+      hour: "2-digit",
+      minute: "2-digit",
+      second: "2-digit",
+    });
+    finishRefreshProgress(refreshedAt + " 갱신됨");
+    announce("데이터를 새로고침했습니다.");
+  } catch (error) {
+    console.error("refresh failed", error);
+    stopRefreshProgress();
+    if (refreshDataStatusEl !== null) {
+      refreshDataStatusEl.classList.add("is-error");
+    }
+    renderRefreshProgress(refreshProgressValue, "갱신 실패");
+    announce("데이터 새로고침에 실패했습니다.");
+  } finally {
+    if (refreshDataButtonEl !== null) {
+      refreshDataButtonEl.disabled = false;
+      refreshDataButtonEl.textContent = "새로고침";
+    }
+    if (refreshDataStatusEl !== null) {
+      refreshDataStatusEl.classList.remove("is-refreshing");
+    }
+  }
 }
 
 async function loadUsers() {
@@ -1408,6 +1746,77 @@ function renderDeletionRequests() {
     "</article>";
   }).join("");
   setMarkup(deletionRequestListEl, deletionMarkup);
+}
+
+async function loadIntegrityReport() {
+  if (isAdmin() === false) {
+    renderIntegrityReport(null);
+    return;
+  }
+  const { response, payload } = await getJson("/admin/operations/integrity");
+  if (response.ok === false) {
+    setMarkup(integrityReportListEl, "<div class='empty'>무결성 상태를 불러오지 못했습니다.</div>");
+    return;
+  }
+  renderIntegrityReport(payload);
+}
+
+function renderIntegrityReport(report) {
+  if (integrityReportListEl === null) {
+    return;
+  }
+  if (isAdmin() === false) {
+    setMarkup(integrityReportListEl, "<div class='empty'>관리자만 볼 수 있습니다.</div>");
+    return;
+  }
+  if (report === null || typeof report !== "object") {
+    setMarkup(integrityReportListEl, "<div class='empty'>무결성 상태를 확인하는 중입니다.</div>");
+    return;
+  }
+
+  const counts = report.counts || {};
+  const orphanCount = Number(counts.orphan_raw_files || 0) + Number(counts.orphan_summary_files || 0);
+  const issueCount = Number(counts.missing_raw_logs || 0)
+    + Number(counts.missing_summary_logs || 0)
+    + orphanCount
+    + Number(counts.outside_upload_dir_logs || 0);
+  const statusLabel = issueCount === 0 ? "정상" : "정리 필요";
+  const badgeClass = issueCount === 0 ? "done" : "wait";
+
+  if (integrityCleanupButtonEl !== null) {
+    integrityCleanupButtonEl.disabled = issueCount === 0;
+  }
+
+  const markup =
+    "<article class='member-card'>" +
+      "<div>" +
+        "<strong>업로드 기록 " + escapeHtml(String(counts.uploaded_logs || 0)) + "건</strong>" +
+        "<p>누락 원본 " + escapeHtml(String(counts.missing_raw_logs || 0)) +
+        " / 누락 요약 " + escapeHtml(String(counts.missing_summary_logs || 0)) +
+        " / 고아 파일 " + escapeHtml(String(orphanCount)) + "</p>" +
+      "</div>" +
+      "<span class='badge " + badgeClass + "'>" + statusLabel + "</span>" +
+    "</article>";
+  setMarkup(integrityReportListEl, markup);
+}
+
+async function cleanupIntegrityIssues() {
+  if (isAdmin() === false || integrityCleanupButtonEl === null) {
+    return;
+  }
+  integrityCleanupButtonEl.disabled = true;
+  setStatusText(membersStatusEl, "업로드 무결성 문제를 정리하는 중입니다.");
+  const { response, payload } = await postJson("/admin/operations/integrity/cleanup", {});
+  if (response.ok === false) {
+    setStatusText(membersStatusEl, payload.detail || "업로드 무결성 정리에 실패했습니다.");
+    integrityCleanupButtonEl.disabled = false;
+    return;
+  }
+  renderIntegrityReport(payload.report);
+  await loadLogs();
+  const deletedLogCount = Array.isArray(payload.deleted_log_records) ? payload.deleted_log_records.length : 0;
+  const deletedFileCount = Array.isArray(payload.deleted_files) ? payload.deleted_files.length : 0;
+  setStatusText(membersStatusEl, "업로드 무결성 정리 완료: DB 기록 " + deletedLogCount + "건, 파일 " + deletedFileCount + "개 정리");
 }
 
 function stopAdminRefresh() {
@@ -2010,7 +2419,7 @@ function renderEventLogEntriesMarkup(sectionText) {
     return "<div class='empty'>표시할 이벤트가 없습니다.</div>";
   }
 
-  return "<div class='event-log-category-list'>" + categories.map((category, categoryIndex) => {
+  return "<div class='event-log-category-list'>" + categories.map((category) => {
     const code = category.code || "이벤트";
     const entries = Array.isArray(category.entries) ? category.entries : [];
     const entriesMarkup = entries.map((line) => {
@@ -2040,7 +2449,7 @@ function renderEventLogEntriesMarkup(sectionText) {
     }).join("");
 
     return (
-      "<details class='event-log-category' " + (categoryIndex === 0 ? "open" : "") + ">" +
+      "<details class='event-log-category'>" +
         "<summary>" +
           "<strong>" + escapeHtml(code) + "</strong>" +
           "<span>" + escapeHtml(String(entries.length)) + "건</span>" +
@@ -2223,23 +2632,11 @@ function renderRequestPosts(posts) {
   }
 
   const canManage = isAuthenticated();
-  const requestMarkup = posts.map((post) => {
-    const actions = canManage
-      ? "<div class='request-actions'>" +
-          "<button class='secondary' data-action='request-edit' data-id='" + post.id + "' type='button'>수정</button>" +
-          "<button class='danger' data-action='request-delete' data-id='" + post.id + "' type='button'>삭제</button>" +
-        "</div>"
-      : "";
-    return "<article class='request-card'>" +
-      "<div class='request-top'>" +
-        "<div class='request-header'><span class='badge " + getStatusBadgeClass(post.status) + "'>" + escapeHtml(post.status) + "</span></div>" +
-        actions +
-      "</div>" +
-      "<h3 class='request-title'>" + escapeHtml(post.title) + "</h3>" +
-      "<p class='request-content'>" + escapeHtml(post.content) + "</p>" +
-      "<div class='request-meta'><span>작성자: " + escapeHtml(post.author || "-") + "</span><span>업데이트: " + escapeHtml(formatDate(post.updated_at || post.created_at)) + "</span></div>" +
-    "</article>";
-  }).join("");
+  const requestMarkup = renderBoardListMarkup(posts, {
+    statusLabel: (post) => "<span class='badge " + getStatusBadgeClass(post.status) + "'>" + escapeHtml(post.status) + "</span>",
+    actionPrefix: "request",
+    canManage,
+  });
   setMarkup(requestListEl, requestMarkup);
 }
 
@@ -2273,24 +2670,53 @@ function renderBugPosts(posts) {
   }
 
   const canManage = isAuthenticated();
-  const bugMarkup = posts.map((post) => {
-    const actions = canManage
-      ? "<div class='request-actions'>" +
-          "<button class='secondary' data-action='bug-edit' data-id='" + post.id + "' type='button'>수정</button>" +
-          "<button class='danger' data-action='bug-delete' data-id='" + post.id + "' type='button'>삭제</button>" +
-        "</div>"
-      : "";
-    return "<article class='request-card'>" +
-      "<div class='request-top'>" +
-        "<div class='request-header'><span class='badge doing'>버그</span></div>" +
-        actions +
-      "</div>" +
-      "<h3 class='request-title'>" + escapeHtml(post.title) + "</h3>" +
-      "<p class='request-content'>" + escapeHtml(post.content) + "</p>" +
-      "<div class='request-meta'><span>작성자: " + escapeHtml(post.author || "-") + "</span><span>업데이트: " + escapeHtml(formatDate(post.updated_at || post.created_at)) + "</span></div>" +
-    "</article>";
-  }).join("");
+  const bugMarkup = renderBoardListMarkup(posts, {
+    statusLabel: () => "<span class='badge doing'>버그</span>",
+    actionPrefix: "bug",
+    canManage,
+  });
   setMarkup(bugListEl, bugMarkup);
+}
+
+function renderBoardListMarkup(posts, config) {
+  const headerMarkup =
+    "<div class='board-list-header'>" +
+      "<span>상태</span>" +
+      "<span>제목</span>" +
+      "<span>작성자</span>" +
+      "<span>업데이트</span>" +
+      "<span>관리</span>" +
+    "</div>";
+
+  const rowsMarkup = posts.map((post) => {
+    const contentPanelId = "board-content-" + config.actionPrefix + "-" + post.id;
+    const actions = config.canManage
+      ? "<div class='board-list-actions'>" +
+          "<button class='secondary' data-action='" + config.actionPrefix + "-edit' data-id='" + post.id + "' type='button'>수정</button>" +
+          "<button class='danger' data-action='" + config.actionPrefix + "-delete' data-id='" + post.id + "' type='button'>삭제</button>" +
+        "</div>"
+      : "<div class='board-list-actions'><span class='board-list-muted'>-</span></div>";
+
+    return (
+      "<article class='board-list-row'>" +
+        "<div class='board-list-status'>" + config.statusLabel(post) + "</div>" +
+        "<div class='board-list-title-group'>" +
+          "<button class='board-list-title-button' data-action='toggle-board-item' data-panel-id='" + contentPanelId + "' type='button' aria-expanded='false' aria-controls='" + contentPanelId + "'>" +
+            "<span class='board-list-title'>" + escapeHtml(post.title || "-") + "</span>" +
+            "<span class='board-list-toggle-mark' aria-hidden='true'>⌄</span>" +
+          "</button>" +
+        "</div>" +
+        "<div class='board-list-author'>" + escapeHtml(post.author || "-") + "</div>" +
+        "<div class='board-list-date'>" + escapeHtml(formatDate(post.updated_at || post.created_at)) + "</div>" +
+        actions +
+        "<div id='" + contentPanelId + "' class='board-list-content-panel' hidden>" +
+          "<p class='board-list-content'>" + escapeHtml(post.content || "") + "</p>" +
+        "</div>" +
+      "</article>"
+    );
+  }).join("");
+
+  return "<div class='board-list-table'>" + headerMarkup + rowsMarkup + "</div>";
 }
 
 function populateRequestForm(postId) {
@@ -2505,7 +2931,14 @@ window.addEventListener("resize", () => {
   renderAllStoragePages();
 });
 
+if (sidebarRailToggleButtonEl !== null) {
+  sidebarRailToggleButtonEl.addEventListener("click", () => {
+    setSidebarCollapsed(!sidebarCollapsed);
+  });
+}
+
 async function restoreSession() {
+  connectServerHealthMonitor();
   const savedUserJson = window.localStorage.getItem(SESSION_USER_STORAGE_KEY);
   if (savedUserJson) {
     try {
@@ -2539,4 +2972,12 @@ async function restoreSession() {
   }
 }
 
+if (serverReconnectButtonEl !== null) {
+  serverReconnectButtonEl.addEventListener("click", () => {
+    serverConnection.reconnectAttempt = 0;
+    connectServerHealthMonitor();
+  });
+}
+
+restoreSidebarPreference();
 restoreSession();

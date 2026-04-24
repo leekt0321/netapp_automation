@@ -314,9 +314,16 @@ async def upload_log(file: UploadFile, save_name: str, storage_name: str, site: 
 
 
 async def upload_logs(files, file, save_name, save_names, storage_name, site_id, manual_fields_json, db: Session) -> dict:
-    upload_files = [current for current in (files or []) if hasattr(current, "filename")]
-    if file is not None and hasattr(file, "filename"):
-        upload_files.append(file)
+    upload_files = []
+    seen_upload_file_ids = set()
+    for current in [*(files or []), file]:
+        if current is None or not hasattr(current, "filename"):
+            continue
+        marker = id(current)
+        if marker in seen_upload_file_ids:
+            continue
+        seen_upload_file_ids.add(marker)
+        upload_files.append(current)
     if not upload_files:
         raise HTTPException(status_code=400, detail="업로드할 파일을 선택하세요.")
 
@@ -361,6 +368,7 @@ def list_logs(storage_name: Optional[str], site_id: Optional[int], db: Session) 
             "created_at": row[0].created_at,
         }
         for row in rows
+        if Path(row[0].stored_path).exists() and resolve_summary_path(row[0]).exists()
     ]
 
 

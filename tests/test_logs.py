@@ -103,6 +103,36 @@ def test_log_upload_summary_and_admin_review_flow(client, upload_dir: Path, samp
     assert empty_list.json() == []
 
 
+def test_upload_multiple_files_counts_each_file_once(client, upload_dir: Path, sample_log: str):
+    admin_login = login(client, "admin", "secret123")
+    assert admin_login.status_code == 200
+
+    site = create_site_as_admin(client, "storage1", "하나금융티아이")
+
+    upload_response = client.post(
+        "/upload",
+        data={
+            "storage_name": "storage1",
+            "site_id": str(site["id"]),
+            "manual_fields_json": "",
+            "save_names": ["one.log", "two.log"],
+        },
+        files=[
+            ("files", ("one.log", sample_log, "text/plain")),
+            ("files", ("two.log", sample_log, "text/plain")),
+        ],
+    )
+    assert upload_response.status_code == 200
+    payload = upload_response.json()
+    assert payload["count"] == 2
+    assert len(payload["items"]) == 2
+
+    list_response = client.get("/logs", params={"storage_name": "storage1", "site_id": site["id"]})
+    assert list_response.status_code == 200
+    assert len(list_response.json()) == 2
+    assert len([path for path in upload_dir.iterdir() if path.name.endswith(".log")]) == 2
+
+
 def test_upload_rejects_invalid_site_and_does_not_create_files(client, upload_dir: Path, sample_log: str):
     admin_login = login(client, "admin", "secret123")
     assert admin_login.status_code == 200

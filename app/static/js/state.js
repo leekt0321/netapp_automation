@@ -43,5 +43,16 @@ export function createAppState(createEmptyManualFields, isDesktopLogSplitView) {
     lastLogLayoutMode: isDesktopLogSplitView(),
     currentUser: null,
     adminRefreshTimerId: null,
+    serverConnection: {
+      connected: false,
+      status: "connecting",
+      lastHeartbeatAt: 0,
+      reconnectAttempt: 0,
+      reconnectTimerId: null,
+      heartbeatTimerId: null,
+      socket: null,
+      serverSessionId: null,
+      lastDisconnectReason: "",
+    },
   };
 }

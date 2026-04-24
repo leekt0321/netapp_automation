@@ -3,6 +3,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 from sqlalchemy import inspect, text
+from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session
 
 from app.core.paths import UPLOAD_DIR
@@ -156,4 +157,61 @@ def build_integrity_report(db: Session) -> dict:
             "orphan_summary_files": orphan_summary_files,
             "outside_upload_dir_logs": outside_upload_dir_logs,
         },
+    }
+
+
+def _is_inside_upload_dir(path: Path) -> bool:
+    try:
+        path.resolve(strict=False).relative_to(UPLOAD_DIR.resolve(strict=False))
+        return True
+    except ValueError:
+        return False
+
+
+def _delete_upload_file(path: Path, deleted_files: list[str]) -> None:
+    if path.exists() and path.is_file() and _is_inside_upload_dir(path):
+        path.unlink()
+        deleted_files.append(str(path))
+
+
+def cleanup_integrity_issues(db: Session) -> dict:
+    logs = db.query(UploadedLog).order_by(UploadedLog.id.asc()).all()
+    invalid_logs = []
+    files_to_delete = []
+    registered_paths = set()
+
+    for log in logs:
+        raw_path = Path(log.stored_path)
+        summary_path = resolve_summary_path(log)
+        registered_paths.add(str(raw_path))
+        registered_paths.add(str(summary_path))
+        if raw_path.exists() is False or summary_path.exists() is False:
+            invalid_logs.append(log)
+            files_to_delete.extend([raw_path, summary_path])
+
+    upload_files = [path for path in sorted(UPLOAD_DIR.iterdir(), key=lambda item: item.name) if path.is_file()]
+    orphan_files = [path for path in upload_files if str(path) not in registered_paths]
+
+    deleted_log_records = [
+        _serialize_integrity_item(log, resolve_summary_path(log))
+        for log in invalid_logs
+    ]
+
+    for log in invalid_logs:
+        db.delete(log)
+
+    try:
+        db.commit()
+    except SQLAlchemyError:
+        db.rollback()
+        raise
+
+    deleted_files = []
+    for path in [*files_to_delete, *orphan_files]:
+        _delete_upload_file(path, deleted_files)
+
+    return {
+        "deleted_log_records": deleted_log_records,
+        "deleted_files": deleted_files,
+        "report": build_integrity_report(db),
     }
