@@ -9,6 +9,7 @@ import {
 import {
   activeSessionListEl,
   appShellEl,
+  appLiveRegionEl,
   bugCancelButtonEl,
   bugContentEl,
   bugEditIdEl,
@@ -23,6 +24,17 @@ import {
   changePasswordFormMembersEl,
   changePasswordStatusEl,
   changePasswordStatusMembersEl,
+  confirmCancelEl,
+  confirmDescriptionEl,
+  confirmFormEl,
+  confirmInputEl,
+  confirmInputLabelEl,
+  confirmInputTextEl,
+  confirmModalEl,
+  confirmStatusEl,
+  confirmSubmitEl,
+  confirmTitleEl,
+  contentShellEl,
   createStorageViews,
   currentPasswordEl,
   currentPasswordMembersEl,
@@ -50,6 +62,7 @@ import {
   manualFieldsTitleEl,
   memberCountEl,
   memberListEl,
+  membersStatusEl,
   navButtons,
   newPasswordEl,
   newPasswordMembersEl,
@@ -83,6 +96,7 @@ import {
 } from "/static/js/dom.js";
 import {
   createEmptyManualFields,
+  debounce,
   escapeHtml,
   formatBytes,
   formatDate,
@@ -118,11 +132,249 @@ let lastHistorySnapshot = appState.lastHistorySnapshot;
 let lastLogLayoutMode = appState.lastLogLayoutMode;
 let currentUser = appState.currentUser;
 let adminRefreshTimerId = appState.adminRefreshTimerId;
+let lastFocusedElement = null;
+let confirmResolver = null;
+let modalOpenCount = 0;
+const debouncedLogSearchRenderers = Object.fromEntries(
+  STORAGE_KEYS.map((storageKey) => {
+    return [storageKey, debounce(() => {
+      renderStoragePage(storageKey);
+    }, 160)];
+  }),
+);
 
 function hasAllowedUploadExtension(filename) {
   const lowerName = typeof filename === "string" ? filename.toLowerCase() : "";
   return ALLOWED_UPLOAD_EXTENSIONS.some((extension) => lowerName.endsWith(extension));
 }
+
+function announce(message) {
+  if (appLiveRegionEl === null || typeof message !== "string" || message === "") {
+    return;
+  }
+  appLiveRegionEl.textContent = "";
+  window.setTimeout(() => {
+    appLiveRegionEl.textContent = message;
+  }, 20);
+}
+
+function setStatusText(targetEl, message, shouldAnnounce = true) {
+  if (targetEl !== null) {
+    targetEl.textContent = message;
+  }
+  if (shouldAnnounce && message) {
+    announce(message);
+  }
+}
+
+function setMarkup(targetEl, markup) {
+  if (targetEl !== null && targetEl.innerHTML !== markup) {
+    targetEl.innerHTML = markup;
+  }
+}
+
+function setPanelTabRelationship(panelEl, tabId) {
+  if (panelEl !== null) {
+    panelEl.setAttribute("aria-labelledby", tabId);
+  }
+}
+
+function rememberFocusedElement() {
+  if (document.activeElement instanceof HTMLElement) {
+    lastFocusedElement = document.activeElement;
+  }
+}
+
+function restoreFocus() {
+  if (lastFocusedElement instanceof HTMLElement) {
+    lastFocusedElement.focus();
+  }
+  lastFocusedElement = null;
+}
+
+function getOpenDialogElement() {
+  if (confirmModalEl !== null && confirmModalEl.hidden === false) {
+    return confirmModalEl;
+  }
+  if (manualFieldsModalEl !== null && manualFieldsModalEl.hidden === false) {
+    return manualFieldsModalEl;
+  }
+  return null;
+}
+
+function getFocusableDialogElements(dialogEl) {
+  return Array.from(dialogEl.querySelectorAll('button:not([disabled]), input:not([disabled]):not([type="hidden"]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'))
+    .filter((element) => element instanceof HTMLElement && element.hidden === false && (element.offsetParent !== null || element === document.activeElement));
+}
+
+function focusDialog(dialogEl) {
+  const panel = dialogEl ? dialogEl.querySelector(".modal-panel") : null;
+  if (panel instanceof HTMLElement) {
+    const focusables = getFocusableDialogElements(dialogEl);
+    const target = focusables[0] || panel;
+    target.focus();
+  }
+}
+
+function syncAppInteractivityForModal() {
+  const modalOpen = modalOpenCount > 0;
+  for (const element of [appShellEl, loginScreenEl]) {
+    if (element === null) {
+      continue;
+    }
+    if (modalOpen) {
+      element.setAttribute("inert", "");
+      element.setAttribute("aria-hidden", "true");
+    } else {
+      element.removeAttribute("inert");
+      element.removeAttribute("aria-hidden");
+    }
+  }
+  document.body.classList.toggle("modal-open", modalOpen);
+}
+
+function closeConfirmModal(result) {
+  if (confirmModalEl === null) {
+    return;
+  }
+  confirmModalEl.hidden = true;
+  setStatusText(confirmStatusEl, "", false);
+  modalOpenCount = Math.max(0, modalOpenCount - 1);
+  syncAppInteractivityForModal();
+  const resolver = confirmResolver;
+  confirmResolver = null;
+  restoreFocus();
+  if (typeof resolver === "function") {
+    resolver(result);
+  }
+}
+
+function requestConfirmation(config) {
+  if (
+    confirmModalEl === null ||
+    confirmTitleEl === null ||
+    confirmDescriptionEl === null ||
+    confirmFormEl === null ||
+    confirmInputLabelEl === null ||
+    confirmInputEl === null ||
+    confirmSubmitEl === null
+  ) {
+    return Promise.resolve(false);
+  }
+
+  rememberFocusedElement();
+  confirmTitleEl.textContent = config.title || "확인";
+  confirmDescriptionEl.textContent = config.description || "계속 진행할지 확인해 주세요.";
+  confirmSubmitEl.textContent = config.confirmLabel || "진행";
+  confirmSubmitEl.classList.toggle("danger", config.variant !== "secondary");
+  confirmInputLabelEl.hidden = config.requireInput !== true;
+  confirmInputEl.required = config.requireInput === true;
+  confirmInputEl.value = config.initialValue || "";
+  confirmInputEl.placeholder = config.inputPlaceholder || "사유를 입력하세요";
+  if (confirmInputTextEl !== null) {
+    confirmInputTextEl.textContent = config.inputLabel || "사유";
+  }
+  setStatusText(confirmStatusEl, "", false);
+  confirmModalEl.hidden = false;
+  modalOpenCount += 1;
+  syncAppInteractivityForModal();
+  focusDialog(confirmModalEl);
+
+  return new Promise((resolve) => {
+    confirmResolver = resolve;
+    confirmFormEl.onsubmit = (event) => {
+      event.preventDefault();
+      if (config.requireInput === true) {
+        const value = confirmInputEl.value.trim();
+        if (value === "") {
+          setStatusText(confirmStatusEl, "진행 사유를 입력해 주세요.");
+          confirmInputEl.focus();
+          return;
+        }
+        closeConfirmModal(value);
+        return;
+      }
+      closeConfirmModal(true);
+    };
+  });
+}
+
+document.addEventListener("keydown", (event) => {
+  const openDialogEl = getOpenDialogElement();
+  if (openDialogEl !== null) {
+    if (event.key === "Escape") {
+      event.preventDefault();
+      if (confirmModalEl !== null && confirmModalEl.hidden === false) {
+        closeConfirmModal(false);
+        return;
+      }
+      closeManualFieldsModal();
+      return;
+    }
+
+    if (event.key !== "Tab") {
+      return;
+    }
+
+    const focusables = getFocusableDialogElements(openDialogEl);
+    if (focusables.length === 0) {
+      return;
+    }
+
+    const first = focusables[0];
+    const last = focusables[focusables.length - 1];
+
+    if (event.shiftKey && document.activeElement === first) {
+      event.preventDefault();
+      last.focus();
+    } else if (event.shiftKey === false && document.activeElement === last) {
+      event.preventDefault();
+      first.focus();
+    }
+    return;
+  }
+
+  const tabTarget = event.target;
+  if (!(tabTarget instanceof HTMLElement) || tabTarget.getAttribute("role") !== "tab") {
+    return;
+  }
+
+  if (!["ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown", "Home", "End"].includes(event.key)) {
+    return;
+  }
+
+  const tabList = tabTarget.closest('[role="tablist"]');
+  if (tabList === null) {
+    return;
+  }
+
+  const tabs = Array.from(tabList.querySelectorAll('[role="tab"]'));
+  const currentIndex = tabs.indexOf(tabTarget);
+  if (currentIndex === -1) {
+    return;
+  }
+
+  let nextIndex = currentIndex;
+  if (event.key === "Home") {
+    nextIndex = 0;
+  } else if (event.key === "End") {
+    nextIndex = tabs.length - 1;
+  } else {
+    const direction = event.key === "ArrowLeft" || event.key === "ArrowUp" ? -1 : 1;
+    nextIndex = (currentIndex + direction + tabs.length) % tabs.length;
+  }
+
+  const nextTab = tabs[nextIndex];
+  if (!(nextTab instanceof HTMLElement)) {
+    return;
+  }
+
+  event.preventDefault();
+  nextTab.focus();
+  if (typeof nextTab.click === "function") {
+    nextTab.click();
+  }
+});
 
 loginFormEl.addEventListener("submit", async (event) => {
   event.preventDefault();
@@ -233,6 +485,28 @@ if (manualFieldsCloseEl !== null) {
   manualFieldsCloseEl.addEventListener("click", closeManualFieldsModal);
 }
 
+if (confirmCancelEl !== null) {
+  confirmCancelEl.addEventListener("click", () => {
+    closeConfirmModal(false);
+  });
+}
+
+if (confirmModalEl !== null) {
+  confirmModalEl.addEventListener("click", (event) => {
+    if (event.target === confirmModalEl) {
+      closeConfirmModal(false);
+    }
+  });
+}
+
+if (manualFieldsModalEl !== null) {
+  manualFieldsModalEl.addEventListener("click", (event) => {
+    if (event.target === manualFieldsModalEl) {
+      closeManualFieldsModal();
+    }
+  });
+}
+
 if (manualFieldsResetEl !== null) {
   manualFieldsResetEl.addEventListener("click", () => {
     fillManualFieldsForm(createEmptyManualFields());
@@ -272,15 +546,15 @@ if (manualFieldsFormEl !== null) {
 }
 
 if (requestSearchEl !== null) {
-  requestSearchEl.addEventListener("input", () => {
+  requestSearchEl.addEventListener("input", debounce(() => {
     renderFilteredRequestPosts();
-  });
+  }, 160));
 }
 
 if (bugSearchEl !== null) {
-  bugSearchEl.addEventListener("input", () => {
+  bugSearchEl.addEventListener("input", debounce(() => {
     renderFilteredBugPosts();
-  });
+  }, 160));
 }
 
 for (const button of requestFilterButtons) {
@@ -728,7 +1002,7 @@ document.addEventListener("input", (event) => {
     storageState[storageKey].logSearchQuery = target.value.trim();
     storageState[storageKey].rawPage = 1;
     storageState[storageKey].summaryPage = 1;
-    renderStoragePage(storageKey);
+    debouncedLogSearchRenderers[storageKey]?.();
   }
 });
 
@@ -764,20 +1038,21 @@ function renderSelectedFiles() {
   }
 
   if (selectedFiles.length === 0) {
-    uploadFileListEl.innerHTML = "<div class='empty'>파일을 선택하면 각 파일의 저장 이름 입력칸이 여기에 표시됩니다.</div>";
+    setMarkup(uploadFileListEl, "<div class='empty'>파일을 선택하면 각 파일의 저장 이름 입력칸이 여기에 표시됩니다.</div>");
     return;
   }
   if (selectedFiles.some((selectedFile) => !hasAllowedUploadExtension(selectedFile.name))) {
-    uploadFileListEl.innerHTML = "<div class='empty'>.log 또는 .txt 파일만 선택할 수 있습니다.</div>";
+    setMarkup(uploadFileListEl, "<div class='empty'>.log 또는 .txt 파일만 선택할 수 있습니다.</div>");
     return;
   }
 
-  uploadFileListEl.innerHTML = selectedFiles.map((file, index) => {
+  const fileMarkup = selectedFiles.map((file, index) => {
     return "<label class='file-name-row'>" +
       "<span class='file-name-title'>" + escapeHtml(file.name) + "</span>" +
       "<input class='save-name-input' type='text' name='save_names' value='" + escapeHtml(file.name) + "' data-index='" + index + "' required>" +
     "</label>";
   }).join("");
+  setMarkup(uploadFileListEl, fileMarkup);
 }
 
 function clearSession() {
@@ -933,10 +1208,12 @@ function showPage(page, options) {
 
   for (const button of navButtons) {
     button.classList.toggle("active", button.dataset.page === page);
+    button.setAttribute("aria-current", button.dataset.page === page ? "page" : "false");
   }
 
   for (const section of pageSections) {
     section.classList.toggle("active", section.id === "page-" + page);
+    section.hidden = section.id !== "page-" + page;
   }
 
   pageTitleEl.textContent = pageMeta[page].title;
@@ -946,6 +1223,10 @@ function showPage(page, options) {
     renderStorageSubViews(page);
     renderStorageLogView(page);
     renderStoragePage(page);
+  }
+
+  if (contentShellEl !== null) {
+    contentShellEl.setAttribute("data-page", page);
   }
 
   syncHistoryState(historyMode);
@@ -984,10 +1265,11 @@ async function updateUserStatus(userId, isActive) {
   }
   const { response, payload } = await putJson("/admin/users/" + userId + "/status", { is_active: isActive });
   if (response.ok === false) {
-    window.alert(payload.detail || "사용자 상태 변경에 실패했습니다.");
+    setStatusText(membersStatusEl, payload.detail || "회원 상태 변경에 실패했습니다.");
     return;
   }
   await Promise.all([loadUsers(), loadActiveSessions()]);
+  setStatusText(membersStatusEl, (payload.display_name || payload.username || "선택한 계정") + " 상태를 업데이트했습니다.");
   if (currentUser !== null && currentUser.id === payload.id) {
     currentUser = payload;
     loginUserEl.textContent = getCurrentDisplayName() + " 님";
@@ -1003,16 +1285,16 @@ function renderUserList() {
   memberCountEl.textContent = allUsers.length + "명";
 
   if (isAdmin() === false) {
-    memberListEl.innerHTML = "<div class='empty'>관리자만 볼 수 있습니다.</div>";
+    setMarkup(memberListEl, "<div class='empty'>관리자만 볼 수 있습니다.</div>");
     return;
   }
 
   if (allUsers.length === 0) {
-    memberListEl.innerHTML = "<div class='empty'>등록된 회원이 없습니다.</div>";
+    setMarkup(memberListEl, "<div class='empty'>등록된 회원이 없습니다.</div>");
     return;
   }
 
-  memberListEl.innerHTML = allUsers.map((user) => {
+  const usersMarkup = allUsers.map((user) => {
     const displayName = user.display_name || user.full_name || user.username;
     const approvalPending = user.approval_pending === true;
     const stateLabel = approvalPending ? "승인 대기" : (user.is_active ? "사용중" : "비활성");
@@ -1028,6 +1310,7 @@ function renderUserList() {
       "</div>" +
     "</article>";
   }).join("");
+  setMarkup(memberListEl, usersMarkup);
 }
 
 async function loadActiveSessions() {
@@ -1046,14 +1329,14 @@ function renderActiveSessions() {
     return;
   }
   if (isAdmin() === false) {
-    activeSessionListEl.innerHTML = "<div class='empty'>관리자만 볼 수 있습니다.</div>";
+    setMarkup(activeSessionListEl, "<div class='empty'>관리자만 볼 수 있습니다.</div>");
     return;
   }
   if (allActiveSessions.length === 0) {
-    activeSessionListEl.innerHTML = "<div class='empty'>활성 세션이 없습니다.</div>";
+    setMarkup(activeSessionListEl, "<div class='empty'>활성 세션이 없습니다.</div>");
     return;
   }
-  activeSessionListEl.innerHTML = allActiveSessions.map((session) => {
+  const sessionsMarkup = allActiveSessions.map((session) => {
     return "<article class='member-card'>" +
       "<div>" +
         "<strong>" + escapeHtml(session.display_name || session.username) + "</strong>" +
@@ -1063,6 +1346,7 @@ function renderActiveSessions() {
       "<span class='member-badge'>" + escapeHtml(session.role || "user") + "</span>" +
     "</article>";
   }).join("");
+  setMarkup(activeSessionListEl, sessionsMarkup);
 }
 
 async function loadDeletionRequests() {
@@ -1083,11 +1367,11 @@ async function reviewDeletionRequest(requestId, action) {
 
   const { response, payload } = await putJson("/admin/deletion-requests/" + requestId + "/review", { action });
   if (response.ok === false) {
-    window.alert(payload.detail || "삭제 요청 처리에 실패했습니다.");
+    setStatusText(membersStatusEl, payload.detail || "삭제 요청 처리에 실패했습니다.");
     return;
   }
   await Promise.all([loadDeletionRequests(), loadLogs()]);
-  statusEl.textContent = (payload.target_label || "선택한 로그") + " 삭제 요청이 처리되었습니다.";
+  setStatusText(membersStatusEl, (payload.target_label || "선택한 로그") + " 삭제 요청을 처리했습니다.");
 }
 
 function renderDeletionRequests() {
@@ -1095,14 +1379,14 @@ function renderDeletionRequests() {
     return;
   }
   if (isAdmin() === false) {
-    deletionRequestListEl.innerHTML = "<div class='empty'>관리자만 볼 수 있습니다.</div>";
+    setMarkup(deletionRequestListEl, "<div class='empty'>관리자만 볼 수 있습니다.</div>");
     return;
   }
   if (allDeletionRequests.length === 0) {
-    deletionRequestListEl.innerHTML = "<div class='empty'>등록된 삭제 요청이 없습니다.</div>";
+    setMarkup(deletionRequestListEl, "<div class='empty'>등록된 삭제 요청이 없습니다.</div>");
     return;
   }
-  deletionRequestListEl.innerHTML = allDeletionRequests.map((item) => {
+  const deletionMarkup = allDeletionRequests.map((item) => {
     const actions = item.status === "pending"
       ? "<div class='request-actions'>" +
           "<button data-action='approve-deletion-request' data-request-id='" + item.id + "' type='button'>허용</button>" +
@@ -1123,6 +1407,7 @@ function renderDeletionRequests() {
       reviewMeta +
     "</article>";
   }).join("");
+  setMarkup(deletionRequestListEl, deletionMarkup);
 }
 
 function stopAdminRefresh() {
@@ -1188,14 +1473,28 @@ function renderStorageLogView(storageKey) {
 
   if (view.rawSectionEl !== null) {
     view.rawSectionEl.hidden = activeLogView !== "raw";
+    view.rawSectionEl.id = storageKey + "-raw-panel";
+    view.rawSectionEl.setAttribute("role", "tabpanel");
+    setPanelTabRelationship(view.rawSectionEl, storageKey + "-tab-raw");
   }
   if (view.summarySectionEl !== null) {
     view.summarySectionEl.hidden = activeLogView !== "summary";
+    view.summarySectionEl.id = storageKey + "-summary-panel";
+    view.summarySectionEl.setAttribute("role", "tabpanel");
+    setPanelTabRelationship(view.summarySectionEl, storageKey + "-tab-summary");
   }
 
   const buttons = document.querySelectorAll('[data-action="storage-log-view"][data-storage="' + storageKey + '"]');
   for (const button of buttons) {
-    button.classList.toggle("active", button.dataset.logView === activeLogView);
+    const isActive = button.dataset.logView === activeLogView;
+    const targetKey = button.dataset.logView === "summary" ? "summary" : "raw";
+    const buttonId = storageKey + "-tab-" + targetKey;
+    button.classList.toggle("active", isActive);
+    button.id = buttonId;
+    button.setAttribute("role", "tab");
+    button.setAttribute("aria-controls", storageKey + "-" + targetKey + "-panel");
+    button.setAttribute("aria-selected", isActive ? "true" : "false");
+    button.tabIndex = isActive ? 0 : -1;
   }
 }
 
@@ -1233,11 +1532,11 @@ function renderSiteList(storageKey, sites) {
   }
 
   if (sites.length === 0) {
-    view.siteListEl.innerHTML = "<div class='empty'>등록된 사이트가 없습니다.</div>";
+    setMarkup(view.siteListEl, "<div class='empty'>등록된 사이트가 없습니다.</div>");
     return;
   }
 
-  view.siteListEl.innerHTML = sites.map((site) => {
+  const siteMarkup = sites.map((site) => {
     const activeClass = storageState[storageKey].activeSiteId === site.id ? " active" : "";
     const adminButtons = isAdmin()
       ? "<button class='secondary' data-action='site-edit' data-storage='" + storageKey + "' data-id='" + site.id + "' type='button'>수정</button>" +
@@ -1251,6 +1550,7 @@ function renderSiteList(storageKey, sites) {
       "</div>" +
     "</article>";
   }).join("");
+  setMarkup(view.siteListEl, siteMarkup);
 }
 
 function renderSiteCurrent(storageKey, sites) {
@@ -1280,8 +1580,8 @@ function renderStoragePage(storageKey) {
   if (sites.length === 0 || state.activeSiteId === null) {
     state.rawId = null;
     state.summaryId = null;
-    view.rawListEl.innerHTML = "<div class='empty'>먼저 사이트를 등록하세요.</div>";
-    view.summaryListEl.innerHTML = "<div class='empty'>먼저 사이트를 등록하세요.</div>";
+    setMarkup(view.rawListEl, "<div class='empty'>먼저 사이트를 등록하세요.</div>");
+    setMarkup(view.summaryListEl, "<div class='empty'>먼저 사이트를 등록하세요.</div>");
     renderRawEmptyState(storageKey, "로그를 선택하면 원본 내용이 여기에 표시됩니다.");
     renderSummaryEmptyState(storageKey, "summary를 선택하면 요약 내용이 여기에 표시됩니다.");
     toggleLogDetailPage(storageKey, "raw", false);
@@ -1296,8 +1596,8 @@ function renderStoragePage(storageKey) {
   if (logs.length === 0) {
     state.rawId = null;
     state.summaryId = null;
-    view.rawListEl.innerHTML = "<div class='empty'>선택한 사이트에 업로드된 로그가 없습니다.</div>";
-    view.summaryListEl.innerHTML = "<div class='empty'>선택한 사이트에 업로드된 summary가 없습니다.</div>";
+    setMarkup(view.rawListEl, "<div class='empty'>선택한 사이트에 업로드된 로그가 없습니다.</div>");
+    setMarkup(view.summaryListEl, "<div class='empty'>선택한 사이트에 업로드된 summary가 없습니다.</div>");
     updateLogPagination(storageKey, "raw", 0, 0, 0);
     updateLogPagination(storageKey, "summary", 0, 0, 0);
     renderRawEmptyState(storageKey, "업로드된 원본 로그가 없습니다.");
@@ -1310,8 +1610,8 @@ function renderStoragePage(storageKey) {
   if (visibleLogs.length === 0) {
     state.rawId = null;
     state.summaryId = null;
-    view.rawListEl.innerHTML = "<div class='empty'>검색 조건과 일치하는 원본 로그가 없습니다.</div>";
-    view.summaryListEl.innerHTML = "<div class='empty'>검색 조건과 일치하는 summary가 없습니다.</div>";
+    setMarkup(view.rawListEl, "<div class='empty'>검색 조건과 일치하는 원본 로그가 없습니다.</div>");
+    setMarkup(view.summaryListEl, "<div class='empty'>검색 조건과 일치하는 summary가 없습니다.</div>");
     updateLogPagination(storageKey, "raw", 0, 0, 0);
     updateLogPagination(storageKey, "summary", 0, 0, 0);
     renderRawEmptyState(storageKey, "검색 조건을 바꾸면 원본 로그를 다시 볼 수 있습니다.");
@@ -1427,7 +1727,7 @@ function updateLogPagination(storageKey, type, totalCount, page, pageCount) {
     nextButton.disabled = pageCount === 0 || page >= pageCount;
   }
   if (container !== null && totalCount === 0) {
-    container.innerHTML = "<div class='empty'>표시할 로그가 없습니다.</div>";
+    setMarkup(container, "<div class='empty'>표시할 로그가 없습니다.</div>");
   }
 }
 
@@ -1446,13 +1746,14 @@ function renderLogListPage(storageKey, type, logs, activeId) {
 
   updateLogPagination(storageKey, type, logs.length, page, pageCount);
 
-  container.innerHTML = pageLogs.map((log) => {
+  const listMarkup = pageLogs.map((log) => {
     const activeClass = log.id === activeId ? " active" : "";
     return "<button class='log-item " + activeClass + "' data-action='" + action + "' data-storage='" + storageKey + "' data-id='" + log.id + "' type='button'>" +
       "<strong>" + escapeHtml(type === "raw" ? log.filename : log.filename + "_summary") + "</strong>" +
       "<div class='meta'><span>" + escapeHtml(formatDate(log.created_at)) + "</span><span>" + formatBytes(log.size) + "</span></div>" +
     "</button>";
   }).join("");
+  setMarkup(container, listMarkup);
 }
 
 function toggleLogDetailPage(storageKey, type, showDetail) {
@@ -1488,7 +1789,7 @@ function renderSummaryEmptyState(storageKey, message) {
   setDetailEmptyState(view.summaryDetailPageEl, true);
   view.summaryNameEl.textContent = "요약 로그 미리보기";
   view.summaryMetaEl.textContent = message;
-  view.summaryGridEl.innerHTML = "<div class='summary-field summary-field-empty'><strong>summary</strong><span>" + escapeHtml(message) + "</span></div>";
+  setMarkup(view.summaryGridEl, "<div class='summary-field summary-field-empty'><strong>summary</strong><span>" + escapeHtml(message) + "</span></div>");
   view.summaryRawEl.textContent = "";
   state.currentSummarySections = {};
   state.currentSpecialNotes = [];
@@ -1504,7 +1805,7 @@ async function loadRawLog(storageKey, logId) {
   if (response.ok === false) {
     renderRawEmptyState(storageKey, payload.detail || "원본 로그를 불러오지 못했습니다.");
     toggleLogDetailPage(storageKey, "raw", false);
-    view.rawListEl.innerHTML = "<div class='empty'>" + escapeHtml(payload.detail || "원본 로그를 불러오지 못했습니다.") + "</div>";
+    setMarkup(view.rawListEl, "<div class='empty'>" + escapeHtml(payload.detail || "원본 로그를 불러오지 못했습니다.") + "</div>");
     return;
   }
 
@@ -1523,7 +1824,7 @@ async function loadSummary(storageKey, logId) {
   if (response.ok === false) {
     renderSummaryEmptyState(storageKey, payload.detail || "summary를 불러오지 못했습니다.");
     toggleLogDetailPage(storageKey, "summary", false);
-    view.summaryListEl.innerHTML = "<div class='empty'>" + escapeHtml(payload.detail || "summary를 불러오지 못했습니다.") + "</div>";
+    setMarkup(view.summaryListEl, "<div class='empty'>" + escapeHtml(payload.detail || "summary를 불러오지 못했습니다.") + "</div>");
     return;
   }
 
@@ -1531,7 +1832,7 @@ async function loadSummary(storageKey, logId) {
   toggleLogDetailPage(storageKey, "summary", true);
   view.summaryNameEl.textContent = payload.summary_filename;
   view.summaryMetaEl.textContent = payload.filename + " / " + toStorageLabel(payload.storage_name) + " > " + (payload.site_name || "사이트 미지정");
-  view.summaryGridEl.innerHTML = renderSummaryFieldsMarkup(payload.summary || {});
+  setMarkup(view.summaryGridEl, renderSummaryFieldsMarkup(payload.summary || {}));
   view.summaryRawEl.textContent = payload.raw_text || "";
   storageState[storageKey].currentSummarySections = payload.section_contents || {};
   storageState[storageKey].currentSpecialNotes = (payload.section_contents && payload.section_contents["특이사항"]) || [];
@@ -1594,9 +1895,14 @@ function renderSummarySectionView(storageKey) {
 
   if (view.summaryOverviewPageEl !== null) {
     view.summaryOverviewPageEl.hidden = activeSection !== "overview";
+    view.summaryOverviewPageEl.id = storageKey + "-summary-overview-panel";
+    view.summaryOverviewPageEl.setAttribute("role", "tabpanel");
+    setPanelTabRelationship(view.summaryOverviewPageEl, storageKey + "-summary-tab-overview");
   }
   if (view.summarySectionPageEl !== null) {
     view.summarySectionPageEl.hidden = activeSection === "overview";
+    view.summarySectionPageEl.id = storageKey + "-summary-section-panel";
+    view.summarySectionPageEl.setAttribute("role", "tabpanel");
   }
   if (eventLogFiltersEl !== null && activeSection === "overview") {
     eventLogFiltersEl.hidden = true;
@@ -1615,7 +1921,13 @@ function renderSummarySectionView(storageKey) {
       }
       const filterButtons = eventLogFiltersEl.querySelectorAll('[data-action="event-log-filter"]');
       for (const button of filterButtons) {
-        button.classList.toggle("active", (button.dataset.eventLogFilter || "all") === activeEventLogFilter);
+        const isActive = (button.dataset.eventLogFilter || "all") === activeEventLogFilter;
+        button.id = storageKey + "-event-filter-" + (button.dataset.eventLogFilter || "all");
+        button.classList.toggle("active", isActive);
+        button.setAttribute("role", "tab");
+        button.setAttribute("aria-controls", storageKey + "-summary-section-panel");
+        button.setAttribute("aria-selected", isActive ? "true" : "false");
+        button.tabIndex = isActive ? 0 : -1;
       }
     } else if (eventLogFiltersEl !== null) {
       eventLogFiltersEl.hidden = true;
@@ -1623,9 +1935,9 @@ function renderSummarySectionView(storageKey) {
 
     view.summarySectionTitleEl.textContent = activeSection;
     if (activeSection === "특이사항") {
-      view.summarySectionMessageEl.innerHTML = renderSpecialNotesMarkup(storageKey);
+      setMarkup(view.summarySectionMessageEl, renderSpecialNotesMarkup(storageKey));
     } else if (useHtmlRender) {
-      view.summarySectionMessageEl.innerHTML = renderEventLogEntriesMarkup(sectionText);
+      setMarkup(view.summarySectionMessageEl, renderEventLogEntriesMarkup(sectionText));
     } else {
       view.summarySectionMessageEl.textContent = sectionText || activeSection + " 페이지는 다음 단계에서 구성할 예정입니다.";
     }
@@ -1633,7 +1945,19 @@ function renderSummarySectionView(storageKey) {
 
   const buttons = document.querySelectorAll('[data-action="summary-section-view"][data-storage="' + storageKey + '"]');
   for (const button of buttons) {
-    button.classList.toggle("active", (button.dataset.summarySection || "overview") === activeSection);
+    const isActive = (button.dataset.summarySection || "overview") === activeSection;
+    const sectionKey = (button.dataset.summarySection || "overview").replace(/\s+/g, "-").toLowerCase();
+    const panelId = button.dataset.summarySection === "overview" ? storageKey + "-summary-overview-panel" : storageKey + "-summary-section-panel";
+    const buttonId = storageKey + "-summary-tab-" + sectionKey;
+    button.classList.toggle("active", isActive);
+    button.id = buttonId;
+    button.setAttribute("role", "tab");
+    button.setAttribute("aria-controls", panelId);
+    button.setAttribute("aria-selected", isActive ? "true" : "false");
+    button.tabIndex = isActive ? 0 : -1;
+    if (isActive) {
+      setPanelTabRelationship(button.dataset.summarySection === "overview" ? view.summaryOverviewPageEl : view.summarySectionPageEl, buttonId);
+    }
   }
 }
 
@@ -1788,8 +2112,12 @@ async function deleteStorageSite(storageKey, siteId) {
     return;
   }
 
-  const confirmed = window.confirm(target.name + " 사이트를 삭제하시겠습니까?");
-  if (confirmed === false) {
+  const confirmed = await requestConfirmation({
+    title: "사이트 삭제",
+    description: "'" + target.name + "' 사이트를 삭제합니다. 이 작업은 되돌릴 수 없습니다.",
+    confirmLabel: "사이트 삭제",
+  });
+  if (confirmed !== true) {
     return;
   }
 
@@ -1817,20 +2145,27 @@ async function requestSelectedLogDeletion(logId) {
     return;
   }
 
-  const reason = window.prompt("삭제 요청 사유를 입력하세요.", "");
-  if (reason === null) {
+  const reason = await requestConfirmation({
+    title: "삭제 요청 등록",
+    description: "삭제 요청 사유를 남겨 주세요. 관리자가 검토할 때 함께 확인합니다.",
+    confirmLabel: "삭제 요청 보내기",
+    requireInput: true,
+    inputLabel: "삭제 요청 사유",
+    inputPlaceholder: "예: 중복 업로드된 로그입니다.",
+  });
+  if (typeof reason !== "string") {
     return;
   }
 
-  statusEl.textContent = "삭제 요청 등록 중...";
+  setStatusText(statusEl, "삭제 요청을 등록하는 중입니다.");
   const { response, payload } = await postJson("/logs/" + logId + "/deletion-requests", { reason });
 
   if (response.ok === false) {
-    statusEl.textContent = payload.detail || "삭제 요청 등록에 실패했습니다.";
+    setStatusText(statusEl, payload.detail || "삭제 요청 등록에 실패했습니다.");
     return;
   }
 
-  statusEl.textContent = (payload.target_label || "선택한 로그") + " 삭제 요청이 등록되었습니다.";
+  setStatusText(statusEl, (payload.target_label || "선택한 로그") + " 삭제 요청을 등록했습니다.");
   if (isAdmin()) {
     await loadDeletionRequests();
   }
@@ -1872,7 +2207,9 @@ function renderFilteredRequestPosts() {
 
 function updateRequestFilterButtons() {
   for (const button of requestFilterButtons) {
-    button.classList.toggle("active", (button.dataset.requestFilter || "all") === activeRequestFilter);
+    const isActive = (button.dataset.requestFilter || "all") === activeRequestFilter;
+    button.classList.toggle("active", isActive);
+    button.setAttribute("aria-pressed", isActive ? "true" : "false");
   }
 }
 
@@ -1881,12 +2218,12 @@ function renderRequestPosts(posts) {
     requestCountEl.textContent = posts.length + "건";
   }
   if (posts.length === 0) {
-    requestListEl.innerHTML = "<div class='empty'>등록된 수정 요청이 없습니다.</div>";
+    setMarkup(requestListEl, "<div class='empty'>등록된 수정 요청이 없습니다.</div>");
     return;
   }
 
   const canManage = isAuthenticated();
-  requestListEl.innerHTML = posts.map((post) => {
+  const requestMarkup = posts.map((post) => {
     const actions = canManage
       ? "<div class='request-actions'>" +
           "<button class='secondary' data-action='request-edit' data-id='" + post.id + "' type='button'>수정</button>" +
@@ -1903,6 +2240,7 @@ function renderRequestPosts(posts) {
       "<div class='request-meta'><span>작성자: " + escapeHtml(post.author || "-") + "</span><span>업데이트: " + escapeHtml(formatDate(post.updated_at || post.created_at)) + "</span></div>" +
     "</article>";
   }).join("");
+  setMarkup(requestListEl, requestMarkup);
 }
 
 function renderFilteredBugPosts() {
@@ -1930,12 +2268,12 @@ function renderBugPosts(posts) {
   }
 
   if (posts.length === 0) {
-    bugListEl.innerHTML = "<div class='empty'>등록된 버그가 없습니다.</div>";
+    setMarkup(bugListEl, "<div class='empty'>등록된 버그가 없습니다.</div>");
     return;
   }
 
   const canManage = isAuthenticated();
-  bugListEl.innerHTML = posts.map((post) => {
+  const bugMarkup = posts.map((post) => {
     const actions = canManage
       ? "<div class='request-actions'>" +
           "<button class='secondary' data-action='bug-edit' data-id='" + post.id + "' type='button'>수정</button>" +
@@ -1952,24 +2290,22 @@ function renderBugPosts(posts) {
       "<div class='request-meta'><span>작성자: " + escapeHtml(post.author || "-") + "</span><span>업데이트: " + escapeHtml(formatDate(post.updated_at || post.created_at)) + "</span></div>" +
     "</article>";
   }).join("");
+  setMarkup(bugListEl, bugMarkup);
 }
 
 function populateRequestForm(postId) {
-  getJson("/requests")
-    .then(({ payload: posts }) => {
-      const target = Array.isArray(posts) ? posts.find((post) => post.id === postId) : null;
-      if (target === undefined || target === null) {
-        return;
-      }
-      requestEditIdEl.value = String(target.id);
-      requestStatusEl.value = target.status;
-      requestTitleEl.value = target.title;
-      requestContentEl.value = target.content;
-      requestSubmitButtonEl.textContent = "수정 저장";
-      requestCancelButtonEl.hidden = false;
-      requestStatusMessageEl.textContent = "수정할 내용을 편집한 뒤 저장하세요.";
-      showPage("requests");
-    });
+  const target = allRequestPosts.find((post) => post.id === postId);
+  if (!target) {
+    return;
+  }
+  requestEditIdEl.value = String(target.id);
+  requestStatusEl.value = target.status;
+  requestTitleEl.value = target.title;
+  requestContentEl.value = target.content;
+  requestSubmitButtonEl.textContent = "수정 저장";
+  requestCancelButtonEl.hidden = false;
+  setStatusText(requestStatusMessageEl, "수정할 내용을 편집한 뒤 저장해 주세요.");
+  showPage("requests");
 }
 
 function populateBugForm(postId) {
@@ -1987,8 +2323,12 @@ function populateBugForm(postId) {
 }
 
 async function deleteRequestPost(postId) {
-  const confirmed = window.confirm("이 수정 요청 글을 삭제하시겠습니까?");
-  if (confirmed === false) {
+  const confirmed = await requestConfirmation({
+    title: "수정 요청 삭제",
+    description: "이 수정 요청 글을 삭제합니다. 삭제 후에는 다시 복구할 수 없습니다.",
+    confirmLabel: "글 삭제",
+  });
+  if (confirmed !== true) {
     return;
   }
 
@@ -2007,8 +2347,12 @@ async function deleteRequestPost(postId) {
 }
 
 async function deleteBugPost(postId) {
-  const confirmed = window.confirm("이 버그 글을 삭제하시겠습니까?");
-  if (confirmed === false) {
+  const confirmed = await requestConfirmation({
+    title: "버그 글 삭제",
+    description: "이 버그 글을 삭제합니다. 삭제 후에는 다시 복구할 수 없습니다.",
+    confirmLabel: "글 삭제",
+  });
+  if (confirmed !== true) {
     return;
   }
 
@@ -2089,6 +2433,7 @@ function getManualFieldsFromForm() {
 }
 
 function openManualFieldsModal(mode, storageKey, logId) {
+  rememberFocusedElement();
   manualFieldsModalMode = mode;
   manualFieldsModalTarget = { storageKey: storageKey || null, logId: logId || null };
   manualFieldsStatusEl.textContent = "";
@@ -2100,11 +2445,17 @@ function openManualFieldsModal(mode, storageKey, logId) {
     fillManualFieldsForm(uploadManualFields);
   }
   manualFieldsModalEl.hidden = false;
+  modalOpenCount += 1;
+  syncAppInteractivityForModal();
+  focusDialog(manualFieldsModalEl);
 }
 
 function closeManualFieldsModal() {
   manualFieldsModalEl.hidden = true;
   manualFieldsStatusEl.textContent = "";
+  modalOpenCount = Math.max(0, modalOpenCount - 1);
+  syncAppInteractivityForModal();
+  restoreFocus();
 }
 
 function getHistoryStateSnapshot() {

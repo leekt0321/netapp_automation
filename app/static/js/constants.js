@@ -20,31 +20,31 @@ export const ALLOWED_UPLOAD_EXTENSIONS = [".log", ".txt"];
 
 export const pageMeta = {
   dashboard: {
-    title: "Dashboard",
-    description: "업로드 파일 수와 최근 업로드 파일을 확인합니다.",
+    title: "대시보드",
+    description: "업로드 현황을 확인하고 새 로그 파일을 등록합니다.",
   },
   storage1: {
     title: "스토리지1팀",
-    description: "스토리지1팀 내부 사이트별 원본 로그와 요약 로그를 확인합니다.",
+    description: "스토리지1팀 사이트별 원본 로그와 요약 로그를 확인합니다.",
   },
   storage2: {
     title: "스토리지2팀",
-    description: "스토리지2팀 내부 사이트별 원본 로그와 요약 로그를 확인합니다.",
+    description: "스토리지2팀 사이트별 원본 로그와 요약 로그를 확인합니다.",
   },
   storage3: {
     title: "스토리지3팀",
-    description: "스토리지3팀 내부 사이트별 원본 로그와 요약 로그를 확인합니다.",
+    description: "스토리지3팀 사이트별 원본 로그와 요약 로그를 확인합니다.",
   },
   members: {
-    title: "회원 관리 목록",
-    description: "회원가입된 계정 정보를 확인하고 내 계정을 관리합니다.",
+    title: "회원 관리",
+    description: "가입 승인, 계정 상태 변경, 삭제 요청 검토를 진행합니다.",
   },
   bugs: {
-    title: "버그 모음",
-    description: "운영 중 확인된 버그와 추후 정리할 이슈를 모아봅니다.",
+    title: "버그 기록",
+    description: "운영 중 발견한 버그를 기록하고 업데이트합니다.",
   },
   requests: {
     title: "수정 요청 게시판",
-    description: "수정 요청을 등록하고 진행 상태를 관리합니다.",
+    description: "수정 요청을 등록하고 진행 상태를 추적합니다.",
   },
 };

@@ -74,3 +74,16 @@ export function createEmptyManualFields() {
 export function isDesktopLogSplitView() {
   return window.matchMedia(DESKTOP_LOG_MEDIA_QUERY).matches;
 }
+
+export function debounce(callback, delayMs) {
+  let timeoutId = null;
+  return (...args) => {
+    if (timeoutId !== null) {
+      window.clearTimeout(timeoutId);
+    }
+    timeoutId = window.setTimeout(() => {
+      timeoutId = null;
+      callback(...args);
+    }, delayMs);
+  };
+}
