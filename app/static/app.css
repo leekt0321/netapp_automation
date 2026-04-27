@@ -372,8 +372,7 @@ textarea {
 }
 
 .member-list,
-.site-list,
-.log-list-vertical {
+.site-list {
   content-visibility: auto;
   contain-intrinsic-size: 420px;
 }
@@ -1071,6 +1070,8 @@ textarea {
 
 .log-list-vertical {
   align-content: start;
+  content-visibility: visible;
+  contain: none;
 }
 
 [data-role="raw-log-list-page"],
@@ -1175,8 +1176,40 @@ textarea {
 
 .log-item {
   width: 100%;
+  height: auto;
   text-align: left;
   color: var(--text);
+  display: grid;
+  gap: 8px;
+  align-content: start;
+  min-height: 74px;
+  padding: 14px 16px;
+  overflow: visible;
+  line-height: 1.35;
+  white-space: normal;
+  box-sizing: border-box;
+}
+
+.log-item strong {
+  display: block;
+  min-width: 0;
+  max-width: 100%;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+.log-item .meta {
+  margin-top: 0;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  row-gap: 4px;
+  line-height: 1.35;
+  min-width: 0;
+  max-width: 100%;
+  color: var(--text-muted);
 }
 
 .log-item.active,

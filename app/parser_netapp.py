@@ -57,6 +57,29 @@ def _strip_terminal_backspaces(text: str) -> str:
 
 
 def decode_text_content(content: bytes) -> str:
+    if content.startswith((b"\xff\xfe", b"\xfe\xff")):
+        for encoding in ("utf-16", "utf-16-le", "utf-16-be"):
+            try:
+                return _strip_terminal_backspaces(content.decode(encoding))
+            except UnicodeDecodeError:
+                continue
+
+    sample = content[:4096]
+    if sample:
+        even_nulls = sample[0::2].count(0)
+        odd_nulls = sample[1::2].count(0)
+        sample_pairs = max(1, len(sample) // 2)
+        if odd_nulls / sample_pairs > 0.25 and even_nulls / sample_pairs < 0.05:
+            try:
+                return _strip_terminal_backspaces(content.decode("utf-16-le"))
+            except UnicodeDecodeError:
+                pass
+        if even_nulls / sample_pairs > 0.25 and odd_nulls / sample_pairs < 0.05:
+            try:
+                return _strip_terminal_backspaces(content.decode("utf-16-be"))
+            except UnicodeDecodeError:
+                pass
+
     for encoding in ("utf-8-sig", "utf-8", "cp949", "euc-kr"):
         try:
             return _strip_terminal_backspaces(content.decode(encoding))

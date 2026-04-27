@@ -390,7 +390,7 @@ def get_raw_log(log_id: int, db: Session) -> dict:
         "storage_name": log.storage_name,
         "site_id": log.site_id,
         "site_name": row[1],
-        "raw_text": raw_path.read_text(encoding="utf-8", errors="replace"),
+        "raw_text": decode_text_content(raw_path.read_bytes()),
     }
 
 

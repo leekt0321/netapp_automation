@@ -133,6 +133,33 @@ def test_upload_multiple_files_counts_each_file_once(client, upload_dir: Path, s
     assert len([path for path in upload_dir.iterdir() if path.name.endswith(".log")]) == 2
 
 
+def test_raw_log_preview_decodes_utf16_le(client, sample_log: str):
+    admin_login = login(client, "admin", "secret123")
+    assert admin_login.status_code == 200
+
+    site = create_site_as_admin(client, "storage1", "하나금융티아이")
+    utf16_log = sample_log.encode("utf-16-le")
+
+    upload_response = client.post(
+        "/upload",
+        data={
+            "save_name": "utf16.log",
+            "storage_name": "storage1",
+            "site_id": str(site["id"]),
+            "manual_fields_json": "",
+        },
+        files={"file": ("utf16.log", utf16_log, "text/plain")},
+    )
+    assert upload_response.status_code == 200
+    log_item = upload_response.json()["latest"]
+
+    raw_response = client.get(f"/logs/{log_item['id']}/raw")
+    assert raw_response.status_code == 200
+    raw_text = raw_response.json()["raw_text"]
+    assert "FAS2750::*>" in raw_text
+    assert "\x00" not in raw_text
+
+
 def test_upload_rejects_invalid_site_and_does_not_create_files(client, upload_dir: Path, sample_log: str):
     admin_login = login(client, "admin", "secret123")
     assert admin_login.status_code == 200

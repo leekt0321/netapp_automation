@@ -2223,6 +2223,8 @@ async function loadRawLog(storageKey, logId) {
   view.rawNameEl.textContent = payload.filename;
   view.rawMetaEl.textContent = "상태: " + payload.status + " / 저장 위치: " + toStorageLabel(payload.storage_name) + " > " + (payload.site_name || "사이트 미지정") + " / 크기: " + formatBytes(payload.size);
   view.rawContentEl.textContent = payload.raw_text || "";
+  view.rawContentEl.scrollTop = 0;
+  view.rawContentEl.scrollLeft = 0;
 }
 
 async function loadSummary(storageKey, logId) {

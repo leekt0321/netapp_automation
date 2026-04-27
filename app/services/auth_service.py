@@ -13,7 +13,7 @@ from app.models import User, UserSession
 from app.schemas.payloads import ChangePasswordPayload, DeleteUserPayload, LoginPayload, RegisterPayload
 
 
-SESSION_DURATION_HOURS = 24
+SESSION_DURATION_HOURS = 12
 
 
 def utc_now() -> datetime:
