@@ -7,6 +7,8 @@ export function createStorageState(storageKeys, createEmptyManualFields) {
       activeSiteId: null,
       activeView: "sites",
       activeLogView: "raw",
+      siteSearchQuery: "",
+      siteSortMode: "name-asc",
       logSearchQuery: "",
       logSortMode: "newest",
       pageSize: 10,

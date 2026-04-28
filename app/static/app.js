@@ -164,6 +164,13 @@ const debouncedLogSearchRenderers = Object.fromEntries(
     }, 160)];
   }),
 );
+const debouncedSiteSearchRenderers = Object.fromEntries(
+  STORAGE_KEYS.map((storageKey) => {
+    return [storageKey, debounce(() => {
+      renderSiteSections();
+    }, 160)];
+  }),
+);
 
 function hasAllowedUploadExtension(filename) {
   const lowerName = typeof filename === "string" ? filename.toLowerCase() : "";
@@ -679,7 +686,13 @@ if (changePasswordFormMembersEl !== null) {
 
 for (const button of navButtons) {
   button.addEventListener("click", () => {
-    showPage(button.dataset.page);
+    if (button.dataset.action === "toggle-log-center-nav") {
+      toggleLogCenterNav();
+      return;
+    }
+    if (button.dataset.page) {
+      showPage(button.dataset.page);
+    }
   });
 }
 
@@ -1246,6 +1259,12 @@ document.addEventListener("input", (event) => {
     storageState[storageKey].rawPage = 1;
     storageState[storageKey].summaryPage = 1;
     debouncedLogSearchRenderers[storageKey]?.();
+    return;
+  }
+  if (target.dataset.action === "site-search") {
+    const storageKey = target.dataset.storage;
+    storageState[storageKey].siteSearchQuery = target.value.trim();
+    debouncedSiteSearchRenderers[storageKey]?.();
   }
 });
 
@@ -1271,6 +1290,11 @@ document.addEventListener("change", (event) => {
     storageState[storageKey].rawPage = 1;
     storageState[storageKey].summaryPage = 1;
     renderStoragePage(storageKey);
+    return;
+  }
+  if (target.dataset.action === "site-sort") {
+    storageState[storageKey].siteSortMode = target.value;
+    renderSiteSections();
   }
 });
 
@@ -1330,6 +1354,9 @@ function applyRolePermissions() {
   const admin = isAdmin();
   for (const element of adminOnlyElements) {
     element.hidden = !admin;
+  }
+  for (const grid of document.querySelectorAll(".storage-site-grid-manage")) {
+    grid.classList.toggle("site-grid-full", admin === false);
   }
   if (memberCountEl !== null) {
     memberCountEl.textContent = admin ? memberCountEl.textContent : "-";
@@ -1448,11 +1475,15 @@ function showPage(page, options) {
     page = "dashboard";
   }
   currentPage = page;
+  const isStoragePage = STORAGE_KEYS.includes(page);
 
   for (const button of navButtons) {
-    button.classList.toggle("active", button.dataset.page === page);
+    const isLogCenterParent = button.dataset.action === "toggle-log-center-nav";
+    const isActive = isLogCenterParent ? isStoragePage : button.dataset.page === page;
+    button.classList.toggle("active", isActive);
     button.setAttribute("aria-current", button.dataset.page === page ? "page" : "false");
   }
+  syncLogCenterNav(isStoragePage);
 
   for (const section of pageSections) {
     section.classList.toggle("active", section.id === "page-" + page);
@@ -1473,6 +1504,31 @@ function showPage(page, options) {
   }
 
   syncHistoryState(historyMode);
+}
+
+function toggleLogCenterNav() {
+  const group = document.querySelector('[data-role="log-center-nav"]');
+  if (!(group instanceof HTMLElement)) {
+    return;
+  }
+  setLogCenterNavOpen(group.classList.contains("open") === false);
+}
+
+function syncLogCenterNav(shouldOpen) {
+  if (shouldOpen) {
+    setLogCenterNavOpen(true);
+  }
+}
+
+function setLogCenterNavOpen(open) {
+  const group = document.querySelector('[data-role="log-center-nav"]');
+  const button = document.querySelector('[data-action="toggle-log-center-nav"]');
+  if (group instanceof HTMLElement) {
+    group.classList.toggle("open", open);
+  }
+  if (button instanceof HTMLButtonElement) {
+    button.setAttribute("aria-expanded", open ? "true" : "false");
+  }
 }
 
 async function loadInitialData() {
@@ -1931,6 +1987,7 @@ function renderSiteSections() {
 
     renderSiteList(storageKey, sites);
     renderSiteCurrent(storageKey, sites);
+    renderSiteSwitcher(storageKey, sites);
   }
 }
 
@@ -1940,19 +1997,34 @@ function renderSiteList(storageKey, sites) {
     return;
   }
 
+  const metricsBySiteId = getSiteMetricsById(sites);
+  syncSiteListControls(storageKey, sites, metricsBySiteId);
+
   if (sites.length === 0) {
     setMarkup(view.siteListEl, "<div class='empty'>등록된 사이트가 없습니다.</div>");
     return;
   }
 
-  const siteMarkup = sites.map((site) => {
+  const visibleSites = getVisibleSites(storageKey, sites, metricsBySiteId);
+  if (visibleSites.length === 0) {
+    setMarkup(view.siteListEl, "<div class='empty'>검색 조건과 일치하는 사이트가 없습니다.</div>");
+    return;
+  }
+
+  const siteMarkup = visibleSites.map((site) => {
     const activeClass = storageState[storageKey].activeSiteId === site.id ? " active" : "";
+    const metrics = metricsBySiteId.get(site.id) || createEmptySiteMetrics();
+    const latestText = metrics.latestAt === null ? "최근 업로드 없음" : "최근 " + formatDate(metrics.latestAt);
     const adminButtons = isAdmin()
       ? "<button class='secondary' data-action='site-edit' data-storage='" + storageKey + "' data-id='" + site.id + "' type='button'>수정</button>" +
         "<button class='danger' data-action='site-delete' data-storage='" + storageKey + "' data-id='" + site.id + "' type='button'>삭제</button>"
       : "";
     return "<article class='site-item" + activeClass + "'>" +
-      "<div><strong>" + escapeHtml(site.name) + "</strong><p>" + escapeHtml(toStorageLabel(site.storage_name)) + "</p></div>" +
+      "<div class='site-main'><strong>" + escapeHtml(site.name) + "</strong><p>" + escapeHtml(toStorageLabel(site.storage_name)) + "</p></div>" +
+      "<div class='site-metrics'>" +
+        "<span>로그 " + metrics.logCount + "건</span>" +
+        "<span>" + escapeHtml(latestText) + "</span>" +
+      "</div>" +
       "<div class='request-actions'>" +
         "<button data-action='open-site-logs' data-storage='" + storageKey + "' data-id='" + site.id + "' type='button'>로그 보기</button>" +
         adminButtons +
@@ -1960,6 +2032,101 @@ function renderSiteList(storageKey, sites) {
     "</article>";
   }).join("");
   setMarkup(view.siteListEl, siteMarkup);
+}
+
+function syncSiteListControls(storageKey, sites, metricsBySiteId) {
+  const view = storageViews[storageKey];
+  const state = storageState[storageKey];
+  const visibleCount = getVisibleSites(storageKey, sites, metricsBySiteId).length;
+  const resultText = visibleCount === sites.length ? "총 " + visibleCount + "개 사이트" : "총 " + sites.length + "개 중 " + visibleCount + "개";
+  const controls = [
+    [view.siteSearchEl, state.siteSearchQuery],
+    [view.siteSortEl, state.siteSortMode],
+    [view.siteCountEl, resultText],
+  ];
+
+  for (const [element, value] of controls) {
+    if (element === null) {
+      continue;
+    }
+    if (element instanceof HTMLInputElement || element instanceof HTMLSelectElement) {
+      element.value = value;
+      continue;
+    }
+    element.textContent = value;
+  }
+}
+
+function getVisibleSites(storageKey, sites, metricsBySiteId) {
+  const state = storageState[storageKey];
+  const query = state.siteSearchQuery.trim().toLowerCase();
+  const visibleSites = sites.filter((site) => {
+    if (query === "") {
+      return true;
+    }
+    return site.name.toLowerCase().includes(query);
+  });
+
+  return getSortedSites(storageKey, visibleSites, metricsBySiteId);
+}
+
+function getSortedSites(storageKey, sites, metricsBySiteId) {
+  const state = storageState[storageKey];
+  const sortedSites = [...sites];
+
+  sortedSites.sort((left, right) => {
+    const leftMetrics = metricsBySiteId.get(left.id) || createEmptySiteMetrics();
+    const rightMetrics = metricsBySiteId.get(right.id) || createEmptySiteMetrics();
+    if (state.siteSortMode === "name-desc") {
+      return right.name.localeCompare(left.name, "ko");
+    }
+    if (state.siteSortMode === "logs-desc") {
+      return rightMetrics.logCount - leftMetrics.logCount || left.name.localeCompare(right.name, "ko");
+    }
+    if (state.siteSortMode === "recent") {
+      return getTimeValue(rightMetrics.latestAt) - getTimeValue(leftMetrics.latestAt) || left.name.localeCompare(right.name, "ko");
+    }
+    return left.name.localeCompare(right.name, "ko");
+  });
+
+  return sortedSites;
+}
+
+function getSiteMetricsById(sites) {
+  const metricsBySiteId = new Map();
+  const siteIds = new Set(sites.map((site) => site.id));
+  for (const site of sites) {
+    metricsBySiteId.set(site.id, createEmptySiteMetrics());
+  }
+
+  for (const log of allLogs) {
+    if (siteIds.has(log.site_id) === false) {
+      continue;
+    }
+    const metrics = metricsBySiteId.get(log.site_id) || createEmptySiteMetrics();
+    metrics.logCount += 1;
+    if (!log.created_at) {
+      continue;
+    }
+    if (metrics.latestAt === null || getTimeValue(log.created_at) > getTimeValue(metrics.latestAt)) {
+      metrics.latestAt = log.created_at;
+    }
+    metricsBySiteId.set(log.site_id, metrics);
+  }
+
+  return metricsBySiteId;
+}
+
+function createEmptySiteMetrics() {
+  return {
+    logCount: 0,
+    latestAt: null,
+  };
+}
+
+function getTimeValue(value) {
+  const time = new Date(value).getTime();
+  return Number.isFinite(time) ? time : 0;
 }
 
 function renderSiteCurrent(storageKey, sites) {
@@ -1975,6 +2142,30 @@ function renderSiteCurrent(storageKey, sites) {
 
   const site = sites.find((item) => item.id === storageState[storageKey].activeSiteId);
   view.siteCurrentEl.textContent = site ? toStorageLabel(storageKey) + " > " + site.name : "";
+}
+
+function renderSiteSwitcher(storageKey, sites) {
+  const view = storageViews[storageKey];
+  if (view.siteSwitchListEl === null) {
+    return;
+  }
+
+  if (sites.length === 0) {
+    setMarkup(view.siteSwitchListEl, "");
+    return;
+  }
+
+  const metricsBySiteId = getSiteMetricsById(sites);
+  const switchSites = getSortedSites(storageKey, sites, metricsBySiteId);
+  const switchMarkup = switchSites.map((site) => {
+    const active = storageState[storageKey].activeSiteId === site.id;
+    const metrics = metricsBySiteId.get(site.id) || createEmptySiteMetrics();
+    return "<button class='site-switch-chip" + (active ? " active" : "") + "' data-action='open-site-logs' data-storage='" + storageKey + "' data-id='" + site.id + "' type='button'" + (active ? " aria-current='page'" : "") + ">" +
+      "<span>" + escapeHtml(site.name) + "</span>" +
+      "<small>" + metrics.logCount + "</small>" +
+    "</button>";
+  }).join("");
+  setMarkup(view.siteSwitchListEl, switchMarkup);
 }
 
 function renderStoragePage(storageKey) {
@@ -2158,7 +2349,7 @@ function renderLogListPage(storageKey, type, logs, activeId) {
   const listMarkup = pageLogs.map((log) => {
     const activeClass = log.id === activeId ? " active" : "";
     return "<button class='log-item " + activeClass + "' data-action='" + action + "' data-storage='" + storageKey + "' data-id='" + log.id + "' type='button'>" +
-      "<strong>" + escapeHtml(type === "raw" ? log.filename : log.filename + "_summary") + "</strong>" +
+      "<strong>" + escapeHtml(log.filename) + "</strong>" +
       "<div class='meta'><span>" + escapeHtml(formatDate(log.created_at)) + "</span><span>" + formatBytes(log.size) + "</span></div>" +
     "</button>";
   }).join("");
