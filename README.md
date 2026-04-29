@@ -281,13 +281,6 @@ bash deploy/build_release.sh 1.0v HEAD
 - `dist/netapp_automation-1.0v/`
 - `dist/netapp_automation-1.0v.tar.gz`
 
-## 문서
-
-- [research.md](/root/2026_project/research.md:1)
-  현재 구현 구조, 흐름, 데이터 구조 정리
-- [plan.md](/root/2026_project/plan.md:1)
-  이후 버전 계획 및 기능 확장 방향
-
 ## 현재 주의사항
 
 - 인증/인가 체계는 아직 단순한 편입니다.
