@@ -3,7 +3,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Baobab Ops Console</title>
-  <link rel="stylesheet" href="/static/app.css?v=1.1.4v">
+  <link rel="stylesheet" href="/static/app.css?v=1.1.6v">
 </head>
 <body>
   <div id="app-live-region" class="sr-only" aria-live="polite" aria-atomic="true"></div>
@@ -903,45 +903,16 @@
 
       <section id="page-requests" class="page-section">
         <div class="board-grid">
-          <section class="panel request-form-panel">
-            <div class="section-head">
-              <div>
-                <h3>수정 요청 작성</h3>
-                <p>대기, 진행중, 완료 상태를 지정하고 요청 내용을 남길 수 있습니다.</p>
-              </div>
-            </div>
-            <form id="request-form" class="upload-form">
-              <input id="request-edit-id" type="hidden">
-              <label>
-                말머리
-                <select id="request-status" required>
-                  <option value="대기">대기</option>
-                  <option value="진행중">진행중</option>
-                  <option value="완료">완료</option>
-                </select>
-              </label>
-              <label>
-                제목
-                <input id="request-title" type="text" placeholder="요청 제목을 입력하세요" required>
-              </label>
-              <label>
-                내용
-                <textarea id="request-content" rows="8" placeholder="수정 요청 내용을 입력하세요" required></textarea>
-              </label>
-              <div class="form-actions">
-                <button id="request-submit-button" type="submit">등록</button>
-                <button id="request-cancel-button" class="secondary" type="button" hidden>취소</button>
-              </div>
-            </form>
-            <p id="request-status-message" class="status" role="status" aria-live="polite" aria-atomic="true"></p>
-          </section>
           <section class="panel request-list-panel">
             <div class="section-head">
               <div>
                 <h3>수정 요청 게시판</h3>
                 <p>등록된 요청을 확인하고 수정하거나 삭제할 수 있습니다.</p>
               </div>
-              <span id="request-count" class="member-count">0건</span>
+              <div class="board-head-actions">
+                <span id="request-count" class="member-count">0건</span>
+                <button class="board-compose-button" data-action="open-request-editor" type="button"><span aria-hidden="true"></span>작성</button>
+              </div>
             </div>
             <div class="request-filter-bar">
               <div id="request-filter-tabs" class="request-filter-tabs">
@@ -952,53 +923,100 @@
               </div>
               <input id="request-search" type="text" placeholder="제목, 내용, 작성자로 검색">
             </div>
-            <div id="request-list" class="request-list"></div>
+            <div class="board-content-layout">
+              <div id="request-list" class="request-list"></div>
+              <aside id="request-detail" class="board-detail-panel" aria-live="polite"></aside>
+            </div>
           </section>
         </div>
       </section>
 
       <section id="page-bugs" class="page-section">
         <div class="board-grid">
-          <section class="panel request-form-panel">
-            <div class="section-head">
-              <div>
-                <h3>버그 등록</h3>
-                <p>운영 중 확인한 버그 내용을 기록하고 추후 수정 이력을 관리할 수 있습니다.</p>
-              </div>
-            </div>
-            <form id="bug-form" class="upload-form">
-              <input id="bug-edit-id" type="hidden">
-              <label>
-                제목
-                <input id="bug-title" type="text" placeholder="버그 제목을 입력하세요" required>
-              </label>
-              <label>
-                내용
-                <textarea id="bug-content" rows="8" placeholder="버그 내용을 입력하세요" required></textarea>
-              </label>
-              <div class="form-actions">
-                <button id="bug-submit-button" type="submit">등록</button>
-                <button id="bug-cancel-button" class="secondary" type="button" hidden>취소</button>
-              </div>
-            </form>
-            <p id="bug-status-message" class="status" role="status" aria-live="polite" aria-atomic="true"></p>
-          </section>
           <section class="panel request-list-panel">
             <div class="section-head">
               <div>
                 <h3>버그 목록</h3>
                 <p>등록된 버그를 확인하고 수정하거나 삭제할 수 있습니다.</p>
               </div>
-              <span id="bug-count" class="member-count">0건</span>
+              <div class="board-head-actions">
+                <span id="bug-count" class="member-count">0건</span>
+                <button class="board-compose-button" data-action="open-bug-editor" type="button"><span aria-hidden="true"></span>작성</button>
+              </div>
             </div>
             <div class="request-filter-bar">
               <input id="bug-search" type="text" placeholder="제목, 내용, 작성자로 검색">
             </div>
-            <div id="bug-list" class="request-list"></div>
+            <div class="board-content-layout">
+              <div id="bug-list" class="request-list"></div>
+              <aside id="bug-detail" class="board-detail-panel" aria-live="polite"></aside>
+            </div>
           </section>
         </div>
       </section>
     </main>
+  </div>
+
+  <div id="request-editor-modal" class="modal-backdrop board-editor-modal" hidden>
+    <section class="modal-panel board-editor-panel" role="dialog" aria-modal="true" aria-labelledby="request-editor-title" aria-describedby="request-editor-description" tabindex="-1">
+      <div class="section-head">
+        <div>
+          <h3 id="request-editor-title">수정 요청 작성</h3>
+          <p id="request-editor-description">대기, 진행중, 완료 상태를 지정하고 요청 내용을 남길 수 있습니다.</p>
+        </div>
+      </div>
+      <form id="request-form" class="upload-form">
+        <input id="request-edit-id" type="hidden">
+        <label>
+          말머리
+          <select id="request-status" required>
+            <option value="대기">대기</option>
+            <option value="진행중">진행중</option>
+            <option value="완료">완료</option>
+          </select>
+        </label>
+        <label>
+          제목
+          <input id="request-title" type="text" placeholder="요청 제목을 입력하세요" required>
+        </label>
+        <label>
+          내용
+          <textarea id="request-content" rows="8" placeholder="수정 요청 내용을 입력하세요" required></textarea>
+        </label>
+        <div class="form-actions">
+          <button id="request-submit-button" type="submit">등록</button>
+          <button id="request-cancel-button" class="secondary" type="button">취소</button>
+        </div>
+      </form>
+      <p id="request-status-message" class="status" role="status" aria-live="polite" aria-atomic="true"></p>
+    </section>
+  </div>
+
+  <div id="bug-editor-modal" class="modal-backdrop board-editor-modal" hidden>
+    <section class="modal-panel board-editor-panel" role="dialog" aria-modal="true" aria-labelledby="bug-editor-title" aria-describedby="bug-editor-description" tabindex="-1">
+      <div class="section-head">
+        <div>
+          <h3 id="bug-editor-title">버그 등록</h3>
+          <p id="bug-editor-description">운영 중 확인한 버그 내용을 기록하고 추후 수정 이력을 관리할 수 있습니다.</p>
+        </div>
+      </div>
+      <form id="bug-form" class="upload-form">
+        <input id="bug-edit-id" type="hidden">
+        <label>
+          제목
+          <input id="bug-title" type="text" placeholder="버그 제목을 입력하세요" required>
+        </label>
+        <label>
+          내용
+          <textarea id="bug-content" rows="8" placeholder="버그 내용을 입력하세요" required></textarea>
+        </label>
+        <div class="form-actions">
+          <button id="bug-submit-button" type="submit">등록</button>
+          <button id="bug-cancel-button" class="secondary" type="button">취소</button>
+        </div>
+      </form>
+      <p id="bug-status-message" class="status" role="status" aria-live="polite" aria-atomic="true"></p>
+    </section>
   </div>
 
   <div id="manual-fields-modal" class="modal-backdrop" hidden>
@@ -1082,6 +1100,6 @@
     </div>
   </div>
 
-  <script type="module" src="/static/app.js?v=1.1.1v"></script>
+  <script type="module" src="/static/app.js?v=1.1.6v"></script>
 </body>
 </html>

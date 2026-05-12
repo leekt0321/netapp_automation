@@ -1169,8 +1169,70 @@ textarea {
 }
 
 .board-grid {
-  grid-template-columns: minmax(18rem, 22rem) minmax(0, 1fr);
+  grid-template-columns: minmax(0, 1fr);
   align-items: start;
+}
+
+.board-head-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 10px;
+}
+
+.board-head-actions button {
+  min-height: 40px;
+  padding: 9px 16px;
+  border-radius: 6px;
+  font-size: 0.92rem;
+  box-shadow: none;
+}
+
+.board-content-layout {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 18px;
+  align-items: start;
+}
+
+.board-compose-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--text-inverse);
+  background: color-mix(in oklab, var(--accent-teal) 78%, var(--accent));
+  border: 1px solid color-mix(in oklab, var(--accent-teal) 70%, white);
+  font-weight: 700;
+}
+
+.board-compose-button span {
+  position: relative;
+  width: 18px;
+  height: 18px;
+  flex: 0 0 auto;
+}
+
+.board-compose-button span::before,
+.board-compose-button span::after {
+  content: "";
+  position: absolute;
+  inset: 50% auto auto 50%;
+  width: 18px;
+  height: 2px;
+  border-radius: 999px;
+  background: var(--text-inverse);
+  transform: translate(-50%, -50%);
+}
+
+.board-compose-button span::after {
+  transform: translate(-50%, -50%) rotate(90deg);
+}
+
+.board-compose-button:hover {
+  background: color-mix(in oklab, var(--accent-teal) 64%, var(--accent-strong));
+  border-color: color-mix(in oklab, var(--accent-teal) 52%, white);
+  box-shadow: none;
 }
 
 .upload-panel,
@@ -1635,6 +1697,14 @@ body.modal-open {
   box-shadow: var(--shadow-strong);
 }
 
+.board-editor-panel {
+  width: min(680px, 100%);
+}
+
+.board-editor-panel textarea {
+  min-height: 220px;
+}
+
 .confirm-panel {
   width: min(560px, 100%);
 }
@@ -1783,6 +1853,10 @@ body.modal-open {
   background: color-mix(in oklab, var(--surface-muted) 52%, transparent);
 }
 
+.board-list-row.active {
+  background: color-mix(in oklab, var(--accent-soft) 46%, transparent);
+}
+
 .board-list-status,
 .board-list-author,
 .board-list-date {
@@ -1823,8 +1897,13 @@ body.modal-open {
 }
 
 .board-list-title-button:hover {
+  color: var(--accent-strong);
   background: transparent;
   box-shadow: none;
+}
+
+.board-list-title-button[aria-current="true"] .board-list-title {
+  color: var(--accent-strong);
 }
 
 .board-list-title-button:focus-visible {
@@ -1832,30 +1911,55 @@ body.modal-open {
   outline-offset: 4px;
 }
 
-.board-list-toggle-mark {
-  flex: 0 0 auto;
-  color: var(--text-soft);
-  font-size: 0.84rem;
+.board-detail-panel {
+  position: sticky;
+  top: 18px;
+  min-height: 260px;
+  padding: 18px;
+  border: 1px solid var(--line-soft);
+  border-radius: 18px;
+  background: linear-gradient(180deg, color-mix(in oklab, var(--surface-base) 98%, white), var(--surface-soft));
+  box-shadow: var(--shadow-soft);
+}
+
+.board-detail-card {
+  display: grid;
+  gap: 14px;
+}
+
+.board-detail-kicker {
+  display: flex;
+}
+
+.board-detail-card h4 {
+  font-size: 1.16rem;
+  line-height: 1.35;
   font-weight: 800;
-  transition: transform 0.16s ease;
+  overflow-wrap: anywhere;
 }
 
-.board-list-title-button[aria-expanded="true"] .board-list-toggle-mark {
-  transform: rotate(180deg);
+.board-detail-meta {
+  display: grid;
+  gap: 5px;
+  color: var(--text-muted);
+  font-size: 0.84rem;
+  line-height: 1.4;
 }
 
-.board-list-content-panel {
-  grid-column: 2 / -2;
-  padding: 0 0 4px;
-}
-
-.board-list-content {
-  margin: 2px 0 0;
+.board-detail-content {
   color: var(--text-soft);
-  font-size: 0.86rem;
-  line-height: 1.45;
+  font-size: 0.98rem;
+  line-height: 1.65;
   white-space: pre-wrap;
   word-break: break-word;
+}
+
+.board-detail-empty {
+  display: grid;
+  align-content: center;
+  min-height: 220px;
+  color: var(--text-muted);
+  text-align: center;
 }
 
 .board-list-actions {
@@ -1934,6 +2038,7 @@ body.modal-open {
   .storage-grid,
   .storage-site-grid,
   .storage-site-grid-manage,
+  .board-content-layout,
   .board-grid {
     grid-template-columns: 1fr;
   }
@@ -2112,9 +2217,14 @@ body.modal-open {
   .storage-site-grid,
   .storage-site-grid-manage,
   .board-grid,
+  .board-content-layout,
   .dashboard-grid,
   .storage-grid {
     gap: 16px;
+  }
+
+  .board-detail-panel {
+    position: static;
   }
 
   .log-toolbar,
@@ -2122,6 +2232,7 @@ body.modal-open {
   .list-pagination,
   .detail-actions,
   .request-actions,
+  .board-head-actions,
   .form-actions {
     gap: 10px;
   }

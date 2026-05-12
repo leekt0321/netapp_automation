@@ -15,6 +15,9 @@ import {
   appLiveRegionEl,
   bugCancelButtonEl,
   bugContentEl,
+  bugDetailEl,
+  bugEditorModalEl,
+  bugEditorPanelEl,
   bugEditIdEl,
   bugFormEl,
   bugListEl,
@@ -87,6 +90,9 @@ import {
   refreshProgressBarEl,
   requestCancelButtonEl,
   requestContentEl,
+  requestDetailEl,
+  requestEditorModalEl,
+  requestEditorPanelEl,
   requestEditIdEl,
   requestFilterButtons,
   requestFormEl,
@@ -141,6 +147,8 @@ let allUsers = appState.allUsers;
 let allActiveSessions = appState.allActiveSessions;
 let allDeletionRequests = appState.allDeletionRequests;
 let activeRequestFilter = appState.activeRequestFilter;
+let selectedRequestPostId = null;
+let selectedBugPostId = null;
 let uploadManualFields = appState.uploadManualFields;
 let manualFieldsModalMode = appState.manualFieldsModalMode;
 let manualFieldsModalTarget = appState.manualFieldsModalTarget;
@@ -800,6 +808,22 @@ for (const button of requestFilterButtons) {
   });
 }
 
+if (requestEditorModalEl !== null) {
+  requestEditorModalEl.addEventListener("click", (event) => {
+    if (event.target === requestEditorModalEl) {
+      closeRequestEditor();
+    }
+  });
+}
+
+if (bugEditorModalEl !== null) {
+  bugEditorModalEl.addEventListener("click", (event) => {
+    if (event.target === bugEditorModalEl) {
+      closeBugEditor();
+    }
+  });
+}
+
 storageNameEl.addEventListener("change", () => {
   syncUploadSiteOptions();
 });
@@ -911,11 +935,11 @@ requestFormEl.addEventListener("submit", async (event) => {
   resetRequestForm();
   requestStatusMessageEl.textContent = isEdit ? "수정 요청이 업데이트되었습니다." : "수정 요청이 등록되었습니다.";
   await loadRequestPosts();
+  closeRequestEditor({ reset: false });
 });
 
 requestCancelButtonEl.addEventListener("click", () => {
-  resetRequestForm();
-  requestStatusMessageEl.textContent = "수정 모드를 취소했습니다.";
+  closeRequestEditor();
 });
 
 if (bugFormEl !== null) {
@@ -946,13 +970,13 @@ if (bugFormEl !== null) {
     resetBugForm();
     bugStatusMessageEl.textContent = isEdit ? "버그 글이 업데이트되었습니다." : "버그 글이 등록되었습니다.";
     await loadBugPosts();
+    closeBugEditor({ reset: false });
   });
 }
 
 if (bugCancelButtonEl !== null) {
   bugCancelButtonEl.addEventListener("click", () => {
-    resetBugForm();
-    bugStatusMessageEl.textContent = "수정 모드를 취소했습니다.";
+    closeBugEditor();
   });
 }
 
@@ -973,13 +997,17 @@ document.addEventListener("click", async (event) => {
     return;
   }
 
-  if (action === "toggle-board-item") {
-    const panelId = actionButton.dataset.panelId;
-    const panel = panelId ? document.getElementById(panelId) : null;
-    if (panel !== null) {
-      const expanded = actionButton.getAttribute("aria-expanded") === "true";
-      actionButton.setAttribute("aria-expanded", expanded ? "false" : "true");
-      panel.hidden = expanded;
+  if (action === "select-board-item") {
+    const postId = Number(actionButton.dataset.id);
+    if (Number.isNaN(postId)) {
+      return;
+    }
+    if (actionButton.dataset.boardType === "bug") {
+      selectedBugPostId = postId;
+      renderFilteredBugPosts();
+    } else {
+      selectedRequestPostId = postId;
+      renderFilteredRequestPosts();
     }
     return;
   }
@@ -1193,6 +1221,13 @@ document.addEventListener("click", async (event) => {
     return;
   }
 
+  if (action === "open-bug-editor") {
+    resetBugForm();
+    bugStatusMessageEl.textContent = "";
+    openBugEditor();
+    return;
+  }
+
   if (action === "bug-delete") {
     if (isAuthenticated() === false) {
       return;
@@ -1211,6 +1246,13 @@ document.addEventListener("click", async (event) => {
       return;
     }
     populateRequestForm(Number(actionButton.dataset.id));
+    return;
+  }
+
+  if (action === "open-request-editor") {
+    resetRequestForm();
+    requestStatusMessageEl.textContent = "";
+    openRequestEditor();
     return;
   }
 
@@ -2776,12 +2818,18 @@ async function requestSelectedLogDeletion(logId) {
 async function loadRequestPosts() {
   const { payload } = await getJson("/requests");
   allRequestPosts = Array.isArray(payload) ? payload : [];
+  if (selectedRequestPostId !== null && allRequestPosts.some((post) => post.id === selectedRequestPostId) === false) {
+    selectedRequestPostId = null;
+  }
   renderFilteredRequestPosts();
 }
 
 async function loadBugPosts() {
   const { payload } = await getJson("/bugs");
   allBugPosts = Array.isArray(payload) ? payload : [];
+  if (selectedBugPostId !== null && allBugPosts.some((post) => post.id === selectedBugPostId) === false) {
+    selectedBugPostId = null;
+  }
   renderFilteredBugPosts();
 }
 
@@ -2821,16 +2869,25 @@ function renderRequestPosts(posts) {
   }
   if (posts.length === 0) {
     setMarkup(requestListEl, "<div class='empty'>등록된 수정 요청이 없습니다.</div>");
+    renderBoardDetail(requestDetailEl, null, { emptyTitle: "선택된 요청 없음", emptyDescription: "제목을 선택하면 요청 내용이 여기에 표시됩니다." });
     return;
   }
 
+  if (selectedRequestPostId === null || posts.some((post) => post.id === selectedRequestPostId) === false) {
+    selectedRequestPostId = posts[0].id;
+  }
   const canManage = isAuthenticated();
   const requestMarkup = renderBoardListMarkup(posts, {
     statusLabel: (post) => "<span class='badge " + getStatusBadgeClass(post.status) + "'>" + escapeHtml(post.status) + "</span>",
     actionPrefix: "request",
+    boardType: "request",
     canManage,
+    selectedId: selectedRequestPostId,
   });
   setMarkup(requestListEl, requestMarkup);
+  renderBoardDetail(requestDetailEl, posts.find((post) => post.id === selectedRequestPostId), {
+    statusLabel: (post) => "<span class='badge " + getStatusBadgeClass(post.status) + "'>" + escapeHtml(post.status) + "</span>",
+  });
 }
 
 function renderFilteredBugPosts() {
@@ -2859,16 +2916,25 @@ function renderBugPosts(posts) {
 
   if (posts.length === 0) {
     setMarkup(bugListEl, "<div class='empty'>등록된 버그가 없습니다.</div>");
+    renderBoardDetail(bugDetailEl, null, { emptyTitle: "선택된 버그 없음", emptyDescription: "제목을 선택하면 버그 내용이 여기에 표시됩니다." });
     return;
   }
 
+  if (selectedBugPostId === null || posts.some((post) => post.id === selectedBugPostId) === false) {
+    selectedBugPostId = posts[0].id;
+  }
   const canManage = isAuthenticated();
   const bugMarkup = renderBoardListMarkup(posts, {
     statusLabel: () => "<span class='badge doing'>버그</span>",
     actionPrefix: "bug",
+    boardType: "bug",
     canManage,
+    selectedId: selectedBugPostId,
   });
   setMarkup(bugListEl, bugMarkup);
+  renderBoardDetail(bugDetailEl, posts.find((post) => post.id === selectedBugPostId), {
+    statusLabel: () => "<span class='badge doing'>버그</span>",
+  });
 }
 
 function renderBoardListMarkup(posts, config) {
@@ -2882,7 +2948,7 @@ function renderBoardListMarkup(posts, config) {
     "</div>";
 
   const rowsMarkup = posts.map((post) => {
-    const contentPanelId = "board-content-" + config.actionPrefix + "-" + post.id;
+    const isSelected = post.id === config.selectedId;
     const actions = config.canManage
       ? "<div class='board-list-actions'>" +
           "<button class='secondary' data-action='" + config.actionPrefix + "-edit' data-id='" + post.id + "' type='button'>수정</button>" +
@@ -2891,25 +2957,51 @@ function renderBoardListMarkup(posts, config) {
       : "<div class='board-list-actions'><span class='board-list-muted'>-</span></div>";
 
     return (
-      "<article class='board-list-row'>" +
+      "<article class='board-list-row" + (isSelected ? " active" : "") + "'>" +
         "<div class='board-list-status'>" + config.statusLabel(post) + "</div>" +
         "<div class='board-list-title-group'>" +
-          "<button class='board-list-title-button' data-action='toggle-board-item' data-panel-id='" + contentPanelId + "' type='button' aria-expanded='false' aria-controls='" + contentPanelId + "'>" +
+          "<button class='board-list-title-button' data-action='select-board-item' data-board-type='" + config.boardType + "' data-id='" + post.id + "' type='button'" + (isSelected ? " aria-current='true'" : "") + ">" +
             "<span class='board-list-title'>" + escapeHtml(post.title || "-") + "</span>" +
-            "<span class='board-list-toggle-mark' aria-hidden='true'>⌄</span>" +
           "</button>" +
         "</div>" +
         "<div class='board-list-author'>" + escapeHtml(post.author || "-") + "</div>" +
         "<div class='board-list-date'>" + escapeHtml(formatDate(post.updated_at || post.created_at)) + "</div>" +
         actions +
-        "<div id='" + contentPanelId + "' class='board-list-content-panel' hidden>" +
-          "<p class='board-list-content'>" + escapeHtml(post.content || "") + "</p>" +
-        "</div>" +
       "</article>"
     );
   }).join("");
 
   return "<div class='board-list-table'>" + headerMarkup + rowsMarkup + "</div>";
+}
+
+function renderBoardDetail(targetEl, post, config = {}) {
+  if (targetEl === null) {
+    return;
+  }
+  if (!post) {
+    setMarkup(targetEl,
+      "<div class='board-detail-empty'>" +
+        "<p class='eyebrow'>" + escapeHtml(config.emptyTitle || "선택된 글 없음") + "</p>" +
+        "<p>" + escapeHtml(config.emptyDescription || "목록에서 제목을 선택하세요.") + "</p>" +
+      "</div>"
+    );
+    return;
+  }
+
+  const badge = typeof config.statusLabel === "function" ? config.statusLabel(post) : "";
+  const meta = [
+    "작성자: " + (post.author || "-"),
+    "등록: " + formatDate(post.created_at),
+    "업데이트: " + formatDate(post.updated_at || post.created_at),
+  ];
+  setMarkup(targetEl,
+    "<article class='board-detail-card'>" +
+      "<div class='board-detail-kicker'>" + badge + "</div>" +
+      "<h4>" + escapeHtml(post.title || "-") + "</h4>" +
+      "<div class='board-detail-meta'>" + meta.map((item) => "<span>" + escapeHtml(item) + "</span>").join("") + "</div>" +
+      "<p class='board-detail-content'>" + escapeHtml(post.content || "") + "</p>" +
+    "</article>"
+  );
 }
 
 function populateRequestForm(postId) {
@@ -2922,9 +3014,9 @@ function populateRequestForm(postId) {
   requestTitleEl.value = target.title;
   requestContentEl.value = target.content;
   requestSubmitButtonEl.textContent = "수정 저장";
-  requestCancelButtonEl.hidden = false;
   setStatusText(requestStatusMessageEl, "수정할 내용을 편집한 뒤 저장해 주세요.");
   showPage("requests");
+  openRequestEditor();
 }
 
 function populateBugForm(postId) {
@@ -2936,9 +3028,9 @@ function populateBugForm(postId) {
   bugTitleEl.value = target.title;
   bugContentEl.value = target.content;
   bugSubmitButtonEl.textContent = "수정 저장";
-  bugCancelButtonEl.hidden = false;
   bugStatusMessageEl.textContent = "수정할 내용을 편집한 뒤 저장하세요.";
   showPage("bugs");
+  openBugEditor();
 }
 
 async function deleteRequestPost(postId) {
@@ -2993,7 +3085,6 @@ function resetRequestForm() {
   requestFormEl.reset();
   requestEditIdEl.value = "";
   requestSubmitButtonEl.textContent = "등록";
-  requestCancelButtonEl.hidden = true;
 }
 
 function resetBugForm() {
@@ -3003,7 +3094,54 @@ function resetBugForm() {
   bugFormEl.reset();
   bugEditIdEl.value = "";
   bugSubmitButtonEl.textContent = "등록";
-  bugCancelButtonEl.hidden = true;
+}
+
+function openRequestEditor() {
+  if (requestEditorModalEl === null) {
+    return;
+  }
+  requestEditorModalEl.hidden = false;
+  document.body.classList.add("modal-open");
+  window.requestAnimationFrame(() => {
+    if (requestEditorPanelEl !== null) {
+      requestEditorPanelEl.focus();
+    }
+  });
+}
+
+function closeRequestEditor(options = {}) {
+  if (options.reset !== false) {
+    resetRequestForm();
+    requestStatusMessageEl.textContent = "";
+  }
+  if (requestEditorModalEl !== null) {
+    requestEditorModalEl.hidden = true;
+  }
+  document.body.classList.remove("modal-open");
+}
+
+function openBugEditor() {
+  if (bugEditorModalEl === null) {
+    return;
+  }
+  bugEditorModalEl.hidden = false;
+  document.body.classList.add("modal-open");
+  window.requestAnimationFrame(() => {
+    if (bugEditorPanelEl !== null) {
+      bugEditorPanelEl.focus();
+    }
+  });
+}
+
+function closeBugEditor(options = {}) {
+  if (options.reset !== false) {
+    resetBugForm();
+    bugStatusMessageEl.textContent = "";
+  }
+  if (bugEditorModalEl !== null) {
+    bugEditorModalEl.hidden = true;
+  }
+  document.body.classList.remove("modal-open");
 }
 
 function syncUploadSiteOptions(preferredSiteId, preferredStorageKey) {
